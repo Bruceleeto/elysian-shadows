@@ -1058,11 +1058,9 @@ GYComputeContext* gyComputeContextCreate(unsigned platformIdx, const GYComputeCo
         }
 
         properties[2] = CL_GL_CONTEXT_KHR;
-
-
-        properties[1] = (cl_context_properties)_clGlInteropInfo.glXContext;
-        properties[2] = CL_GLX_DISPLAY_KHR;
-        properties[3] = (cl_context_properties)_clGlInteropInfo.glXDisplay;
+        properties[3] = (cl_context_properties)_clGlInteropInfo.glXContext;
+        properties[4] = CL_GLX_DISPLAY_KHR;
+        properties[5] = (cl_context_properties)_clGlInteropInfo.glXDisplay;
 
     }
 #endif
@@ -1207,6 +1205,11 @@ int gyComputeCommandQueueEnqueueAcquireRendererObject(GYComputeCommandQueue *que
     GY_ASSERT(queue && buffers && count > 0 && count < GY_CL_ENQUEUE_ACQUIRE_RENDERER_OBJECTS_MAX);
     cl_mem clBuffers[GY_CL_ENQUEUE_ACQUIRE_RENDERER_OBJECTS_MAX];
     for(unsigned i = 0; i < count; ++i) clBuffers[i] = ((_Buffer*)buffers[i])->clBuffer;
+
+#ifdef GY_CL_OPENGL_INTEROP
+    //OpenCL may only take GL objects once GL has finished with them (no cl_khr_gl_event sync here)
+    glFinish();
+#endif
 
     return !GY_CL_CHECK_ERROR(clEnqueueAcquireGLObjects(((_CommandQueue*)queue)->queue, count, clBuffers, 0, NULL, NULL));
 }

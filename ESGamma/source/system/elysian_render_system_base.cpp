@@ -568,12 +568,10 @@ void RenderSystemBase::_onViewportSizeChange() {
 void RenderSystemBase::renderScene(void) {
     if(gyVidShadowPass()) return;
 #if 1
-bool success = _populateMapIboComputeTask->populateIbo();
-
-
-    success &= _populateMapIboComputeTask->waitForIboFilled();
-
-    assert(success);
+    //Map geometry is built by an OpenCL kernel sharing buffers with OpenGL;
+    //without that interop there is currently no fallback path, so skip the map.
+    bool success = _populateMapIboComputeTask && _populateMapIboComputeTask->populateIbo();
+    if(success) success &= _populateMapIboComputeTask->waitForIboFilled();
 
     if(success) {
 
@@ -619,7 +617,11 @@ bool success = _populateMapIboComputeTask->populateIbo();
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
     } else {
-        errprintf("FUCKED");
+        static bool warned = false;
+        if(!warned) {
+            warnprintf("RenderSystem: Map rendering requires OpenCL/OpenGL interop, which is unavailable. Skipping map geometry.");
+            warned = true;
+        }
     }
 
 

@@ -107,7 +107,7 @@ void PopulateMapIboComputeTask::updateArea(Area* area) {
 bool PopulateMapIboComputeTask::populateIbo(void) {
     bool success = true;
 
-    if(isValid()) {
+    if(isValid() && _drawIndirectBuffer && _mapIboBuffer && _mapVboBuffer) {
         ComputeBuffer* sharedObjs[3] = {
             _drawIndirectBuffer,
             _mapIboBuffer,
@@ -119,9 +119,9 @@ bool PopulateMapIboComputeTask::populateIbo(void) {
         memcpy(clCam.viewProj, _camera->projViewMat, sizeof(float)*4*4);
 
         success &= enqueueBufferWrite(_cameraBuffer, 0, sizeof(CLCamera), &clCam, false);
-        success &= enqueueAcquireRendererSharedObject(2, sharedObjs);
+        success &= enqueueAcquireRendererSharedObject(3, sharedObjs);
         success &= enqueueKernel(_width * _height * ELYSIAN_AREA_MAP_LAYERS);
-        success &= enqueueReleaseRendererSharedObject(2, sharedObjs, nullptr);
+        success &= enqueueReleaseRendererSharedObject(3, sharedObjs, nullptr);
 
 
 #if 0
