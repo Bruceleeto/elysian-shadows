@@ -9,6 +9,7 @@
 #include <ESGamma/crtp/elysian_debug.hpp>
 #include <AssetIO/utility/elysian_lua_variant_base.hpp>
 #include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <libGyro/gyro_file_api.h>
 
 namespace elysian {
 
@@ -338,7 +339,15 @@ bool LuaManagerBase::runScriptSandbox(const char *const file, LuaScript* const s
     //Check if script has already been loaded, and return its globals table
     int ref = LUA_NOREF;
 
-    if((_errorCode = luaL_loadfile(*_mainState, file)) != 0) {
+    //Scripts are referenced by virtual "/assets/..." paths; map them onto the project folder
+    //the same way libGyro does for every other asset type.
+#if GYRO_PLATFORM == GYRO_PLATFORM_Qt
+    const char *const path = gyFilePath(file);
+#else
+    const char *const path = file;
+#endif
+
+    if((_errorCode = luaL_loadfile(*_mainState, path)) != 0) {
         if(_errorCode == LUA_ERRFILE) {
             Debug::printf(Debug::LOG_WARNING, "Could not load script file [%s]!", file);
         } else _showError(); //DO NOT LOG_ERROR OUT IF FILE ISN'T FOUND!!!
@@ -425,6 +434,46 @@ bool LuaManagerBase::unloadScript(LuaScript &script) {
     return false;
 }
 
+// Scripts refer to assets by virtual "/assets/..." paths, but Lua's own file
+// functions pass paths straight to fopen(). Resolve them through libGyro, the
+// same way every other asset type is loaded.
+static int _luaResolveAssetPath(lua_State *L) {
+    const char *const path = luaL_checkstring(L, 1);
+#if GYRO_PLATFORM == GYRO_PLATFORM_Qt
+    lua_pushstring(L, gyFilePath(path));
+#else
+    lua_pushstring(L, path);
+#endif
+    return 1;
+}
+
+static const char _assetPathShim[] =
+    "do\n"
+    "    local resolve = __esResolveAssetPath\n"
+    "    __esResolveAssetPath = nil\n"
+    "    local function map(p)\n"
+    "        if type(p) == 'string' and p:sub(1, 8) == '/assets/' then return resolve(p) end\n"
+    "        return p\n"
+    "    end\n"
+    "    local _dofile, _loadfile, _open, _lines = dofile, loadfile, io.open, io.lines\n"
+    "    dofile   = function(f, ...) return _dofile(map(f), ...) end\n"
+    "    loadfile = function(f, ...) return _loadfile(map(f), ...) end\n"
+    "    io.open  = function(f, ...) return _open(map(f), ...) end\n"
+    "    io.lines = function(f, ...) return _lines(map(f), ...) end\n"
+    "    -- require: Lua-file searcher that maps each package.path entry first\n"
+    "    package.searchers[2] = function(name)\n"
+    "        local paths = {}\n"
+    "        for entry in package.path:gmatch('[^;]+') do paths[#paths + 1] = map(entry) end\n"
+    "        local file, err = package.searchpath(name, table.concat(paths, ';'))\n"
+    "        if not file then return err end\n"
+    "        local chunk, lerr = _loadfile(file)\n"
+    "        if not chunk then\n"
+    "            error(('error loading module \\'%s\\' from file \\'%s\\':\\n\\t%s'):format(name, file, lerr), 2)\n"
+    "        end\n"
+    "        return chunk, file\n"
+    "    end\n"
+    "end\n";
+
 bool LuaManagerBase::initialize(void) {
     bool success = true;
     DbgEvent event("Initializing Lua virtual machine.");
@@ -432,6 +481,10 @@ bool LuaManagerBase::initialize(void) {
 
     Debug::printf(Debug::LOG_VERBOSE, "Opening standard libs");
     luaL_openlibs(*_mainState);
+
+    lua_pushcfunction(*_mainState, &_luaResolveAssetPath);
+    lua_setglobal(*_mainState, "__esResolveAssetPath");
+    success &= runString(_assetPathShim);
 
     Debug::printf(Debug::LOG_VERBOSE, "Loading utility functions.");
     success &= runString(_rPrint);
