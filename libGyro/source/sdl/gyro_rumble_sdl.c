@@ -31,7 +31,8 @@ static SDLHapticDevice  _tempDevice = {
       0
     },
     NULL,
-    SDL_HAPTIC_DEVICE_UNUSED_PORT
+    SDL_HAPTIC_DEVICE_UNUSED_PORT,
+    0
 };
 static SDLHapticDevice* _devices = NULL;
 static unsigned         _deviceCount = 0;

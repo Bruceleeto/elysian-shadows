@@ -9,6 +9,7 @@
 #include <gl/gyro_video_gl.h>
 #include <gl/gyro_bloom_gl.h>
 #include <stdio.h>
+#include <stdint.h>
 
 
 typedef enum __BLOOM_SHADER_ATTRIB {
@@ -62,7 +63,6 @@ static GLuint               _bloomVbo;
 
 static _QuarterDownscaleShaderProgram   _downscaleShader;
 static GLuint               _downscaleTex;
-static GLuint               _downscaleFbo;
 static GLuint               _downscaleVao;
 static GLuint               _downscaleVbo;
 
@@ -93,7 +93,7 @@ static void _gyBloomSetPipelineTex(GLuint id) {
         _bloomState.texture = NULL;
     } else {
         _bloomState.texture = &_bloomTempTex;
-        _bloomState.texture->_data = id;
+        _bloomState.texture->_data = (void*)(uintptr_t)id;
     }
 }
 
@@ -390,7 +390,7 @@ void gyVidApplyBloom(void) {
 
     GYColor4 col = { 0, 0, 0, 255 };
     gyVidMaterialBind(NULL);
-    _gyBloomSetPipelineTex(NULL);
+    _gyBloomSetPipelineTex(0);
     gyVidPipelineState(&_bloomState);
     //Render fullscreen quad.
     gyMatPush();

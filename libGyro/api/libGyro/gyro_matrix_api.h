@@ -29,13 +29,13 @@ typedef struct GYVector2 { float x, y; } GYVector2;
 
 typedef struct GYVector3 { float x, y, z; } GYVector3;
 
-typedef struct GYVector4 {
+typedef struct GYRO_ALIGN(GYRO_VECTOR4_ALIGNMENT) GYVector4 {
   float x, y, z, w;
-} GYVector4 GYRO_ALIGN(GYRO_VECTOR4_ALIGNMENT);
+} GYVector4;
 
-typedef struct GYQuaternion {
+typedef struct GYRO_ALIGN(GYRO_QUATERNION_ALIGNMENT) GYQuaternion {
     float w, x, y, z;
-} GYQuaternion GYRO_ALIGN(GYRO_QUATERNION_ALIGNMENT);
+} GYQuaternion;
 
 typedef union {
   GYVector4 vec4;
@@ -224,6 +224,7 @@ inline static void gyQuaternionInverse(GYQuaternion* dst, const GYQuaternion* sr
 
 
 inline static void                gyQuaternionLerp(GYQuaternion* dst, const GYQuaternion* start, const GYQuaternion* stop, float elapsed) {
+    (void)dst; (void)start; (void)stop; (void)elapsed;
 //p′=p1+t(p2−p1)
     /*
     Compute the difference between p1 and p2.
@@ -232,6 +233,7 @@ inline static void                gyQuaternionLerp(GYQuaternion* dst, const GYQu
 }
 
 inline static void                gyQuaternionFromLookRotation(GYQuaternion* dst, const GYVector3* forward, const GYVector3* upwards) {
+    (void)dst; (void)forward; (void)upwards;
 #if 0
     mx::Vector3f forward_l = mx::normalize(target - position);
     mx::Vector3f forward_w(1, 0, 0);
@@ -271,10 +273,12 @@ inline static float gyQuaternionMagnitude(const GYQuaternion* q) {
 }
 
 inline static void gyQuaternionRotateTowards(GYQuaternion* dst, const GYQuaternion* from, const GYQuaternion* to, float maxDegreesDelta) {
+    (void)dst; (void)from; (void)to; (void)maxDegreesDelta;
     //needs to be save to use dst as a src
 }
 
 inline static void gyQuaternionSlerp(GYQuaternion* dst, const GYQuaternion* start, const GYQuaternion* stop, float elapsed) {
+    (void)dst; (void)start; (void)stop; (void)elapsed;
 #if 0
     // Only unit quaternions are valid rotations.
         // Normalize to avoid undefined behavior.

@@ -451,6 +451,7 @@ static inline float gyMatDeterminant(GYMatrix4 m) {
 }
 
 static inline int gyMatInverse(GYMatrix4* dst, GYMatrix4 src) {
+    (void)dst;
     assert(0);
 
     float det;

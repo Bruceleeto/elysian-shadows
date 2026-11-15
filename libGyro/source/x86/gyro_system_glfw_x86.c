@@ -44,49 +44,16 @@ static inline void cpuid(int CPUInfo[4],int InfoType){
 }
 
 static void _checkCPUCapabilities(void) {
-    int x64     = 0;
-    int MMX     = 0;
     int SSE     = 0;
-    int SSE2    = 0;
-    int SSE3    = 0;
-    int SSSE3   = 0;
-    int SSE41   = 0;
-    int SSE42   = 0;
-    int SSE4a   = 0;
-    int AVX     = 0;
-    int XOP     = 0;
-    int FMA3    = 0;
-    int FMA4    = 0;
 
     int info[4];
     cpuid(info, 0);
     int nIds = info[0];
 
-    cpuid(info, 0x80000000);
-    unsigned nExIds = info[0];
-
     //  Detect Instruction Set
     if (nIds >= 1){
         cpuid(info,0x00000001);
-        MMX   = (info[3] & ((int)1 << 23)) != 0;
         SSE   = (info[3] & ((int)1 << 25)) != 0;
-        SSE2  = (info[3] & ((int)1 << 26)) != 0;
-        SSE3  = (info[2] & ((int)1 <<  0)) != 0;
-
-        SSSE3 = (info[2] & ((int)1 <<  9)) != 0;
-        SSE41 = (info[2] & ((int)1 << 19)) != 0;
-        SSE42 = (info[2] & ((int)1 << 20)) != 0;
-
-        AVX   = (info[2] & ((int)1 << 28)) != 0;
-        FMA3  = (info[2] & ((int)1 << 12)) != 0;
-    }
-
-    if (nExIds >= 0x80000001){
-        cpuid(info,0x80000001);
-        x64   = (info[3] & ((int)1 << 29)) != 0;
-        SSE4a = (info[2] & ((int)1 <<  6)) != 0;
-        FMA4  = (info[2] & ((int)1 << 16)) != 0;
-        XOP   = (info[2] & ((int)1 << 11)) != 0;
     }
 
     if(!SSE) {
@@ -179,7 +146,8 @@ static int _sdlQuerySystemInfo(GYSystemInfo* info) {
     _gyLog(GY_DEBUG_VERBOSE, "[GY_SYSTEM_API]: Querying System Information");
     _gyPush();
 
-    strncpy(strBuff, SDL_GetPlatform(), GYRO_SYSTEM_PLATFORM_NAME_SIZE);
+    strncpy(strBuff, SDL_GetPlatform(), GYRO_SYSTEM_PLATFORM_NAME_SIZE - 1);
+    strBuff[GYRO_SYSTEM_PLATFORM_NAME_SIZE - 1] = '\0';
     _gyLog(GY_DEBUG_VERBOSE, "%-20s: %50s", "Platform Name",    strBuff);
     if(info) strcpy(info->platformName, strBuff);
 

@@ -209,9 +209,11 @@ void _lightSourceToLightingUBOLightsource(const GYLightSource* lightSrc, Lightin
     case GY_LIGHT_DIRECTIONAL:
         uboSrc->shadowMapIdx = glalDirectionalShadowMapArrayCount++;
         ((_LightInternals*)lightSrc->_data)->shadowMapIdx = uboSrc->shadowMapIdx;
+        break;
     case GY_LIGHT_SPOT:
         uboSrc->shadowMapIdx = glalSpotShadowMapArrayCount++;
         ((_LightInternals*)lightSrc->_data)->shadowMapIdx = uboSrc->shadowMapIdx;
+        break;
     case GY_LIGHT_POINT:
         uboSrc->shadowMapIdx = glalPointShadowCubeMapArrayCount++;
         ((_LightInternals*)lightSrc->_data)->shadowMapIdx = uboSrc->shadowMapIdx;

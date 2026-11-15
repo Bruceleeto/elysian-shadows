@@ -28,7 +28,7 @@ GYAssetBankEntry* gyAssetBankFindEntry(const GYAssetBank *const bank, const void
 	return 0;
 }
 
-void *gyAssetBankFind(const GYAssetBank *const bank, void *const data) {
+void *gyAssetBankFind(const GYAssetBank *const bank, const void *const data) {
 	GYAssetBankEntry *entry = bank->_head;
 
 	if(bank->_comparator) { //user-specified comparator
@@ -37,7 +37,7 @@ void *gyAssetBankFind(const GYAssetBank *const bank, void *const data) {
 		}
 	} else { //default pointer comparison
 		for(; entry; entry = entry->_next) {
-			if(entry->_payload == data) return data;
+			if(entry->_payload == data) return entry->_payload;
 		}
 	}
 	return 0;

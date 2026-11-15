@@ -61,7 +61,8 @@ extern "C" const char* gyFilePath(const char* relative) {
 
     }
 
-    strncpy(pathBuff, absPath.toStdString().c_str(), GYRO_PATH_MAX_SIZE);
+    strncpy(pathBuff, absPath.toStdString().c_str(), GYRO_PATH_MAX_SIZE - 1);
+    pathBuff[GYRO_PATH_MAX_SIZE - 1] = '\0';
 
     return pathBuff;
 }

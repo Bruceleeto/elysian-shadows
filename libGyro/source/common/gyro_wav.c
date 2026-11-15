@@ -59,7 +59,7 @@ int gyAudWavReload(struct GYWav * const wav) {
 }
 
 int gyAudWavReloadPath(const char*const path) {
-    const GYWav* wav = gyAssetBankFind(&_wavBank, path);
+    GYWav* wav = gyAssetBankFind(&_wavBank, path);
     return wav? gyAudWavReload(wav) : 0;
 }
 

@@ -26,9 +26,11 @@ extern "C" {
 #	include <OpenCL/opencl.h>
 #else
 #   define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#   ifndef CL_TARGET_OPENCL_VERSION
+#       define CL_TARGET_OPENCL_VERSION 300
+#   endif
 #   ifdef GY_CL_OPENGL_INTEROP
 #       include <CL/cl_gl.h>
-#       include <CL/cl_gl_ext.h>
 #       ifndef __WIN32
 #           include <GL/glx.h>
 #       endif

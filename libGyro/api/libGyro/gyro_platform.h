@@ -83,7 +83,7 @@
 #endif
 
 
-#define GYRO_ALIGN(a)                   __attribute__ ((aligned (a)));
+#define GYRO_ALIGN(a)                   __attribute__ ((aligned (a)))
 
 //Platform-Specific Definitions
 

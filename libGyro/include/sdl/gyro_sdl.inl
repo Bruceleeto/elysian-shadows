@@ -49,7 +49,7 @@ static inline int _clearSDLError(const char* file, int line, const char* func) {
     return 0;
 }
 
-static int _checkSDLError(const char* file, int line, const char* func) {
+static inline int _checkSDLError(const char* file, int line, const char* func) {
     const char* error = SDL_GetError();
     if(strlen(error)) {
         _gyLog(GY_DEBUG_ERROR, "SDL error raised: '%s' [%s:%d (func %s)]", error, file, line, func);

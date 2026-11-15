@@ -39,7 +39,6 @@ int gyAudInit(void) {
     const char* devStr = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
     _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "Device", devStr? devStr : "ERROR");
     _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Extensions",    alGetString(AL_EXTENSIONS));
-        char* device = (char*)alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
 
     if(!_alDevice) {
         _gyLog(GY_DEBUG_WARNING, "Could not open OpenAL Device!");
@@ -204,7 +203,7 @@ void gyAudSourceStop(struct GYAudioSource*const src) {
 #if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     GY_AL_CLEAR_ERROR();
     alSourceStop(*(ALuint*)src);
-    alSourcei(*(ALuint*)src, AL_BUFFER, NULL);
+    alSourcei(*(ALuint*)src, AL_BUFFER, 0);
     GY_AL_CHECK_ERROR();
 #endif
 }
@@ -257,7 +256,7 @@ GYAudBuffer* gyAudBufferCreate(void) {
     }
 
     GYAudBuffer* buffer = malloc(sizeof(GYAudBuffer));
-    buffer->_data = (ALuint)id;
+    buffer->_data = (void*)(uintptr_t)id;
     buffer->bytes = 0;
 
     _gyPop(1);
@@ -271,7 +270,7 @@ void gyAudBufferDestroy(GYAudBuffer* buff) {
     _gyLog(GY_DEBUG_VERBOSE, "Destroying audio buffer.");
     _gyPush();
 
-    ALuint id = (ALuint)buff->_data;
+    ALuint id = (ALuint)(uintptr_t)buff->_data;
     GY_AL_CLEAR_ERROR();
     alDeleteBuffers(1, &id);
     GY_AL_CHECK_ERROR();
@@ -285,7 +284,7 @@ void gyAudBufferDestroy(GYAudBuffer* buff) {
 
 void gyAudBufferData(GYAudBuffer* buff, unsigned char* data, int format, size_t size, int freq) {
     GY_AL_CLEAR_ERROR();
-    alBufferData(buff->_data, format, (void*)data, size, freq);
+    alBufferData((ALuint)(uintptr_t)buff->_data, format, (void*)data, size, freq);
     GY_AL_CHECK_ERROR();
 }
 
@@ -293,7 +292,7 @@ void gyAudSourcePlayBuffer(struct GYAudioSource* src, const GYAudBuffer* buff) {
     //now we put our data into the openAL buffer and
     //check for success
     GY_AL_CLEAR_ERROR();
-    alSourcei(*(ALuint*)src, AL_BUFFER, (ALuint)buff->_data);
+    alSourcei(*(ALuint*)src, AL_BUFFER, (ALint)(uintptr_t)buff->_data);
     alSourcePlay(*(ALuint*)src);
     GY_AL_CHECK_ERROR();
 }

@@ -188,7 +188,8 @@ GYThread* gyThreadCreate(const char* name,
 }
 
 int gyThreadKill(GYThread* thread) {
-
+    (void)thread;
+    return 0; //not supported by SDL threads
 }
 
 void gyThreadDetach(GYThread* thread) {
@@ -208,7 +209,7 @@ const char* gyThreadName(GYThread* thread) {
 int gyThreadWait(GYThread* thread) {
     if(!thread) return 0;
     char thdName[200] = { 0 };
-    strncpy(thdName, gyThreadName(thread), 200);
+    strncpy(thdName, gyThreadName(thread), sizeof(thdName) - 1);
     //assert(thread); Safely accepts NULL threads
     int retValue = 0;
     SDL_WaitThread((SDL_Thread*)thread, &retValue);
@@ -343,14 +344,14 @@ int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
 
     const unsigned maskSize = (sizeof(cpu_set_t) > sizeof(GYCpuAffinityMask))? sizeof(GYCpuAffinityMask) : sizeof(cpu_set_t);
 
-    char buffer[sizeof(GYCpuAffinityMask)*8*5];
+    char buffer[sizeof(GYCpuAffinityMask)*8*5] = { 0 };
     char intBuff[10];
     strcat(buffer, "<");
     int first = 1;
     int cpuCount = gySystemQueryInfo()->cpuCount;
 
     for(unsigned i = 0; i < maskSize*8; ++i) {
-        if(i >= cpuCount) break;
+        if((int)i >= cpuCount) break;
         uint32_t curByte = i/8;
         uint32_t curBit = i%8;
         uint8_t gyByte = *(((uint8_t*)mask) + curByte);
@@ -366,7 +367,7 @@ int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
     strcat(buffer, ">");
     _gyLog(GY_DEBUG_VERBOSE, "Setting CPU Affinity for Thread [%d]: Cores: %s", sdlId, buffer);
 
-    success &= pthread_setaffinity_np(pthread_self(), maskSize, &cpuMask);
+    success &= !pthread_setaffinity_np(pthread_self(), maskSize, &cpuMask);
     if(!success) {
         _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to modify thread CPU affinity for thread: %d", sdlId);
     }

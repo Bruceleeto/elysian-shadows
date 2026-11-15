@@ -27,13 +27,6 @@ static void _createDeviceOnPort(unsigned port) {
     ++_deviceCount;
 }
 
-static void _destroyDeviceOnPort(unsigned port) {
-    assert(_devices[port]);
-    free(_devices[port]);
-    _devices[port] = NULL;
-    --_deviceCount;
-}
-
 static int _tcpSend(GYVisualMemoryDevice* dev, void* bytes, int size) {
     assert(dev && bytes);
     int bytesSent = 0;
@@ -81,6 +74,7 @@ int gyVisualMemoryUninit(void) {
 
 
 int gyVisualMemoryDeviceBlockRead(GYVisualMemoryDevice* device, uint8_t* buffer, uint8_t block) {
+    (void)buffer;
     GYMapleFrame    frame;
     uint32_t        frameBytes;
     frame.payload.blockRead.func            = MAPLE_FUNC_MEMCARD;

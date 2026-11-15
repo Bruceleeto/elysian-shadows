@@ -30,16 +30,11 @@ GLenum glalTextureMapTexUnits[GLAL_TEXTURE_MAP_MAX] = {
     GL_TEXTURE3,
     GL_TEXTURE4,
     GL_TEXTURE5,
-    GL_TEXTURE6,
-    GL_TEXTURE7,
-    GL_TEXTURE8,
-    GL_TEXTURE9,
-    GL_TEXTURE10,
-    GL_TEXTURE11
+    GL_TEXTURE6
 };
 
 int glalTextureMapUniforms[GLAL_TEXTURE_MAP_MAX] = {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+    0, 1, 2, 3, 4, 5, 6
 };
 
 const GYMatrix4 glalShadowTexCoordBiasMat = {
@@ -88,8 +83,6 @@ GYMatrix4 glalPointShadowFaceMatrices[GY_CUBE_MAP_FACE_MAX];
 static const GYMaterial*    _currentMaterial                               = &_defaultMaterial;
 static GYMaterial           _materialCache;
 static GYVector4			_globalAmbience									= { 0.0f, 0.0f, 0.0f, 1.0f };
-static const GYTexture*		_normalMap										= NULL;
-static const GYTexture*		_specularMap									= NULL;
 GYVector3					glalCamWorldPos									= { 0.0f, 0.0f, 0.0f };
 
 // ==== SHARED EXTERN VARIABLES ======
@@ -452,7 +445,6 @@ int _protectedAttribQuery(const GYShaderProgram* prog, const char* const name, c
 
 static void _queryLightingShader(_LightingShaderProgram*const shader, const unsigned light) {
     (void)light;
-    char buff[100];
 
     if(!shader->program) return;
 

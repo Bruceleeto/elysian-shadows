@@ -54,9 +54,9 @@ int gyFileRead(GYFile *fp, void *buffer, size_t count, size_t *bytes_read)
 }
 
 size_t gyFileWrite(GYFile *fp, const void *ptr, size_t elementSize, size_t elementCount) {
-    size_t bytesWritten;
-    int retVal = turfs_file_write((Turfs_file*)fp, ptr, elementSize, elementCount, &bytesWritten);
-    return retVal;
+    size_t bytesWritten = 0;
+    turfs_file_write((Turfs_file*)fp, ptr, elementSize, elementCount, &bytesWritten);
+    return bytesWritten;
 }
 
 int gyFilePuts(GYFile *fp, const char *str) {

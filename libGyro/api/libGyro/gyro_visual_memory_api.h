@@ -195,7 +195,7 @@ typedef enum GY_VMU_STATE {
 } GY_VMU_STATE;
 
 typedef struct GYVisualMemoryDevice {
-    GYVisualMemoryTCPSettings*  tcpSettings;
+    const GYVisualMemoryTCPSettings*  tcpSettings;
     GYTcpSocket*                tcpSocket;
     unsigned                    port;
     void*                       _physicalDevHandle;

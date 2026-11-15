@@ -13,7 +13,7 @@ void _gyQueryOperatingSystemInfoString(char* buffer, int buffSize) {
     if(uname(&uts)) {
         buffer[0] = 0;
     } else {
-        snprintf(buffer, buffSize, "%s %s", uts.sysname, uts.release, uts.version);
+        snprintf(buffer, buffSize, "%s %s %s", uts.sysname, uts.release, uts.version);
     }
 
 }

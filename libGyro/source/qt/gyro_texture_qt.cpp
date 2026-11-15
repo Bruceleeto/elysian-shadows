@@ -12,7 +12,6 @@
 #include <libGyro/gyro_system_api.h>
 #include <gl/gyro_gl.h>
 #include <QGLWidget>
-#include <QOpenGLContext>
 //#include <QOpenGLWidget>
 #include <libGyro/gyro_input_api.h>
 #include <QHash>
@@ -23,10 +22,7 @@
 
 extern GYInputInitParams    _initParams;
 //static QHash<GLuint, QOpenGLTexture*> _qTextures;
-uint32_t glalDefaultFbo(void) {
-    if(!_initParams.glWidget) return 0;
-    return static_cast<QGLWidget*>(_initParams.glWidget)->context()->contextHandle()->defaultFramebufferObject();
-}
+//glalDefaultFbo() lives in gyro_input_qt.cpp: it needs <QOpenGLContext>, which is incompatible with GLEW.
 
 int _gyVidTexAlloc(GYTexture *const tex) {
     auto checkPowerOfTwo = [](const unsigned dimension) {
@@ -89,8 +85,10 @@ int _gyVidTexAlloc(GYTexture *const tex) {
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 #else
-    glGenTextures(1, (GLuint*)&tex->_data);
-    glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)tex->_data);
+    GLuint texId = 0;
+    glGenTextures(1, &texId);
+    tex->_data = (void*)(uintptr_t)texId;
+    glBindTexture(GL_TEXTURE_2D, texId);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, qimg.width(), qimg.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, qimg.bits());
     glEnable(GL_TEXTURE_2D);
     glGenerateMipmap(GL_TEXTURE_2D);

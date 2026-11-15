@@ -173,6 +173,7 @@ inline static const char* _gyKernelArgAccessQualifierStr(GY_COMPUTE_KERNEL_ARG_A
         GY_CL_ENUM_STR(GY_COMPUTE_KERNEL_ARG_ACCESS_READ_WRITE)
         GY_CL_ENUM_STR(GY_COMPUTE_KERNEL_ARG_ACCESS_UNKNOWN)
     }
+    return "GY_COMPUTE_KERNEL_ARG_ACCESS_UNKNOWN";
 }
 
 inline static GY_COMPUTE_KERNEL_ARG_ADDRESS_QUALIFIER _clKernelArgAddressQualifierToGyro(cl_kernel_arg_address_qualifier qualifier) {
@@ -193,6 +194,7 @@ inline static const char* _gyKernelArgAddressQualifierStr(GY_COMPUTE_KERNEL_ARG_
         GY_CL_ENUM_STR(GY_COMPUTE_KERNEL_ARG_ADDRESS_PRIVATE)
         GY_CL_ENUM_STR(GY_COMPUTE_KERNEL_ARG_ADDRESS_UNKNOWN)
     }
+    return "GY_COMPUTE_KERNEL_ARG_ADDRESS_UNKNOWN";
 }
 
 
@@ -561,15 +563,15 @@ static int _clQueryPlatformInfo(const cl_platform_id platform, _PlatformInfo* in
         _gyLog(GY_DEBUG_WARNING, "CL_PLATFORM_EXTENSIONS platform query failed!");
     } else {
         GY_ASSERT(extensionStrLen < sizeof(stringBuff)-1);
-        int end = CL_QUERY_INFO_STRING_BUFF_SIZE > extensionStrLen? extensionStrLen : CL_QUERY_INFO_STRING_BUFF_SIZE-1;
-        stringBuff[extensionStrLen] = '\0';
+        size_t end = CL_QUERY_INFO_STRING_BUFF_SIZE > extensionStrLen? extensionStrLen : CL_QUERY_INFO_STRING_BUFF_SIZE-1;
+        stringBuff[end] = '\0';
         _gyLog(GY_DEBUG_VERBOSE, "%25s : %20s", "CL_PLATFORM_EXTENSIONS", stringBuff);
     }
 
     if(info && _clPlatformExtensionSupported(&info->gyInfo, GY_CL_GL_PLATFORM_SHARED_CONTEXT_EXTENSION))  info->gyInfo.rendererContextSharing = 1;
 
 #ifdef GY_CL_OPENGL_INTEROP
-    if(info && _clGlInteropInfo.glQueryDataValid && info->platIdx == _clGlInteropInfo.rendererGyroDevice.platformIdx) info->gyInfo.isRenderPlatform = 1;
+    if(info && _clGlInteropInfo.glQueryDataValid && (int)info->platIdx == _clGlInteropInfo.rendererGyroDevice.platformIdx) info->gyInfo.isRenderPlatform = 1;
 #endif
 
     return success;
@@ -791,14 +793,12 @@ static int _clGLQueryInteropInfo(void) {
     }
 
 #   else
-    clGetGLContextInfo = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddress("clGetGLContextInfoKHR");
-    if(!clGetGLContextInfo) {
-        _gyLog(GY_DEBUG_ERROR, "Failed to load extension function address for 'clGetGLContextInfoKHR'!");
-        success = 0;
-        goto done;
-    }
-
     for(unsigned p = 0; p < _clPlatformCount; ++p) {
+        clGetGLContextInfo = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddressForPlatform(_clPlatforms[p], "clGetGLContextInfoKHR");
+        if(!clGetGLContextInfo) {
+            _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (KHR): Failed to load extension function address for 'clGetGLContextInfoKHR' on platform %u!", p);
+            continue;
+        }
 
         cl_context_properties properties[7] = {
             CL_GL_CONTEXT_KHR,
@@ -1087,7 +1087,7 @@ int gyComputePlatformCount(void) {
 }
 
 const GYComputePlatformInfo* gyComputePlatformQueryInfo(unsigned platformIdx) {
-    GY_ASSERT(_initialized && platformIdx >= 0 && platformIdx < _clPlatformCount);
+    GY_ASSERT(_initialized && platformIdx < _clPlatformCount);
     return &_platformInfo[platformIdx].gyInfo;
 }
 
@@ -1100,7 +1100,7 @@ GYComputeDevice gyComputeDeviceHandle(unsigned platformIdx, unsigned deviceIdx) 
 
 
 const GYComputeDeviceInfo* gyComputeDeviceQueryInfo(const GYComputeDevice* device) {
-    GY_ASSERT(_initialized && device && device->platformIdx >= 0 && device->platformIdx < _clPlatformCount && device->deviceIdx >= 0 && device->deviceIdx < _clDeviceCount[device->platformIdx]);
+    GY_ASSERT(_initialized && device && device->platformIdx >= 0 && device->platformIdx < (int)_clPlatformCount && device->deviceIdx >= 0 && device->deviceIdx < (int)_clDeviceCount[device->platformIdx]);
     _ComputeDevice* dev = _clDeviceFromGyComputeDevice(device);
     return &dev->info.gyInfo;
 }
@@ -1109,7 +1109,7 @@ const GYComputeDeviceInfo* gyComputeDeviceQueryInfo(const GYComputeDevice* devic
 //================= GYRO COMPUTE CONTEXT API ======================
 GYComputeContext* gyComputeContextCreate(unsigned platformIdx, const GYComputeContextInitParams* params) {
     GY_ASSERT(_initialized && params);
-    GY_ASSERT(platformIdx >= 0 && platformIdx < _clPlatformCount);
+    GY_ASSERT(platformIdx < _clPlatformCount);
     GY_ASSERT(params->deviceCount > 0 && params->deviceCount < CL_MAX_NUMBER_OF_DEVICES_PER_CONTEXT);
 
     cl_device_id devices[CL_MAX_NUMBER_OF_DEVICES_PER_CONTEXT];
@@ -1225,7 +1225,7 @@ int gyComputeContextDestroy(GYComputeContext* context) {
 
 //================= GYRO COMPUTE COMMAND QUEUE API ======================
 GYComputeCommandQueue* gyComputeCommandQueueCreate(const GYComputeContext* context, const GYComputeDevice* device, int flags) {
-    GY_ASSERT(_initialized && context && device && device->platformIdx < _clPlatformCount && device->deviceIdx >= 0 && device->deviceIdx < _clDeviceCount[device->platformIdx]);
+    GY_ASSERT(_initialized && context && device && device->platformIdx >= 0 && device->platformIdx < (int)_clPlatformCount && device->deviceIdx >= 0 && device->deviceIdx < (int)_clDeviceCount[device->platformIdx]);
     cl_int retCode;
 
     cl_command_queue_properties properties = 0;
@@ -1269,6 +1269,7 @@ int gyComputeCommandQueueDestroy(GYComputeCommandQueue* queue) {
 }
 
 int gyComputeCommandQueueEnqueueKernel(GYComputeCommandQueue* queue, GYComputeKernel* kernel, unsigned workDimensions, const size_t* globalWorkOffset, const size_t* globalWorkSize, const size_t* localWorkSize, unsigned eventCount, GYComputeEvent* eventList, GYComputeEvent* event) {
+    (void)eventList;
     _Kernel* kern = ((_Kernel*)kernel);
     _CommandQueue* cmd = ((_CommandQueue*)queue);
 
@@ -1276,20 +1277,22 @@ int gyComputeCommandQueueEnqueueKernel(GYComputeCommandQueue* queue, GYComputeKe
     GY_ASSERT(!eventCount); // fucking REESTED
     if(!kern->kernel) return 0;
 
-    if(GY_CL_CHECK_ERROR(clEnqueueNDRangeKernel(cmd->queue, kern->kernel, workDimensions, globalWorkOffset, globalWorkSize, localWorkSize, eventCount, eventList, event? &((_Event*)event)->clEvent : NULL))) return 0;
+    if(GY_CL_CHECK_ERROR(clEnqueueNDRangeKernel(cmd->queue, kern->kernel, workDimensions, globalWorkOffset, globalWorkSize, localWorkSize, eventCount, NULL /* event wait lists unsupported, see assert */, event? &((_Event*)event)->clEvent : NULL))) return 0;
     return 1;
 }
 
 int gyComputeCommandQueueEnqueueBufferWrite(GYComputeCommandQueue *queue, const GYComputeBuffer *buffer, int blocking, size_t offset, size_t cb, const void *data, unsigned eventCount, const GYComputeEvent* eventList, GYComputeEvent* event) {
+    (void)eventList;
     GY_ASSERT(queue && buffer && data && cb);
     GY_ASSERT(!eventCount); // fucking REESTED
-    return !GY_CL_CHECK_ERROR(clEnqueueWriteBuffer(((_CommandQueue*)queue)->queue, ((_Buffer*)buffer)->clBuffer, blocking, offset, cb, data, eventCount, (cl_event*)eventList, event? &((_Event*)event)->clEvent : NULL));
+    return !GY_CL_CHECK_ERROR(clEnqueueWriteBuffer(((_CommandQueue*)queue)->queue, ((_Buffer*)buffer)->clBuffer, blocking, offset, cb, data, eventCount, NULL /* event wait lists unsupported, see assert */, event? &((_Event*)event)->clEvent : NULL));
 }
 
 int gyComputeCommandQueueEnqueueBufferRead(GYComputeCommandQueue *queue, GYComputeBuffer *buffer, int blocking, size_t offset, size_t cb, void *ptr, unsigned eventCount, const GYComputeEvent* eventList, GYComputeEvent* event) {
+    (void)eventList;
     GY_ASSERT(queue && buffer && ptr && cb);
     GY_ASSERT(!eventCount); // fucking REESTED
-    return !GY_CL_CHECK_ERROR(clEnqueueReadBuffer(((_CommandQueue*)queue)->queue, ((_Buffer*)buffer)->clBuffer, blocking, offset, cb, ptr, eventCount, (cl_event*)eventList, event? &((_Event*)event)->clEvent : NULL));
+    return !GY_CL_CHECK_ERROR(clEnqueueReadBuffer(((_CommandQueue*)queue)->queue, ((_Buffer*)buffer)->clBuffer, blocking, offset, cb, ptr, eventCount, NULL /* event wait lists unsupported, see assert */, event? &((_Event*)event)->clEvent : NULL));
 }
 
 int gyComputeCommandQueueEnqueueAcquireRendererObject(GYComputeCommandQueue *queue, unsigned count, const GYComputeBuffer** buffers) {
@@ -1301,12 +1304,13 @@ int gyComputeCommandQueueEnqueueAcquireRendererObject(GYComputeCommandQueue *que
 }
 
 int gyComputeCommandQueueEnqueueReleaseRendererObject(GYComputeCommandQueue *queue, unsigned count, const GYComputeBuffer** buffers, unsigned eventCount, const GYComputeEvent* eventList, GYComputeEvent* event) {
+    (void)eventList;
     GY_ASSERT(queue && buffers && count > 0 && count < GY_CL_ENQUEUE_ACQUIRE_RENDERER_OBJECTS_MAX);
         GY_ASSERT(!eventCount); // fucking REESTED
     cl_mem clBuffers[GY_CL_ENQUEUE_ACQUIRE_RENDERER_OBJECTS_MAX];
     for(unsigned i = 0; i < count; ++i) clBuffers[i] = ((_Buffer*)buffers[i])->clBuffer;
 
-    return !GY_CL_CHECK_ERROR(clEnqueueReleaseGLObjects(((_CommandQueue*)queue)->queue, count, clBuffers, eventCount, (cl_event*)eventList, event? &((_Event*)event)->clEvent : NULL));
+    return !GY_CL_CHECK_ERROR(clEnqueueReleaseGLObjects(((_CommandQueue*)queue)->queue, count, clBuffers, eventCount, NULL /* event wait lists unsupported, see assert */, event? &((_Event*)event)->clEvent : NULL));
 }
 
 int gyComputeCommandQueueFinish(GYComputeCommandQueue* queue) {
@@ -1471,7 +1475,7 @@ int gyComputeProgramCompile(GYComputeProgram*                       program,
     }
 
     for(unsigned d = 0; d < deviceCount; ++d) {
-        GY_ASSERT(devices[d].platformIdx < _clPlatformCount && devices[d].deviceIdx >= 0 && devices[d].deviceIdx < _clDeviceCount[devices[d].platformIdx]);
+        GY_ASSERT(devices[d].platformIdx >= 0 && devices[d].platformIdx < (int)_clPlatformCount && devices[d].deviceIdx >= 0 && devices[d].deviceIdx < (int)_clDeviceCount[devices[d].platformIdx]);
         devIds[d] = _clDeviceFromGyComputeDevice(&devices[d])->deviceId;
         if(buildInfo) buildInfo[d].buildStatus = GY_COMPUTE_BUILD_STATUS_NONE;
     }
@@ -1481,8 +1485,8 @@ int gyComputeProgramCompile(GYComputeProgram*                       program,
 
     if(options && options->includeDirCount) {
         for(unsigned i = 0; i < options->includeDirCount; ++i) {
-            strncat(gyClBuildFlags, " -I ", GY_CL_BUILD_FLAGS_BUFFER_SIZE_MAX);
-            strncat(gyClBuildFlags, gyFilePath(options->includeDirs[i]), GY_CL_BUILD_FLAGS_BUFFER_SIZE_MAX);
+            strncat(gyClBuildFlags, " -I ", GY_CL_BUILD_FLAGS_BUFFER_SIZE_MAX - strlen(gyClBuildFlags) - 1);
+            strncat(gyClBuildFlags, gyFilePath(options->includeDirs[i]), GY_CL_BUILD_FLAGS_BUFFER_SIZE_MAX - strlen(gyClBuildFlags) - 1);
         }
     }
 
@@ -1530,6 +1534,7 @@ end:
 
 //================== GYRO COMPUTE KERNEL API ===================
 GYComputeKernel* gyComputeKernelCreate(const GYComputeProgram* program, const char* kernelName, void* softwareFallbackFuncPtr) {
+    (void)softwareFallbackFuncPtr;
     GY_ASSERT(program && kernelName);
 
     _gyLog(GY_DEBUG_VERBOSE, "[GYRO_COMPUTE_API] Creating OpenCL Kernel: [%s]", kernelName);
@@ -1562,9 +1567,9 @@ int gyComputeKernelDestroy(GYComputeKernel *kernel) {
     int success = 1;
 
     if(kernel) {
-        success &= GY_CL_CHECK_ERROR(clReleaseKernel(((_Kernel*)kernel)->kernel));
-        free(kernel);
+        success &= !GY_CL_CHECK_ERROR(clReleaseKernel(((_Kernel*)kernel)->kernel));
         free(((_Kernel*)kernel)->gyKernelInfo.argInfo);
+        free(kernel);
 #ifdef GY_COMPUTE_DEBUG
     --_debugInfo.activeKernelCount;
 #endif
@@ -1600,7 +1605,7 @@ int gyComputeKernelArgBuffer(GYComputeKernel *kernel, unsigned index, GYComputeB
 GY_COMPUTE_EVENT_STATUS gyComputeEventStatus(const GYComputeEvent* event) {
     cl_int status;
 
-    if(GY_CL_CHECK_ERROR(clGetEventInfo((cl_event*)event, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(CL_EVENT_COMMAND_EXECUTION_STATUS), &status, NULL))) {
+    if(GY_CL_CHECK_ERROR(clGetEventInfo(((const _Event*)event)->clEvent, CL_EVENT_COMMAND_EXECUTION_STATUS, sizeof(status), &status, NULL))) {
         return GY_COMPUTE_EVENT_STATUS_INVALID;
     }
     return _clEventStatusFromGyro(status);

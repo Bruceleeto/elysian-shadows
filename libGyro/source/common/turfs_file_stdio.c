@@ -45,11 +45,11 @@ TURFSAPI turfs_file_read(Turfs_file* fp, void *buffer, size_t count, size_t *byt
     return TURFS_RET_OK;
 }
 
-TURFSAPI turfs_file_write(Turfs_file* fp, void* ptr, size_t elementSize, size_t elementCount, size_t* elementsWritten) {
+TURFSAPI turfs_file_write(Turfs_file* fp, const void* ptr, size_t elementSize, size_t elementCount, size_t* elementsWritten) {
     if (fp == NULL || fp->fp == NULL || ptr == NULL) {
         return TURFS_RET_INVALID_ARGS;
     }
-    *elementsWritten = fwrite(ptr, elementCount, elementSize, fp->fp);
+    *elementsWritten = fwrite(ptr, elementSize, elementCount, fp->fp);
     return (*elementsWritten == elementCount)? TURFS_RET_OK : TURFS_RET_UNKNOWN;
 }
 

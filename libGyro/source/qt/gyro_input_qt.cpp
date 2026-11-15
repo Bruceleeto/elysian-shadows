@@ -9,6 +9,8 @@
 #include <QKeyEvent>
 #include <QGraphicsView>
 #include <libGyro/gyro_system_api.h>
+#include <QGLWidget>
+#include <QOpenGLContext>
 
 extern "C" int  _sdlControllerInit(const struct GYInputInitParams*const  params);
 extern "C" int  _sdlControllerUninit(void);
@@ -19,6 +21,11 @@ static bool         _keysChangedThisFrame[GY_KEY_COUNT]                 = { fals
 static bool         _mouseButtonsChangedThisFrame[GY_MOUSE_BUT_COUNT]   = { false };
 static bool         _mousePosChangedThisFrame                           = false;
 static bool         _mouseScrollWheelChangedThisFrame                   = false;
+
+uint32_t glalDefaultFbo(void) {
+    if(!_initParams.glWidget) return 0;
+    return static_cast<QGLWidget*>(_initParams.glWidget)->context()->contextHandle()->defaultFramebufferObject();
+}
 
 static inline GY_KEY _TranslateKeyFromQt(const int keyCode) {
     switch(keyCode) {

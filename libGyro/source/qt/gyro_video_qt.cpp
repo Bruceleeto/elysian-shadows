@@ -16,9 +16,9 @@ extern "C" void glalVidBindDefaultFbo(void) {
    // glBindFramebuffer(GL_FRAMEBUFFER, glalDefaultFbo());
     glBindFramebuffer(GL_FRAMEBUFFER, glalDefaultFbo());
 
-    GLenum buffs[] = {
-        GL_BACK_LEFT
-    };
+    //GLenum buffs[] = {
+    //    GL_BACK_LEFT
+    //};
 
     //glDrawBuffers(1, buffs);
 #ifdef GYRO_GLAL_GL_Desktop

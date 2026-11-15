@@ -14,6 +14,7 @@
 #include <gl/gyro_chromatic_aberration_gl.h>
 #include <gl/gyro_bloom_gl.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <gl/gyro_gl_utils.h>
 #include <common/gyro_spine_common.h>
 #ifndef GYRO_NO_SPINE
@@ -199,7 +200,7 @@ int                         glalVersionMajor            = 0;
 int                         glalVersionMinor            = 0;
 int                         glalCpuFrustumCulling       = 1;
 size_t                      glalCpuPrimCullCount        = 0;
-GYVidFrameStats             glalFrameStats              = { 0, 0, 0, 0, 0 };
+GYVidFrameStats             glalFrameStats              = { 0 };
 
 //Private video state variables
 static unsigned int			_projWidth                  = 0;
@@ -1096,7 +1097,8 @@ void gyVidSkeleton(const struct spSkeleton*const skeleton) {
         GY_BLEND_SRC_ALPHA,
         GY_BLEND_ONE,
         0,
-        GY_VID_DEPTH_LEQUAL
+        GY_VID_DEPTH_LEQUAL,
+        { 0, 0, 0, 0 }
     };
 
         gyVidVertexBatchFlush();
@@ -1404,12 +1406,12 @@ void gyVidTexBind(const GYTexture *const texture) {
         int active = texture && texture->_data;
 
         GY_GL_CHECK_ERROR();
-        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)texture->_data);
+        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)texture->_data);
         GY_GL_CHECK_ERROR();
         if(_glIsLightShaderActive()) glUniform1i(glalCurLightShader->uniformLoc[GLAL_SHADER_TEXTURE_ENABLED], active);
         GY_GL_CHECK_ERROR();
 
-        _glState.texture = texture;
+        _glState.texture = (GYTexture*)texture;
         _glStateDirty.texture = 0;
 #ifdef GY_VIDEO_DEBUG
         ++_dbgInfo.frameStats.textureChangeCount;
@@ -1428,10 +1430,9 @@ void gyVidPipelineState(const GYVidPipelineState* state) {
 
     if(state->alphaLevel != _glState.alphaLevel || _glStateDirty.alphaLevel) {
         gyVidVertexBatchFlush();
+        GY_GL_CHECK_ERROR();
 
         switch(state->alphaLevel) {
-
-        GY_GL_CHECK_ERROR();
         case GY_ALPHA_NONE:
         case GY_ALPHA_PUNCHTHRU:
             glDisable(GL_BLEND);
@@ -1565,14 +1566,14 @@ void gyVidNormalMapBind(const GYTexture * const texture) {
         int active = texture && texture->_data;
 
         GY_GL_CHECK_ERROR();
-        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)texture->_data);
+        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)texture->_data);
         GY_GL_CHECK_ERROR();
         if(_glIsLightShaderActive()) glUniform1i(glalCurLightShader->uniformLoc[GLAL_SHADER_NORMAL_MAP_ENABLED], active);
         GY_GL_CHECK_ERROR();
 
         glActiveTexture(glalTextureMapTexUnits[GLAL_TEXTURE_MAP]);
 
-        _glState.normalMap = texture;
+        _glState.normalMap = (GYTexture*)texture;
         _glStateDirty.normalMap = 0;
 #ifdef GY_VIDEO_DEBUG
         ++_dbgInfo.frameStats.textureChangeCount;
@@ -1596,14 +1597,14 @@ void gyVidSpecularMapBind(const GYTexture * const texture) {
         int active = texture && texture->_data;
 
         GY_GL_CHECK_ERROR();
-        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)texture->_data);
+        if(active) glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)texture->_data);
         GY_GL_CHECK_ERROR();
         if(_glIsLightShaderActive()) glUniform1i(glalCurLightShader->uniformLoc[GLAL_SHADER_SPECULAR_MAP_ENABLED], active);
         GY_GL_CHECK_ERROR();
 
         glActiveTexture(glalTextureMapTexUnits[GLAL_TEXTURE_MAP]);
 
-        _glState.emissiveMap = texture;
+        _glState.emissiveMap = (GYTexture*)texture;
         _glStateDirty.emissiveMap = 0;
 #ifdef GY_VIDEO_DEBUG
         ++_dbgInfo.frameStats.textureChangeCount;

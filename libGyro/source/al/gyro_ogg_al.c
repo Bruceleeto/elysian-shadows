@@ -376,7 +376,7 @@ void gyAudOggStreamPause(struct GYAudioSource*src) {
         alSourceUnqueueBuffers(stream->src, 1, &buffer);
         GY_AL_CHECK_ERROR();
     }
-    alSourcei(*(ALuint*)src, AL_BUFFER, NULL);
+    alSourcei(*(ALuint*)src, AL_BUFFER, 0);
 
     stream->stillStreaming = 0;
 

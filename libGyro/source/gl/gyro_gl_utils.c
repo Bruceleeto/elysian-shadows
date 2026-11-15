@@ -13,22 +13,18 @@ GYGLInfo glalGlInfo;
 void glalGLDriverQuery(void) {
     GLint       glint[20];
     GLubyte*    glchar[100];
-    GLfloat     glfloat[20];
     //GLboolean   glbool[20];
 
     memset(&glalGlInfo, 0, sizeof(GYGLInfo));
 
-#define GL_QUERY(enumVal, strName, suffix, var, format) do {                \
+#define GLAL_QUERY(enumVal, strName, suffix, var, format) do {                \
         glGet##suffix(enumVal, &var);                                       \
         if(!GY_GL_CHECK_ERROR())                                            \
             _gyLog(GY_DEBUG_VERBOSE, "%-45s: %40"#format, strName,  var);   \
     } while(0);
 
 #define GL_QUERY_INT(enumVal) \
-    GL_QUERY(enumVal, #enumVal, Integerv, glint[0], d)
-
-#define GL_QUERY_FLOAT(enumVal) \
-    GL_QUERY(enumVal, #enumVal, Floatv, glfloat, f)
+    GLAL_QUERY(enumVal, #enumVal, Integerv, glint[0], d)
 
 #define GL_QUERY_STRING(enumVal) do {                                               \
         const GLubyte* str = glGetString(enumVal);                                  \
