@@ -40,7 +40,7 @@ Before you dive in, know what you're getting:
 | **QESTkUtils** | Shared Qt utilities and widgets |
 | **UnitTests** | Tests for ESToolkit |
 
-Third-party libraries (Lua 5.2, OOLua, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
+Third-party libraries (OOLua, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
 
 ## Building
 
@@ -51,7 +51,7 @@ ESToolkit builds with qmake and Qt 5. Linux is the tested platform.
 On Debian or Ubuntu:
 
 ```sh
-sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev \
+sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev liblua5.2-dev \
     libqt5charts5-dev qttools5-dev libglew-dev libglu1-mesa-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
     opencl-headers ocl-icd-opencl-dev zlib1g-dev libx11-dev

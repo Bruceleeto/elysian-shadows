@@ -61,7 +61,6 @@ headerdirs  += ../../AssetIO/include \
 	../../ESGamma/include \
 	./include \
 	../../libGyro/include \
-	../../Lua5.2/include \
 	../../OOLua/include \
 	../../Spine/include
 

@@ -32,7 +32,6 @@ INCLUDEPATH +=  \
     ../ESGamma/include \
     ../QESTkUtils/include \
     $${GLOBAL_INCLUDE_PATH} \
-    ../Lua5.2/include \
     ../OOLua/include/oolua \
     ../Spine/include \
 

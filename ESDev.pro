@@ -14,7 +14,6 @@ SUBDIRS += \
     libGyro/qtcreator/libGyro \
     Spine/qtcreator/Spine \
     libGyro-Kinetic \
-    Lua5.2/qtcreator/Lua5_2 \
     OOLua/qtcreator/OOLua
 
 tests {
@@ -29,8 +28,6 @@ vulkan {
 
 libGyro.depends = Spine \
     LibGyro-Kinetic
-
-OOLua.depends = Lua5_2
 
 ESToolkit.depends += libGyro \
     OOLua \

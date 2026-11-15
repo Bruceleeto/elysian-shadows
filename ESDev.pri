@@ -21,6 +21,12 @@ dreamcast {
 }
 
 CONFIG -= exceptions
+
+# Lua 5.2 comes from the system on Linux (Debian/Ubuntu: liblua5.2-dev).
+!dreamcast {
+    CONFIG += link_pkgconfig
+    PKGCONFIG += lua5.2
+}
 #CONFIG += warn_off
 
 

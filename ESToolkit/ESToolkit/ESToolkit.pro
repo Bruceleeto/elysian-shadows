@@ -73,7 +73,6 @@ INCLUDEPATH += include \
     ../../libGyro/api \
     ../../QESTkUtils/include \
     ../../game/include \
-    ../../Lua5.2/include \
     ../../OOLua/include/oolua \
     ../../Spine/include
 
@@ -722,13 +721,6 @@ INCLUDEPATH += $$PWD/../../OOLua/qtcreator/OOLua
 DEPENDPATH += $$PWD/../../OOLua/qtcreator/OOLua
 
 PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/libOOLua.a
-
-LIBS += -L$$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/ -lLua5_2
-
-INCLUDEPATH += $$PWD/../../Lua5.2/qtcreator/Lua5_2
-DEPENDPATH += $$PWD/../../Lua5.2/qtcreator/Lua5_2
-
-PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/libLua5_2.a
 
 
 LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/ -lSpine

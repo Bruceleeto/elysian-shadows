@@ -6,8 +6,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 
-INCLUDEPATH += ../../include/oolua \
-	../../../Lua5.2/include
+INCLUDEPATH += ../../include/oolua
 
 DEPENDPATH += ../../include
 
