@@ -18,7 +18,7 @@ ui_*.h
 /executable/
 *.app/
 
-# Compiled binaries. Prebuilt third-party SDKs and tools are committed
+# Compiled binaries. The prebuilt Dreamcast SDK bits and tools are committed
 # on purpose, so keep those directories tracked.
 *.a
 *.so
@@ -28,9 +28,7 @@ ui_*.h
 *.lib
 *.exe
 *.elf
-!/lib/**
 !/libGyro/lib/**
-!/tools/**
 !/libGyro/tools/**
 
 # Generated Spine .pri from qmake

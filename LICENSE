@@ -43,6 +43,6 @@ THIRD-PARTY COMPONENTS
 This repository includes third-party code and prebuilt libraries that are NOT
 covered by the license above and remain under their own licenses, including
 (but not limited to): Lua5.2/, OOLua/, Spine/ (Spine Runtimes License),
-the prebuilt SDKs and headers under lib/ directories, the Dreamcast tools under
-tools/dc/, the Android native app glue, QGifImage, and other files that carry
+the prebuilt SDKs and headers under libGyro/lib/, the Dreamcast tools under
+libGyro/tools/dc/, QGifImage, and other files that carry
 their own copyright notices. See each component for its license terms.

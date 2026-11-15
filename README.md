@@ -24,7 +24,7 @@ We're opening up the full *Elysian Shadows* codebase — engine, toolkit, and th
 Before you dive in, know what you're getting:
 
 - **No assets.** No art, music, maps, or game scripts are included — this is code only.
-- **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 5.15. Other platforms (Windows, macOS, Dreamcast, iOS, Android) haven't been tried yet.
+- **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 5.15. The only supported targets are Linux (Debian/Ubuntu) and the Sega Dreamcast; the Dreamcast build hasn't been fixed up yet. Windows, macOS, iOS and Android support has been removed.
 - **It could use some love.** Expect rough edges, dead code, and the occasional colorful comment.
 
 ## What's inside
@@ -40,7 +40,7 @@ Before you dive in, know what you're getting:
 | **QESTkUtils** | Shared Qt utilities and widgets |
 | **UnitTests** | Tests for ESToolkit |
 
-Third-party libraries (Lua 5.2, OOLua, the Spine runtime, prebuilt SDKs under `lib/`, and the Dreamcast tools under `tools/dc/`) remain under their own licenses.
+Third-party libraries (Lua 5.2, OOLua, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
 
 ## Building
 

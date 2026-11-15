@@ -14,7 +14,7 @@ dreamcast {
     TARGET_EXT=".elf"
 }
 
-!ios: !dreamcast: !android {
+!dreamcast {
     QT += sql gui opengl network help charts
     CONFIG += console
     tests {
@@ -31,27 +31,11 @@ dreamcast {
 #    QMAKE_BUNDLE_DATA += deployment
 }
 
-ios {
-#    QMAKE_XCODE_CODE_SIGN_IDENTITY="Elysian Shadows"
-    #QMAKE_INFO_PLIST=iOS_Info.plist
-}
-
-macx {
-    QMAKE_INFO_PLIST=MacOS_Info.plist
-}
-
-
-!ios {
-    #QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++
-    #CONFIG += precompile_header
-}
 QMAKE_CXXFLAGS += -Wno-empty-body
 # Some engine types are over-aligned (e.g. TkArea via 32-byte aligned GYMatrix4 members);
 # make operator new honor their alignment even though we build as C++14.
 !dreamcast: QMAKE_CXXFLAGS += -faligned-new
 
-
-ICON = resource/images/estk.icns
 
 DEPENDPATH += 	../../AssetIO/include \
     ../../AssetIO/include/component \
@@ -70,7 +54,7 @@ DEPENDPATH += 	../../AssetIO/include \
     ../../libGyro/api \
     ../../libGyro-Kinetic/api
 
-!ios: !dreamcast: !android {
+!dreamcast {
     DEPENDPATH += include \
         $${LIBGYRO_PATH}/api \
         $${ESDEV_ROOT}/AssetIO/include \
@@ -79,10 +63,6 @@ DEPENDPATH += 	../../AssetIO/include \
         $${ESDEV_ROOT}/libGyro-Kinetic/api \
         $${ESDEV_ROOT}/UnitTests/include
 }
-
-#!ios: !dreamcast: !android {
-    #PRECOMPILED_HEADER = include/tk_precompiled_headers.h
-#}
 
 #SPLIT UP SO ITS STILL PRIORITIZED!!!
 INCLUDEPATH += include \
@@ -238,7 +218,7 @@ SOURCES += \
     ../../ESGamma/source/proxy/elysian_render_system_proxy.cpp
 
 
-!ios: !dreamcast: !android {
+!dreamcast {
 
     SOURCES += \
         source/AssetIO/tk_area.cpp \
@@ -548,7 +528,7 @@ HEADERS += \
     ../../AssetIO/include/AssetIO/primitive/elysian_mesh_attrib.hpp
 
 
-!ios:!dreamcast: !android {
+!dreamcast {
     HEADERS +=  \
         include/ESToolkit/ESGamma/tk_render_system.h \
         include/ESToolkit/AssetIO/tk_area.h \
@@ -694,24 +674,6 @@ FORMS += form/ESToolkit/dock/tk_sheet_dock_widget.ui \
 #PRE_TARGETDEPS += ESToolkit.qhc
 
 
-#Create windows manifest requesting ESTk to be run as admin (to run dc-tool as admin)
-#win32 {
-#    WINSDK_DIR = C:/Program Files (x86)/Microsoft SDKs/Windows/v7.0A
-#    WIN_PWD = $$replace(PWD, /, \\)
-#    OUT_PWD_WIN = $$replace(OUT_PWD, /, \\)
-#    QMAKE_POST_LINK = "$$WINSDK_DIR/bin/x64/mt.exe -manifest $$quote($$WIN_PWD\\$$basename(TARGET).manifest) -outputresource:$$quote($$OUT_PWD_WIN\\${DESTDIR_TARGET};1)"
-#}
-
-#Required to get C++11x to work on OSX
-macx {
-    QMAKE_CXXFLAGS +=  -stdlib=libc++
-    LIBS += -stdlib=libc++
-
-    #CONFIG(release, debug|release) {
-     #  QMAKE_POST_LINK = "macdeployqt TARGET"
-    #}
-}
-
 RESOURCES += resource/resource.qrc
 
 docs {
@@ -733,194 +695,58 @@ docs {
 
 }
 
-macx {
-    DESTDIR = ../../executable
-    #    CONFIG(release, debug|release):
-    release: QMAKE_POST_LINK = "sh $$PWD/macdeployes.sh"
-}
-
 dreamcast {
-    DESTDIR = ../../executable
     QMAKE_POST_LINK="mv ../../executable/ESToolkit ../../executable/ESToolkit.elf"
 }
 
-ios {
-    QMAKE_CXXFLAGS += -stdlib=libc++
-    iphoneos {
-        DESTDIR = ../../executable/ios
-        deployment.files = ../../assets
-        deployment.path =
-      #  QMAKE_BUNDLE_DATA += deployment
-    }
-    iphonesimulator {
-        DESTDIR = ../../executable/ios_sim
-        deployment.files = ../../assets
-        deployment.path =
-        QMAKE_BUNDLE_DATA += deployment
-    }
-}
-
-win32 {
-    DESTDIR = ../../executable
-
-    LIBS +=        \
-        -lOpenCL
-}
-
-linux {
-    DESTDIR = ../../executable
-}
+DESTDIR = ../../executable
 
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/release/ -llibGyroKinetic
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/debug/ -llibGyroKinetic
-else:unix: LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/ -llibGyroKinetic
+LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/ -llibGyroKinetic
 
 INCLUDEPATH += $$PWD/../../libGyro-Kinetic
 DEPENDPATH += $$PWD/../../libGyro-Kinetic
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/release/liblibGyroKinetic.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/debug/liblibGyroKinetic.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/release/libGyroKinetic.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/debug/libGyroKinetic.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/liblibGyroKinetic.a
+PRE_TARGETDEPS += $$OUT_PWD/../../libGyro-Kinetic/liblibGyroKinetic.a
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libGyro/qtcreator/libGyro/release/ -llibGyro
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libGyro/qtcreator/libGyro/debug/ -llibGyro
-else:unix: LIBS += -L$$OUT_PWD/../../libGyro/qtcreator/libGyro/ -llibGyro
+LIBS += -L$$OUT_PWD/../../libGyro/qtcreator/libGyro/ -llibGyro
 
 INCLUDEPATH += $$PWD/../../libGyro/qtcreator/libGyro
 DEPENDPATH += $$PWD/../../libGyro/qtcreator/libGyro
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/release/liblibGyro.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/debug/liblibGyro.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/release/libGyro.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/debug/libGyro.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/liblibGyro.a
+PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/liblibGyro.a
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../OOLua/qtcreator/OOLua/release/ -lOOLua
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../OOLua/qtcreator/OOLua/debug/ -lOOLua
-else:unix: LIBS += -L$$OUT_PWD/../../OOLua/qtcreator/OOLua/ -lOOLua
+LIBS += -L$$OUT_PWD/../../OOLua/qtcreator/OOLua/ -lOOLua
 
 INCLUDEPATH += $$PWD/../../OOLua/qtcreator/OOLua
 DEPENDPATH += $$PWD/../../OOLua/qtcreator/OOLua
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/release/libOOLua.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/debug/libOOLua.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/release/OOLua.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/debug/OOLua.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/libOOLua.a
+PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/libOOLua.a
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/release/ -lLua5_2
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/debug/ -lLua5_2
-else:unix: LIBS += -L$$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/ -lLua5_2
+LIBS += -L$$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/ -lLua5_2
 
 INCLUDEPATH += $$PWD/../../Lua5.2/qtcreator/Lua5_2
 DEPENDPATH += $$PWD/../../Lua5.2/qtcreator/Lua5_2
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/release/libLua5_2.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/debug/libLua5_2.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/release/Lua5_2.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/debug/Lua5_2.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/libLua5_2.a
+PRE_TARGETDEPS += $$OUT_PWD/../../Lua5.2/qtcreator/Lua5_2/libLua5_2.a
 
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/release/ -lSpine
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/debug/ -lSpine
-else:unix: LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/ -lSpine
+LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/ -lSpine
 
 INCLUDEPATH += $$PWD/../../Spine/qtcreator/Spine
 DEPENDPATH += $$PWD/../../Spine/qtcreator/Spine
 
-win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/release/libSpine.a
-else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/debug/libSpine.a
-else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/release/Spine.lib
-else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/debug/Spine.lib
-else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/libSpine.a
+PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/libSpine.a
 
 tests {
 
-    win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../UnitTests/release/ -lUnitTests
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../UnitTests/debug/ -lUnitTests
-    else:unix: LIBS += -L$$OUT_PWD/../../UnitTests -lUnitTests
+    LIBS += -L$$OUT_PWD/../../UnitTests -lUnitTests
 
     INCLUDEPATH += $$PWD/../../UnitTests
     DEPENDPATH += $$PWD/../../UnitTests
 
-    win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/release/libUnitTests.a
-    else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/debug/libUnitTests.a
-    else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/release/UnitTests.lib
-    else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/debug/UnitTests.lib
-    else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/libUnitTests.a
+    PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/libUnitTests.a
 
-}
-
-win32 {
-    QMAKE_CFLAGS += -msse -std=c99
-    QMAKE_CXXFLAGS += -Wa,-mbig-obj
-    INCLUDEPATH += ../../libGyro/lib/win32
-    LIBS += -L../../lib/win32 \
-        #-llua52 \
-        -L../../libGyro/lib/win32 \
-        -lDbgHelp \
-        -lglew32 \
-        #-lglew32.dll \
-        -lglu32 \
-        -lopengl32 \
-        -lopenal32.dll \
-        #-lDbgHelp.dll \
-        -lz \
-        -lz.dll \
-        -lSDL2 \
-        -lSDL2Main \
-        -lSDL2.dll \
-        -lSDL2_net \
-        -lSDL2_net.dll \
-       # -lmingw32 \
-        -logg \
-        -lvorbis \
-        -lvorbis.dll \
-        -lvorbisenc \
-        -lvorbisenc.dll \
-        -lvorbisfile \
-        -limagehlp \
-        -lvorbisfile.dll
-        #-mconsole
-        #-llua52
-}
-
-macx {
-  LIBS += -L$${LIBGYRO_PATH}/lib/osx \
-        -framework OpenGL \
-        -framework OpenCL \
-        -framework OpenAL \
-        -lz \
-        -F$${LIBGYRO_PATH}/lib/osx \
-        -framework SDL2 \
-        -framework SDL2_net \
-        -framework Foundation \
-        -framework Cocoa \
-        -lobjc \
-        -logg \
-        -lvorbis \
-        -lvorbisenc \
-        -lvorbisfile \
-
-}
-
-ios {
-
-    LIBS += -lstdc++ \
-        -framework OpenGLES \
-        -framework GLKit \
-        -framework UIKit \
-        -framework Foundation \
-        -framework CoreGraphics \
-        -framework CoreMotion \
-        -framework OpenAL \
-        -F../../libGyro/lib/ios \
-        -framework Ogg \
-        -framework Vorbis
 }
 
 dreamcast {
@@ -933,11 +759,7 @@ dreamcast {
         -T/home/jenkins/Dreamcast/cadcdev-kallistios/utils/ldscripts/shlelf.xc \
         -nodefaultlibs
 
-} else: android {
-    LIBS += -lEGL -lGLESv2 -landroid
-
-}
-else:linux {
+} else {
     LIBS += \
         -lSDL2 \
         -lSDL2_net \

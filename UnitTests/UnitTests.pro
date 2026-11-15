@@ -36,10 +36,6 @@ INCLUDEPATH +=  \
     ../OOLua/include/oolua \
     ../Spine/include \
 
-win32 {
-    INCLUDEPATH += ../libGyro/lib/win32
-}
-
 CONFIG   += staticlib
 
 TEMPLATE = lib

@@ -9,42 +9,13 @@ isEmpty(ESDEV_ROOT) {
     DEFINES += GYRO_NO_SPINE
 }
 
-!ios {
-    QMAKE_CXXFLAGS += -Wno-c++11-extensions -Wno-c++11-long-long
-}
+QMAKE_CXXFLAGS += -Wno-c++11-extensions -Wno-c++11-long-long
 
 INCLUDEPATH += ../../include \
                 ../../../Spine/include \
                 ../../api
 
 #==========PLATFORM-SPECIFIC BULLSHIT==========
-
-win32 {
-    INCLUDEPATH +=  ../../lib/win32 \
-                    ../../lib/win32/mingw
-    SOURCES +=	../../source/x86/turfs_windows.c
-}
-
-macx {
-    QMAKE_CFLAGS+= -F../../lib/osx \
-            -I../../lib/osx
-    QMAKE_LFLAGS += -F../../lib/osx
-    LIBS += -F../../lib/osx \
-        -framework SDL2.framework \
-        -framework SDL2_net.framework
-    vulkan {
-        LIBS += -framework MoltenVK.framework
-    }
-
-    INCLUDEPATH += ../../lib/osx
-    INCLUDEPATH += ../../lib/osx/SDL2.framework/Headers \
-                    ../../lib/osx/SDL2_net.framework/Headers
-    vulkan {
-        INCLUDEPATH += ../../lib/osx/MoltenVK.framework/Headers
-    }
-    SOURCES +=	../../source/x86/turfs_osx.c
-    OBJECTIVE_SOURCES += ../../source/apple/gyro_system_apple.m
-}
 
 linux {
     LIBS += \
@@ -53,21 +24,11 @@ linux {
     ../../source/linux/gyro_system_linux.c
 }
 
-raspberrypi {
-    SOURCES +=	../../source/x86/turfs_unix.c
-}
-
-ios {
-
-    INCLUDEPATH += ../../lib/ios/Ogg.framework/Headers \
-        ../../lib/ios/Vorbis.framework/Headers
-}
-
 dreamcast {
     INCLUDEPATH += ../../lib/dc/shlib
 }
 
-!iphoneos:!dreamcast:!android:!raspberrypi:!iphonesimulator {
+!dreamcast {
     QMAKE_CFLAGS += -msse
     QMAKE_CXXFLAGS += -msse
 }
@@ -85,9 +46,7 @@ vulkan {
     DEPENDPATH += ../../include/vulkan
 }
 
-ios {
-    DEPENDPATH += ../../include/ios
-} else:dreamcast {
+dreamcast {
     DEPENDPATH += ../../include/dc
 } else {
     DEPENDPATH += ../../include/x86
@@ -159,20 +118,7 @@ vulkan {
 }
 
 
-android {
-
-    HEADERS += ../../include/android/gyro_input_android.inl \
-        ../../include/android/gyro_video_android.inl
-
-} else: ios {
-    HEADERS += ../../source/ios/GYAppDelegate.h \
-        ../../source/ios/GYView.h \
-        ../../source/ios/GYViewController.h \
-        ../../include/ios/gyro_input_ios.inl \
-        ../../include/ios/gyro_video_ios.inl \
-        ../../include/arm/gyro_matrix_arm_neon.inl
-
-} else: dreamcast {
+dreamcast {
     HEADERS += ../../include/dc/gyro_input_dc.h \
         ../../include/dc/gyro_math_dc.inl \
         ../../include/dc/gyro_matrix_dc.inl \
@@ -251,44 +197,16 @@ dreamcast {
         ../../source/al/gyro_ogg_al.c \
         ../../source/x86/gyro_matrix_x86.c
 
-    !ios:!android {
-        SOURCES += \
-            ../../source/x86/gyro_system_glfw_x86.c \
-            ../../source/qt/gyro_texture_qt.cpp \
-            ../../source/qt/gyro_debug_qt.cpp \
-            ../../source/qt/gyro_input_qt.cpp \
-            ../../source/qt/gyro_timer_qt.cpp \
-            ../../source/qt/gyro_file_qt.cpp \
-            ../../source/qt/gyro_video_qt.cpp \
-            ../../source/sdl/gyro_controller_sdl.c \
-            ../../source/sdl/gyro_net_sdl.c
-    } else: android {
-        SOURCES += ../../source/android/android_native_app_glue.c \
-            ../../source/android/bionic_polyfill.c \
-            ../../source/android/gyro_file_android.c \
-            ../../source/android/gyro_input_android.c \
-            ../../source/android/gyro_matrix_android.c \
-            ../../source/android/gyro_system_android.c \
-            ../../source/android/gyro_texture_android.c \
-            ../../source/android/gyro_timer_android.c \
-            ../../source/android/gyro_video_android.c \
-            ../../source/android/turfs_android.c
-
-    } else {
-
-        OBJECTIVE_SOURCES += \
-            ../../source/ios/main.mm \
-            ../../source/ios/gyro_texture_ios.mm \
-            ../../source/ios/gyro_debug_ios.mm \
-            ../../source/ios/gyro_timer_ios.mm \
-            ../../source/ios/turfs_ios.mm \
-            ../../source/ios/gyro_system_ios.mm \
-            ../../source/ios/gyro_video_ios.mm \
-            ../../source/ios/GYAppDelegate.mm \
-            ../../source/ios/GYView.mm \
-            ../../source/ios/GYViewController.mm \
-            ../../source/apple/gyro_system_apple.m
-    }
+    SOURCES += \
+        ../../source/x86/gyro_system_glfw_x86.c \
+        ../../source/qt/gyro_texture_qt.cpp \
+        ../../source/qt/gyro_debug_qt.cpp \
+        ../../source/qt/gyro_input_qt.cpp \
+        ../../source/qt/gyro_timer_qt.cpp \
+        ../../source/qt/gyro_file_qt.cpp \
+        ../../source/qt/gyro_video_qt.cpp \
+        ../../source/sdl/gyro_controller_sdl.c \
+        ../../source/sdl/gyro_net_sdl.c
 
 
 }

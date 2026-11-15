@@ -2,9 +2,6 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= qt
 
-win32:LIBS += -lws2_32 \
-    -lIphlpapi
-
 INCLUDEPATH += ./
 
 SOURCES += version.c \

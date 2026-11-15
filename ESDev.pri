@@ -3,12 +3,6 @@ exists( ESDevCommandLineArgs.pri ) {
     include( ESDevCommandLineArgs.pri )
 }
 
-#macx|win32|linux {
-#    CONFIG(release, debug|release) {
-#        DEFINES+=OOLUA_DEBUG_CHECKS
-#    }
-#}
-
 dreamcast {
 
     INCLUDEPATH=/home/jenkins/Dreamcast/cadcdev-kallistios/include \
@@ -21,30 +15,9 @@ dreamcast {
         ELYSIAN_ENGINE
 }
 
-macx {
-   # QMAKE_CFLAGS += -emit-llvm
-    #QMAKE_MAC_SDK = macosx10.12
-#    QMAKE_MAC_SDK.macosx.version = 10.12
-}
-
 CONFIG -= exceptions
 #CONFIG += warn_off
 
-
-#SPEED UP MINGW'S FUCKTARDEDLY SLOW DUMB ASS!
-win32 {
-#    QMAKE_CFLAGS_RELEASE +=-g -O1
-#    QMAKE_CXXFLAGS_RELEASE +=-g -O1
-#    QMAKE_LFLAGS_RELEASE=
-}
-
-ios|android {
-    DEFINES += ELYSIAN_ENGINE
-}
-
-macx {
-    QMAKE_CXXFLAGS_WARN_ON -= -Wall
-}
 
 !dreamcast {
     QMAKE_CXXFLAGS += -Wall -Wno-unused-local-typedef -Wno-unknown-pragmas -Wno-inconsistent-missing-override
@@ -52,14 +25,9 @@ macx {
 
 #QMAKE_CFLAGS += -std=c99
 
-!iphoneos:!dreamcast:!android:!raspberrypi:!iphonesimulator {
+!dreamcast {
     QMAKE_CFLAGS += -msse
     QMAKE_CXXFLAGS += -msse
-}
-
-iphonesimulator {
-    QMAKE_CFLAGS += -msse3
-    QMAKE_CXXFLAGS += -msse3
 }
 
 CONFIG(debug, debug|release) {
@@ -74,42 +42,8 @@ CONFIG(release, debug|release) {
 
 DEFINES += QT_NO_KEYWORDS QT_NO_DYNAMIC_CAST
 
-android {
-    DEFINES += GYRO_PLATFORM=GYRO_PLATFORM_ANDROID
-    QMAKE_CFLAGS    += -mfpu=neon
-    QMAKE_CXXFLAGS  += -mfpu=neon
-        #QMAKE_ANDROID_DEPLOYMENT_TARGET=8.2
-        #QMAKE_ANDROID_TARGETED_DEVICE_FAMILY=1,2
-} else: ios {
-    DEFINES += GYRO_PLATFORM=GYRO_PLATFORM_iOS
-    iphonesimulator {
-        #QMAKE_IOS_DEPLOYMENT_TARGET = 5.1
-        DEFINES += GYRO_PLATFORM_iOS_SIMULATOR
-        QMAKE_CXXFLAGS += -fno-rtti -fno-exceptions
-        QMAKE_CXXFLAGS+=-stdlib=libc++
-    }
-    iphoneos {
-        #QMAKE_CFLAGS += -target armv8-apple-none-eabi -mcpu=cortex-a8 -mfpu=neon -miphoneos-version-min=7.0
-
-        QMAKE_CXXFLAGS += -fno-rtti -fno-exceptions
-        #QMAKE_CXXFLAGS += -mcpu=cortex-a8 -mfpu=neon -target armv8-apple-none-eabi -miphoneos-version-min=7.0å
-        #QMAKE_CFLAGS += -target armv8-apple-none-eabi
-        #QMAKE_CXXFLAGS += -target armv8-apple-none-eabi
-        #QMAKE_IOS_DEVICE_ARCHS=armv7
-        #QMAKE_IOS_DEPLOYMENT_TARGET=10.3
-        #QMAKE_APPLE_TARGETED_DEVICE_FAMILY=1,2
-        DEFINES += GYRO_PLATFORM_iOS_DEVICE
-        #CONFIG+=neon
-    }
-} else:dreamcast {
+dreamcast {
     DEFINES+=GYRO_PLATFORM=GYRO_PLATFORM_DC
-} else: raspberrypi {
-    DEFINES+=GYRO_PLATFORM=GYRO_PLATFORM_RASPI
-    DEFINES+=_GNU_SOURCE=1
-    #DEFINES+=__USE_POSIX199309 #have to fucking do this for time.h
-    QMAKE_LFLAGS    += -lrt
-    QMAKE_CFLAGS    += -mfpu=neon
-    QMAKE_CXXFLAGS  += -mfpu=neon
 } else {
     DEFINES += GYRO_PLATFORM=GYRO_PLATFORM_Qt
 }
@@ -123,12 +57,6 @@ QMAKE_CXXFLAGS += -Wno-unknown-warning-option #-fno-rtti -fno-exceptions
 }
 
 CONFIG -= exceptions rtti
-
-#Required to get C++11x to work on OSX
-macx {
- # QMAKE_CXXFLAGS += -stdlib=libc++ -Wno-macro-redefined
- # LIBS += -stdlib=libc++
-}
 
 tests {
     DEFINES += ESTK_UNIT_TESTS
