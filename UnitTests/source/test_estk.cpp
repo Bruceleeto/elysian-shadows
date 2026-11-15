@@ -15,7 +15,6 @@
 #include <test_level.h>
 #include <test_map_view.h>
 #include <test_libgyro_file_api.h>
-#include <test_libgyro_compute_api.h>
 #include <test_lua_field_ref.h>
 #include <test_lua_variant.h>
 #include <test_dialog.h>
@@ -115,7 +114,6 @@ int main(QStringList args)
     qDebug() << "Using project directory supplied as command-line argument:" << project;
 
     ESTkTest::enqueueTest(new LibGyroFileApiTest);
-    //ESTkTest::enqueueTest(new LibGyroComputeApiTest);
     ESTkTest::enqueueTest(new tktest::InitializationTest(project));
     if(!assetsTest) {
         ESTkTest::enqueueTest(new tktest::MemoryMappedByteArrayTest);

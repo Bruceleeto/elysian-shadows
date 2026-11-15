@@ -35,7 +35,6 @@
 #include <ESGamma/proxy/elysian_examinable_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_render_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_thread_system_proxy.hpp>
-#include <ESGamma/proxy/elysian_compute_system_proxy.hpp>
 #include <ESGamma/crtp/elysian_lua_manager.hpp>
 #include <ESGamma/lua/elysian_lua_wrappers.hpp>
 
@@ -533,7 +532,6 @@ namespace elysian {
 		_mainState->register_class<DialogSystem>();
         _mainState->register_class<CollisionSystem>();
 		_mainState->register_class<RigidBodySystem>();
-        _mainState->register_class<ComputeSystem>();
         _mainState->register_class<ThreadSystem>();
         _mainState->register_class<RenderSystem>();
         _mainState->register_class<AdventureLog>();
@@ -608,7 +606,6 @@ namespace elysian {
         _mainState->register_class_static<Engine>("getCharSys",         &Singletons_getCharacterSystem);
         _mainState->register_class_static<Engine>("getEventSys",        &Singletons_getEventSystem);
         _mainState->register_class_static<Engine>("getExamSys",         &Singletons_getExaminableSystem);
-        _mainState->register_class_static<Engine>("getComputeSys",      &Singletons_getComputeSystem);
         _mainState->register_class_static<Engine>("getRenderSys",       &Singletons_getRenderSystem);
         _mainState->register_class_static<Engine>("getThreadSys",       &Singletons_getThreadSystem);
 
@@ -744,10 +741,6 @@ namespace elysian {
             \li Threads, ThreadTasks
             \li Manages CPU threads and thread-level parallelization
         \row
-            \li \l{ComputeSystem}
-            \li GPGPU Kernels/Compute Shaders
-            \li Manages GPGPU and hardware accelerated parallel tasks
-        \row
             \li \l{RenderSystem}
             \li \l{Renderable}, \l{Skeleton}, \l{LightSource}
             \li Handles all rendering and displaying graphics
@@ -756,7 +749,7 @@ namespace elysian {
     \sa PartySystem, InputSystem, TimerSystem, AudioSystem, LightSystem, LevelSystem,
     CombatSystem, ParticleSystem, DaySystem, CollisionSystem, RigidBodySystem, GuiSystem,
     CharacterSystem, CameraSystem, DialogSystem, ExaminableSystem, ThreadSystem,
-    ComputeSystem, RenderSystem
+    RenderSystem
 */
 
 /*!
@@ -864,11 +857,6 @@ namespace elysian {
  * \qmlmethod RenderSystem* Engine::getRenderSys()
  *
  * Returns the RenderSystem subsystem.
- */
-/*!
- * \qmlmethod ComputeSystem* Engine::getComputeSys()
- *
- * Returns the ComputeSystem subsystem.
  */
 /*!
  * \qmlmethod ThreadSystem* Engine::getThreadSys()

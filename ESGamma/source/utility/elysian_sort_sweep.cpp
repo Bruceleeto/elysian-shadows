@@ -6,38 +6,6 @@
 
 #include <ESGamma/utility/elysian_sort_sweep.hpp>
 
-#ifdef ELYSIAN_OPENCL_ACCELERATED
-
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifndef CL_TARGET_OPENCL_VERSION
-#   define CL_TARGET_OPENCL_VERSION 300
-#endif
-#include <gl/gyro_gl.h>
-//#       include <GL/glx.h>
-#       include <GL/glext.h>
-#		include <CL/cl.h>
-#       include <CL/cl_gl.h>
-#endif
- extern GLuint                       glalLightingUBO;
-namespace elysian {
-
-cl_platform_id*     _platforms				= nullptr;
-cl_uint             _platformCount			= 0;
-cl_device_id**      _devices				= nullptr;
-cl_uint*            _deviceCount			= nullptr;
-  cl_uint             _curPlatformIndex       = 0;
-  cl_uint             _curDeviceIndex         = 0;
-  cl_context          _context;
-  cl_command_queue    _cmdQueue;
-  cl_program          _program;
-  cl_kernel           _kernel;
-  cl_mem              _aabbListBuff;
-  cl_mem              _aabbListSizeBuff;
-  cl_mem              _aabbContactListBuff;
-  cl_mem              _aabbContactListSizeBuff;
-
-
-}
 
 /*
 template<>

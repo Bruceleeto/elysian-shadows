@@ -189,10 +189,6 @@ static inline int Singletons_getThreadSystem(lua_State* const vm) {
     OOLUA_C_FUNCTION(elysian::ThreadSystem*, elysian::Singletons::getThreadSystem)
 }
 
-static inline int Singletons_getComputeSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::ComputeSystem*, elysian::Singletons::getComputeSystem)
-}
-
 static inline int Singletons_getRenderSystem(lua_State* const vm) {
     OOLUA_C_FUNCTION(elysian::RenderSystem*, elysian::Singletons::getRenderSystem)
 }

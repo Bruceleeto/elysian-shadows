@@ -6,7 +6,6 @@
 
 TARGET = ESToolkit
 
-DEFINES += ELYSIAN_OPENCL_ACCELERATED
 
 TEMPLATE = app
 
@@ -167,7 +166,6 @@ SOURCES += \
     ../../AssetIO/source/proxy/elysian_bit_mask_proxy.cpp \
     ../../AssetIO/source/utility/elysian_bit_mask.cpp \
     ../../ESGamma/source/utility/elysian_lua_table_ref.cpp \
-    ../../AssetIO/source/level/elysian_opaque_map_scene_object.cpp \
     ../../ESGamma/source/utility/elysian_lua_variant.cpp \
     ../../AssetIO/source/proxy/elysian_dialog_proxy.cpp \
     ../../AssetIO/source/level/elysian_dialog_base.cpp \
@@ -202,7 +200,6 @@ SOURCES += \
     ../../game/source/pause_menu/es_playable_pane.cpp \
     ../../game/source/pause_menu/es_party_menu.cpp \
     ../../game/source/pause_menu/es_inventory_menu.cpp \
-    ../../ESGamma/source/system/elysian_compute_system.cpp \
     ../../ESGamma/source/system/elysian_render_system_base.cpp \
     ../../ESGamma/source/gui/elysian_item_delegate.cpp \
     ../../ESGamma/source/system/elysian_thread_system.cpp \
@@ -212,7 +209,6 @@ SOURCES += \
     ../../ESGamma/source/device/elysian_mouse_device.cpp \
     ../../ESGamma/source/device/elysian_visual_memory_device.cpp \
     ../../ESGamma/source/device/elysian_sensor_device.cpp \
-    ../../ESGamma/source/proxy/elysian_compute_system_proxy.cpp \
     ../../ESGamma/source/proxy/elysian_thread_system_proxy.cpp \
     ../../ESGamma/source/proxy/elysian_render_system_proxy.cpp
 
@@ -417,7 +413,6 @@ HEADERS += \
     ../../AssetIO/include/AssetIO/primitive/elysian_rect.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_event.hpp \
     ../../AssetIO/include/AssetIO/proxy/elysian_event_proxy.hpp \
-    ../../AssetIO/include/AssetIO/level/elysian_opaque_map_scene_object.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_scene_object.hpp \
     ../../ESGamma/include/ESGamma/gui/elysian_sprite.hpp \
     ../../ESGamma/include/ESGamma/crtp/elysian_debug.hpp \
@@ -498,7 +493,6 @@ HEADERS += \
     ../../ESGamma/include/ESGamma/device/elysian_rumble_device.hpp \
     ../../ESGamma/include/ESGamma/device/elysian_player_io_device.hpp \
     ../../ESGamma/include/ESGamma/gui/elysian_frame_widget.hpp \
-    ../../ESGamma/include/ESGamma/system/elysian_compute_system.hpp \
     ../../ESGamma/include/ESGamma/crtp/elysian_render_system.hpp \
     ../../ESGamma/include/ESGamma/system/elysian_render_system_base.hpp \
     ../../ESGamma/include/ESGamma/gui/elysian_item_model.hpp \
@@ -520,7 +514,6 @@ HEADERS += \
     ../../ESGamma/include/ESGamma/device/elysian_touch_device.hpp \
     ../../ESGamma/include/ESGamma/device/elysian_power_supply_device.hpp \
     ../../ESGamma/include/ESGamma/device/elysian_sensor_device.hpp \
-    ../../ESGamma/include/ESGamma/proxy/elysian_compute_system_proxy.hpp \
     ../../ESGamma/include/ESGamma/proxy/elysian_thread_system_proxy.hpp \
     ../../ESGamma/include/ESGamma/proxy/elysian_render_system_proxy.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_string.hpp \
@@ -755,7 +748,6 @@ dreamcast {
     LIBS += \
         -lSDL2 \
         -lSDL2_net \
-        -lOpenCL \
         -lGL \
         -lopenal \
         -lGLU \
@@ -765,7 +757,6 @@ dreamcast {
         -lvorbis \
         -lvorbisenc \
         -lvorbisfile \
-        -lX11 \
         -lpthread \
         -lrt
 }

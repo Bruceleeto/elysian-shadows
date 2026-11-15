@@ -33,7 +33,6 @@ namespace elysian {
   EventSystem*          System::_eventSystem        = nullptr;
   BehaviorSystem*		System::_behaviorSystem		= nullptr;
   PathfindingSystem*    System::_pathfindingSystem  = nullptr;
-  ComputeSystem*        System::_computeSystem      = nullptr;
   RenderSystem*         System::_renderSystem       = nullptr;
   ThreadSystem*         System::_threadSystem       = nullptr;
 }

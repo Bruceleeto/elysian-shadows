@@ -155,6 +155,9 @@ namespace elysian {
         uint32_t                    vertexVbo       = 0;
         uint32_t                    elementVbo[2]   = {0} ;
         uint32_t                    vao[2]          = {0};
+        uint32_t                    mapVao          = 0;    //every map tile as one static triangle strip
+        uint32_t                    mapIbo          = 0;
+        uint32_t                    mapIboCount     = 0;
         bool                        vboPopulated    = false;
         bool                        activated       = false;
 

@@ -41,7 +41,6 @@
 #include <ESGamma/crtp/elysian_input_system.hpp>
 #include <ESGamma/system/elysian_event_system.hpp>
 #include <ESGamma/utility/elysian_sort_sweep.hpp>
-#include <ESGamma/system/elysian_compute_system.hpp>
 #include <ESGamma/crtp/elysian_render_system.hpp>
 #include <ESGamma/system/elysian_thread_system.hpp>
 
@@ -85,12 +84,10 @@ Engine::Engine(void):
     _combatSystem		= new CombatSystem;
     _skeletonSystem     = new SkeletonSystem;
     _pathfindingSystem  = new PathfindingSystem;
-    _computeSystem      = new ComputeSystem;
     _renderSystem       = new RenderSystem;
 
     InputSystem::initialize();
     _threadSystem->initialize();
-    _computeSystem->initialize();
     _renderSystem->initialize();
     _behaviorSystem->initialize();
     _warpSystem->initialize();
@@ -104,7 +101,6 @@ Engine::Engine(void):
 
     renderMonitor.addChild(&shadowPassMonitor);
     renderMonitor.addChild(&lightPassMonitor);
-    lightPassMonitor.addChild(&getRenderSystem()->renderParticlesMonitor);
     renderMonitor.addChild(&guiRenderMonitor);
     renderMonitor.addChild(&bloomMonitor);
 
@@ -124,8 +120,6 @@ Engine::Engine(void):
     updateMonitor.addChild(&updateDialogMonitor);
     updateMonitor.addChild(&updateCombatMonitor);
     updateMonitor.addChild(&updateLuaMonitor);
-
-    renderMonitor.addChild(&getRenderSystem()->updateHDRExposureMonitor);
 
    // memset(&_platInput, 0, sizeof(GYInput));
 }
@@ -266,7 +260,6 @@ void Engine::update(void) {
 }
 
 void Engine::processInput(void) {
-        _renderSystem->populateParticleVbos();
   _timerSystem->pushTaskMonitor(&_inputMonitor);
   processInputMonitor.start();
 
@@ -321,7 +314,6 @@ void Engine::render(void) {
             _cameraSystem->update();
             gyVidSceneBegin();
             gyMatLoadIdentity();
-            //_renderSystem->updateHDRExposure();
 
         /*	unsigned w, h;
             gyVidResolution(&w, &h);
@@ -359,9 +351,7 @@ void Engine::render(void) {
 
              //_collisionSystem->render();
              //_particleSystem->render();
-             //_renderSystem->createLuminanceHistogram();
           //  func();
-           // _renderSystem->forwardPlusCullLights();
              _lightSystem->removeLightSourcesFromScene();
              //glalVidApplyRadialBlur();
             //glalVidApplyChromaticAberration();
@@ -408,7 +398,6 @@ Engine::~Engine(void) {
     delete _daySystem;
     LuaManager::uninitialize();
     _renderSystem->uninitialize();
-    _computeSystem->uninitialize();
 
 
     delete _inputSystem;
@@ -427,7 +416,6 @@ Engine::~Engine(void) {
     delete _behaviorSystem;
     delete _pathfindingSystem;
     delete _eventSystem;
-    delete _computeSystem;
     delete _audioSystem;
     _threadSystem->uninitialize();
     delete _threadSystem;

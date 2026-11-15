@@ -75,14 +75,12 @@ HEADERS += \
     ../../include/gl/gyro_gl_utils.h \
     ../../include/gl/gyro_radial_blur_gl.h \
     ../..//include/gl/gyro_chromatic_aberration_gl.h \
-    ../../include/cl/gyro_cl.h \
     ../../include/al/gyro_al.h \
     ../../include/gl/gyro_gl.h \
     ../../include/gl/gyro_shaders_gl.h \
     ../../include/gl/gyro_video_gl.h \
     ../../api/libGyro/gyro.h \
     ../../api/libGyro/gyro_audio_api.h \
-    ../../api/libGyro/gyro_compute_api.h \
     ../../api/libGyro/gyro_defines.h \
     ../../api/libGyro/gyro_file_api.h \
     ../../api/libGyro/gyro_input_api.h \
@@ -151,7 +149,6 @@ SOURCES += \
     ../../source/common/gyro_visual_memory_common.c \
     ../../source/gl/gyro_radial_blur_gl.c \
     ../../source/gl/gyro_chromatic_aberration_gl.c \
-    ../../source/cl/gyro_compute_cl.c \
     ../../source/sdl/gyro_performance_sdl.c \
     ../../source/sdl/gyro_rumble_sdl.c \
     ../../source/gl/gyro_bloom_gl.c \

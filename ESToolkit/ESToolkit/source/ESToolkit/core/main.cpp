@@ -111,8 +111,8 @@ static GYAppCbRet Init(int argc, char **argv) {
     // Set the default GL format to OpenGL 3.2 Core
     QSurfaceFormat::setDefaultFormat(fmt);
 
-    //OpenCL/OpenGL sharing is implemented for GLX only, so use Qt's X11 backend
-    //(XWayland on Wayland sessions) unless the user asked for something else.
+    //The editor's GL view has only been tested on Qt's X11 backend (XWayland on
+    //Wayland sessions), so use it unless the user asked for something else.
     if(qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "xcb");
 
     QGLFormat glfmt;

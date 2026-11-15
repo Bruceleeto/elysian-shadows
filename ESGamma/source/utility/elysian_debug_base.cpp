@@ -42,7 +42,6 @@
 #include <ESGamma/gui/elysian_label_widget.hpp>
 #include <ESGamma/gui/elysian_entity_widget.hpp>
 #include <ESGamma/system/elysian_thread_system.hpp>
-#include <ESGamma/system/elysian_compute_system.hpp>
 #include <ESToolkit/ui/tk_estoolkit.h>
 #include <QESTkUtils/ui/widget/tk_line_chart.h>
 
@@ -330,9 +329,6 @@ void DebugBase::processInput(Keyboard*const input) {
         for(; i < newI; ++i)
             getThreadSystem()->enqueueAsyncTask(task, (void*)i);
 #endif
-#if ELYSIAN_COMPUTE_PROFILING_ENABLED == 1
-        PerformanceMonitor::print(getComputeSystem()->getPerfMonitor());
-#endif
 #else
         auto* line = ESToolkit::getInstance()->getLineChartWidget();
 
@@ -505,19 +501,10 @@ void DebugBase::processInput(Keyboard*const input) {
 	}
 
     if(input->isTapped(GY_KEY_G)) {
-#if 1
 		static bool enabled = true;
 		enabled = !enabled;
 		getRigidBodySys()->setGravityEnabled(enabled);
         Debug::printf(Debug::LOG_VERBOSE, "Gravity %s.", (enabled)? "enabled" : "disabled");
-#else
-        bool usingGPU = _engine->_collisionSystem->_sortSweepPool.getUseGPU();
-
-        _engine->_collisionSystem->_sortSweepPool.setUseGPU(!usingGPU);
-        dbgprintf("Using GPU - %d", !usingGPU);
-
-        _engine->_timerSystem->printTaskStats();
-#endif
 	}
 
     if(input->isTapped(GY_KEY_R)) {

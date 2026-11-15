@@ -21,6 +21,7 @@
 #include <libGyro/gyro_file_api.h>
 #include <ESGamma/system/elysian_audio_system.hpp>
 #include <stdlib.h>
+#include <vector>
 
 using namespace std;
 
@@ -388,6 +389,12 @@ void AreaBase::freeVbo(void) {
     glDeleteVertexArrays(1, &vao[0]);
     glDeleteVertexArrays(1, &vao[1]);
 
+    glDeleteBuffers(1, &mapIbo);
+    glDeleteVertexArrays(1, &mapVao);
+    mapIbo = 0;
+    mapVao = 0;
+    mapIboCount = 0;
+
     for(unsigned i = 0; i < 2; ++i) {
         elementsArraySize[i] = 0;
         lastElemArraySize[i] = 0;
@@ -398,6 +405,30 @@ void AreaBase::freeVbo(void) {
     vboPopulated = false;
 #endif
 }
+
+#if GYRO_PLATFORM != GYRO_PLATFORM_DC
+//Points the bound VAO at the map vertex buffer. The lighting shader takes the full
+//vertex; the shadow map shader only needs position and texture coordinates.
+static void _mapVertexAttribs(const _LightingShaderProgram* shader, bool lighting) {
+    static_assert(sizeof(GYVertex) == 64, "map VBO layout assumes a 64-byte GYVertex");
+
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_POS]);
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_TEX_COORD]);
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_POS], 4, GL_FLOAT, GL_FALSE, sizeof(GYVertex), (void*)offsetof(GYVertex, pos));
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_TEX_COORD], 2, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, texCoord));
+
+    if(!lighting) return;
+
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_COLOR]);
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_NORMAL]);
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_TANGENT]);
+    glEnableVertexAttribArray(shader->attribLoc[GLAL_SHADER_NORMAL_Z]);
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, color));
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_NORMAL_Z], 1, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, normalZ));
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_NORMAL], 3, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, normal));
+    glVertexAttribPointer(shader->attribLoc[GLAL_SHADER_TANGENT], 3, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, tangent));
+}
+#endif
 
 void AreaBase::populateVbo(void) {
     if(vboPopulated) return;
@@ -436,17 +467,7 @@ void AreaBase::populateVbo(void) {
         &glalShadowMapShader
     };
 
-#if 0
-    typedef struct GYVertex {
-        GYVector4   pos;        //16 bytes      16
-        GYTexCoord2 texCoord;   //8 bytes       24
-        GYColor4    color;      //4 bytes       28
-        GYVector3   normal;     //12 bytes      44  32
-        float       normalZ;    //4 bytes       45  36
-        GYVector3   tangent;    //12 bytes      46  48
-    } GYVertex;                 //68 bytes
-#endif
-
+    //Per-pass VAOs whose element buffers MapSystem streams visible tiles into
     for(unsigned j = 0; j < 2; ++j) {
         glGenVertexArrays(1, &vao[j]);
         gyVidVertexArrayBind(vao[j]);
@@ -456,42 +477,36 @@ void AreaBase::populateVbo(void) {
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE, elementsArray, ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
-
-    glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_POS]);
-    glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_TEX_COORD]);
-
-    assert(offsetof(GYVertex, pos) == 0);
-    glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_POS], 4, GL_FLOAT, GL_FALSE, sizeof(GYVertex), (void*)offsetof(GYVertex, pos));
-    assert(offsetof(GYVertex, texCoord) == 16);
-    glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_TEX_COORD], 2, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)(offsetof(GYVertex, texCoord)));
-
-    if(j == 0) { //light VAO
-        glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_COLOR]);
-        glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_NORMAL]);
-        glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_TANGENT]);
-        glEnableVertexAttribArray(shaders[j]->attribLoc[GLAL_SHADER_NORMAL_Z]);
-
-        assert(offsetof(GYVertex, color) == 24);
-        glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, color));
-
-        assert(offsetof(GYVertex, normalZ) == 28);
-        glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_NORMAL_Z], 1, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, normalZ));
-
-        assert(offsetof(GYVertex, normal) == 32);
-        glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_NORMAL], 3, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)offsetof(GYVertex, normal));
-
-   //     assert(offsetof(GYVertex, tangent) == 48 && offsetof(GYVertex, tangent) % 16 == 0);
-        glVertexAttribPointer(shaders[j]->attribLoc[GLAL_SHADER_TANGENT], 3, GL_FLOAT, GL_TRUE, sizeof(GYVertex), (void*)(offsetof(GYVertex, tangent)));
-
-        assert(sizeof(GYVertex) == 64);
+        _mapVertexAttribs(shaders[j], j == 0);
     }
-        }
 
-   // glGenBuffers(1, &elementVbo);
-  // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementVbo);
- //   glBufferData(GL_ELEMENT_ARRAY_BUFFER, ELYSIAN_MAP_SYSTEM_GLAL_STRIP_INDEX_ARRAY_SIZE*sizeof(GLushort), &elementsArray[0], GL_DYNAMIC_DRAW);
+    //Static index buffer drawing every tile quad (4 vertices each) as one triangle
+    //strip, joined by degenerate triangles: v0 v0 v1 v2 v3 v3. It only depends on the
+    //map size, so it is built once here instead of every frame.
+    const uint32_t tileCount = static_cast<uint32_t>(width) * height * ELYSIAN_AREA_MAP_LAYERS;
+    std::vector<GLuint> indices(static_cast<size_t>(tileCount) * 6);
+    for(uint32_t t = 0; t < tileCount; ++t) {
+        const GLuint base = t * 4;
+        GLuint* idx = &indices[static_cast<size_t>(t) * 6];
+        idx[0] = base;
+        idx[1] = base;
+        idx[2] = base + 1;
+        idx[3] = base + 2;
+        idx[4] = base + 3;
+        idx[5] = base + 3;
+    }
+    mapIboCount = static_cast<uint32_t>(indices.size());
+
+    glGenVertexArrays(1, &mapVao);
+    gyVidVertexArrayBind(mapVao);
+    glGenBuffers(1, &mapIbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mapIbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*indices.size(), indices.data(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
+    _mapVertexAttribs(&glalLightingShader, true);
 
     gyVidVertexArrayBind(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 #endif
     vboPopulated = true;
 }

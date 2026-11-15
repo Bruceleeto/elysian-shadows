@@ -37,7 +37,6 @@ namespace elysian {
   class SkeletonSystem;
   class EventSystem;
   class PathfindingSystem;
-  class ComputeSystem;
   class ThreadSystem;
 
   class System: public LevelManager {
@@ -72,7 +71,6 @@ namespace elysian {
     static EventSystem*         _eventSystem;
     static BehaviorSystem*      _behaviorSystem;
     static PathfindingSystem*   _pathfindingSystem;
-    static ComputeSystem*       _computeSystem;
     static RenderSystem*        _renderSystem;
     static ThreadSystem*        _threadSystem;
 
@@ -99,7 +97,6 @@ namespace elysian {
     static EventSystem*         getEventSys(void) { return _eventSystem; }
     static BehaviorSystem*		getBehavSys(void) { return _behaviorSystem; }
     static PathfindingSystem*   getPathfindingSys(void) { return _pathfindingSystem; }
-    static ComputeSystem*       getComputeSystem(void) { return _computeSystem; }
     static RenderSystem*        getRenderSystem(void) { return _renderSystem; }
     static ThreadSystem*        getThreadSystem(void) { return _threadSystem; }
 

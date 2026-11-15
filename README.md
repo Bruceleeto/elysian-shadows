@@ -54,7 +54,7 @@ On Debian or Ubuntu:
 sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev liblua5.2-dev \
     libqt5charts5-dev qttools5-dev libglew-dev libglu1-mesa-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
-    opencl-headers ocl-icd-opencl-dev zlib1g-dev libx11-dev
+    zlib1g-dev
 ```
 
 ### 2. Build
