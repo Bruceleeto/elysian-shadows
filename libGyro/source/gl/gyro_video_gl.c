@@ -1145,6 +1145,8 @@ void gyVidSkeleton(const struct spSkeleton*const skeleton) {
             gyMatLoadIdentity();
 
             gyVidSkeletonAttachment(attachment);
+            //Draw the attachment now, while its own texture and state are still bound.
+            gyVidVertexBatchFlush();
 
             gyMatPop();
             //gyMatPush();
@@ -1383,6 +1385,7 @@ void gyVidSkeleton(const struct spSkeleton*const skeleton) {
 
     }
 
+    gyVidVertexBatchFlush();
     gyVidVertexBatchEnd();
     _glPrimitiveType = GL_TRIANGLE_STRIP;
 #endif
