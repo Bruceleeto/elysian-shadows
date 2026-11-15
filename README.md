@@ -17,14 +17,14 @@
 
 You believed in this project when it was just a dream and a Dreamcast. This release is for you.
 
-We're opening up the full *Elysian Shadows* codebase — engine, toolkit, VMU emulator, and the cross-platform libraries underneath them — with its complete development history. It's MIT licensed for everyone, and **if you backed the Kickstarter, you can do whatever you want with it, no license terms attached.** See [LICENSE](LICENSE) for details.
+We're opening up the full *Elysian Shadows* codebase — engine, toolkit, and the cross-platform libraries underneath them — with its complete development history. It's MIT licensed for everyone, and **if you backed the Kickstarter, you can do whatever you want with it, no license terms attached.** See [LICENSE](LICENSE) for details.
 
 ## Heads up
 
 Before you dive in, know what you're getting:
 
 - **No assets.** No art, music, maps, or game scripts are included — this is code only.
-- **It probably doesn't build anymore.** Toolchains, Qt versions, and SDKs have moved on since this code was last actively developed.
+- **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 5.15. Other platforms (Windows, macOS, Dreamcast, iOS, Android) haven't been tried yet.
 - **It could use some love.** Expect rough edges, dead code, and the occasional colorful comment.
 
 ## What's inside
@@ -42,21 +42,43 @@ Before you dive in, know what you're getting:
 
 Third-party libraries (Lua 5.2, OOLua, the Spine runtime, prebuilt SDKs under `lib/`, and the Dreamcast tools under `tools/dc/`) remain under their own licenses.
 
-## Building (good luck!)
+## Building
 
-Everything is wired together with qmake. Open the main project file in Qt Creator:
+ESToolkit builds with qmake and Qt 5. Linux is the tested platform.
 
+### 1. Install dependencies
+
+On Debian or Ubuntu:
+
+```sh
+sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev \
+    libqt5charts5-dev qttools5-dev libglew-dev libglu1-mesa-dev \
+    libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
+    opencl-headers ocl-icd-opencl-dev zlib1g-dev libx11-dev
 ```
-qtcreator/ESDev/ESDev.pro
+
+### 2. Build
+
+From the repository root:
+
+```sh
+mkdir -p build && cd build
+qmake ../ESDev.pro
+make -j$(nproc)
 ```
 
-Then pick what to build by adding a `CONFIG+=` argument under **Projects → Build Steps → Additional Arguments**:
+If `qmake` on your system is Qt 6, use the Qt 5 one instead (for example `/usr/lib/qt5/bin/qmake` on Debian/Ubuntu).
 
-| Target | Argument | Extras |
-|---|---|---|
-| ESToolkit | `CONFIG+=estk` | `CONFIG+=tests` (unit tests), `CONFIG+=docs` (Lua API docs) |
+The toolkit ends up at `build/executable/ESToolkit`. All build output stays in `build/`, so to start over just delete that folder.
 
-From the command line, run `qmake` on the same `.pro` file with the same arguments, then `make`.
+Optional extras, passed to `qmake`:
+
+- `CONFIG+=tests` builds the unit tests.
+- `CONFIG+=docs` builds the Lua API docs (not tested recently).
+
+### Qt Creator
+
+Open `ESDev.pro` from the repository root. Qt Creator's default shadow-build folder works fine.
 
 ## Contributing
 
