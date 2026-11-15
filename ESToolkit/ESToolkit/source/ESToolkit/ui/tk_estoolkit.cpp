@@ -61,13 +61,7 @@ ESToolkit::ESToolkit(QWidget *parent):
 
     const QString verString = QString("ESTkv")+QString(ESTOOLKIT_VERSION)+QString(" ") + QString(ESTOOLKIT_VERSION_NAME);
     const char* platString =
-#ifdef __APPLE__
-    "OSX";
-#elif defined(WIN32)
-    "WINDOWS";
-#else
     "LINUX";
-#endif
     _libGyroInitialize();
     DbgEvent event("Initializing %s [%s]", verString.toStdString().c_str(), platString);
 
@@ -113,21 +107,11 @@ ESToolkit::ESToolkit(QWidget *parent):
     m_activePlatform->setPopupMode(QToolButton::MenuButtonPopup);
 
     // activate/disable platforms based on native OS
-#ifdef Q_OS_WIN
-        m_activePlatform->setIcon(_ui->actionWindows->icon());
-        _ui->actionWindows->setChecked(true);
-        _ui->actionMac_OS_X->setEnabled(false);
-        _ui->actionNix->setEnabled(false);
-#elif defined(Q_OS_LINUX)
+#if   defined(Q_OS_LINUX)
         m_activePlatform->setIcon(_ui->actionNix->icon());
         _ui->actionNix->setChecked(true);
         _ui->actionMac_OS_X->setEnabled(false);
         _ui->actionWindows->setEnabled(false);
-#elif defined(Q_OS_MAC)
-        m_activePlatform->setIcon(_ui->actionMac_OS_X->icon());
-        _ui->actionMac_OS_X->setChecked(true);
-        _ui->actionWindows->setEnabled(false);
-        _ui->actionNix->setEnabled(false);
 #endif
 
     _ui->mainToolBar->addWidget(m_activePlatform);
@@ -240,11 +224,7 @@ ESToolkit::ESToolkit(QWidget *parent):
      * ALT+Tab does the same on Windows, this shortcut has to be treated
      * differently between Win/Mac. Linux should work like Window.
      */
-#ifdef Q_OS_MAC
-    altTabAction->setShortcut(QKeySequence("Alt+Tab"));
-#else
     altTabAction->setShortcut(QKeySequence("Ctrl+Tab"));
-#endif
     connect(altTabAction, SIGNAL(triggered()), this, SLOT(onAltTabShortcutTriggered()));
     addAction(altTabAction);
 

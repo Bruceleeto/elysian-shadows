@@ -93,21 +93,11 @@ typedef struct _CLGLInteropInfo {
     cl_device_id        rendererDevice;
     cl_platform_id      rendererPlatform;
     GYComputeDevice     rendererGyroDevice;
-#   ifdef __APPLE__
-    CGLContextObj       cglContextObj;
-    CGLShareGroupObj    cglShareGroupObj;
-#   elif defined(__WIN32)
-    HGLRC               wglContext;
-    HDC                 wglDeviceContext;
-#   else
     GLXContext          glXContext;
     Display*            glXDisplay;
-#   endif
 } _CLGLInteropInfo;
 
-#ifndef __APPLE__
 static clGetGLContextInfoKHR_fn clGetGLContextInfo = NULL;
-#endif
 
 
 static _CLGLInteropInfo         _clGlInteropInfo;
@@ -269,9 +259,6 @@ inline static const char* _clDeviceTypeStr(cl_device_type type) {
     case CL_DEVICE_TYPE_DEFAULT:     return "CL_DEVICE_TYPE_DEFAULT";
     case CL_DEVICE_TYPE_CUSTOM:      return "CL_DEVICE_TYPE_CUSTOM";
     case CL_DEVICE_TYPE_ALL:         return "CL_DEVICE_TYPE_ALL";
-#ifdef __APPLE__
-    case CL_DEVICE_TYPE_USE_ID:      return "CL_DEVICE_TYPE_USE_ID"; //Nonstandardized Apple BULLSHIT
-#endif
     default:                         return "UNKOWN";
     }
 }
@@ -750,49 +737,6 @@ static int _clGLQueryInteropInfo(void) {
 #endif
 
 
-#   ifdef __APPLE__
-    //Retrieve sharegroup CL/GL interop bullshit from Apple.
-    _clGlInteropInfo.cglContextObj = CGLGetCurrentContext();
-    _clGlInteropInfo.cglShareGroupObj = CGLGetShareGroup(_clGlInteropInfo.cglContextObj);
-    if(!_clGlInteropInfo.cglContextObj) {
-        _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (MacOS, CGL): Failed to retrive current CGL Context object!");
-        success = 0;
-        goto done;
-    }
-
-    if(!_clGlInteropInfo.cglShareGroupObj) {
-        _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (MacOS, CGL): Failed to retrieve CGL Share Group object!");
-        success = 0;
-        goto done;
-    }
-
-    cl_context_properties properties[] = {
-        CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
-        (intptr_t)_clGlInteropInfo.cglShareGroupObj,
-        0
-    };
-
-    cl_int errorCode;
-    cl_context context = clCreateContext(properties, 0, NULL, 0, 0, &errorCode);
-    if(GY_CL_CHECK_ERROR(errorCode)) {
-        _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (MacOS, CGL): Failed to create a CL context from GL sharegroup when querying for renderer info!");
-        success = 0;
-        goto done;
-    }
-
-    //Poll for the OpenCL Device associated with the GL/CL context used by the renderer
-    if(GY_CL_CHECK_ERROR(clGetGLContextInfoAPPLE(context, _clGlInteropInfo.cglContextObj, CL_CGL_DEVICE_FOR_CURRENT_VIRTUAL_SCREEN_APPLE, sizeof(cl_device_id), &_clGlInteropInfo.rendererDevice, NULL))) {
-        _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (MacOS, CGL): Failed to retrieve OpenCL Device associated with OpenCL context created from OpenGL context!");
-        success = 0;
-        goto done;
-    }
-
-    if(GY_CL_CHECK_ERROR(clGetDeviceInfo(_clGlInteropInfo.rendererDevice, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), &_clGlInteropInfo.rendererPlatform, NULL))) {
-        _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (MacOS, CGL) Failed to query OpenCL platform corresponding to active OpenGL device!");
-        success = 0;
-    }
-
-#   else
     for(unsigned p = 0; p < _clPlatformCount; ++p) {
         clGetGLContextInfo = (clGetGLContextInfoKHR_fn)clGetExtensionFunctionAddressForPlatform(_clPlatforms[p], "clGetGLContextInfoKHR");
         if(!clGetGLContextInfo) {
@@ -810,27 +754,6 @@ static int _clGLQueryInteropInfo(void) {
             0
         };
 
-#       ifdef __WIN32
-        _clGlInteropInfo.wglContext         = wglGetCurrentContext();
-        _clGlInteropInfo.wglDeviceContext   = wglGetCurrentDC();
-
-        if(!_clGlInteropInfo.wglContext) {
-            _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (Windows, WGL): Failed to retrieve handle to current OpenGL rendering context!");
-            success = 0;
-            goto done;
-        }
-
-        if(!_clGlInteropInfo.wglDeviceContext) {
-            _gyLog(GY_DEBUG_WARNING, "[GY_COMPUTE_API] (Windows, WGL): Failed to retrieve handle to device context associated with current OpenGL rendering context!");
-            success = 0;
-            goto done;
-        }
-
-        properties[1] = (cl_context_properties)_clGlInteropInfo.wglContext;
-        properties[2] = CL_WGL_HDC_KHR;
-        properties[3] = (cl_context_properties)_clGlInteropInfo.wglDeviceContext;
-
-#       else
         _clGlInteropInfo.glXContext = glXGetCurrentContext();
         _clGlInteropInfo.glXDisplay = glXGetCurrentDisplay();
 
@@ -848,7 +771,6 @@ static int _clGLQueryInteropInfo(void) {
         properties[2] = CL_GLX_DISPLAY_KHR;
         properties[3] = (cl_context_properties)_clGlInteropInfo.glXDisplay;
 
-#       endif
 
         cl_device_id devices[CL_MAX_NUMBER_OF_DEVICES_PER_CONTEXT];
         size_t size = 0;
@@ -876,7 +798,6 @@ static int _clGLQueryInteropInfo(void) {
     }
     success = _clGlInteropInfo.glQueryDataValid;
 
-#   endif
 
 done:
     _clGlInteropInfo.glQueryDataValid = success;
@@ -1136,26 +1057,13 @@ GYComputeContext* gyComputeContextCreate(unsigned platformIdx, const GYComputeCo
             return NULL;
         }
 
-#   ifdef __APPLE__
-        properties[2] = (cl_context_properties)CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE;
-        properties[3] = (cl_context_properties)_clGlInteropInfo.cglShareGroupObj;
-#   else
         properties[2] = CL_GL_CONTEXT_KHR;
 
-#       ifdef __WIN32
-
-        properties[3] = (cl_context_properties)_clGlInteropInfo.wglContext;
-        properties[4] = CL_WGL_HDC_KHR;
-        properties[5] = (cl_context_properties)_clGlInteropInfo.wglDeviceContext;
-
-#       else
 
         properties[1] = (cl_context_properties)_clGlInteropInfo.glXContext;
         properties[2] = CL_GLX_DISPLAY_KHR;
         properties[3] = (cl_context_properties)_clGlInteropInfo.glXDisplay;
 
-#       endif
-#   endif
     }
 #endif
 

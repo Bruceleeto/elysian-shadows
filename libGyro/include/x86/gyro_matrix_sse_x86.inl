@@ -13,13 +13,8 @@
 
 
 
-#ifdef _WIN32
-#   define MM_LOAD_ALIGN(a)         _mm_loadu_ps(a)
-#   define MM_STORE_ALIGN(a, b)     _mm_storeu_ps(a, b)
-#else
 #   define MM_LOAD_ALIGN(a)         _mm_load_ps(a)
 #   define MM_STORE_ALIGN(a, b)     _mm_store_ps(a, b)
-#endif
 
 
 extern GYMatrix4 _curMat;

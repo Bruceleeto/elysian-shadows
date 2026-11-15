@@ -23,20 +23,12 @@
 
 
 //DC-Tool binary paths
-#ifdef Q_OS_WIN
-#	define ENGINE_DIALOG_DEFAULT_PATH	ENGINE_DIALOG_WIN_PATH
-#elif defined(Q_OS_MAC)
-#	define ENGINE_DIALOG_DEFAULT_PATH	ENGINE_DIALOG_OSX_PATH
-#elif defined(Q_OS_LINUX)
+#if   defined(Q_OS_LINUX)
 #	define ENGINE_DIALOG_DEFAULT_PATH	ENGINE_DIALOG_LINUX_PATH
 #endif
 
 //DC-Tool binary paths
-#ifdef Q_OS_WIN
-#	define ENGINE_DIALOG_DCTOOL_PATH	"../bin/dc-tool-win.exe"
-#elif defined(Q_OS_MAC)
-#	define ENGINE_DIALOG_DCTOOL_PATH	"../bin/dc-tool-osx"
-#elif defined(Q_OS_LINUX)
+#if   defined(Q_OS_LINUX)
 #	define ENGINE_DIALOG_DCTOOL_PATH	"../bin/dc-tool-linux"
 #endif
 

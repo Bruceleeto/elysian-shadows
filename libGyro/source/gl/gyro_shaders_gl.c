@@ -16,11 +16,7 @@
 #ifdef GL_ES_VERSION_3_0
 #   define GY_GL_VERSION_STR "#version 300 es"
 #else
-#ifdef _WIN32
-#   define GY_GL_VERSION_STR "#version 420\n\r"
-#else
 #   define GY_GL_VERSION_STR "#version 410\n"
-#endif
 #endif
 
 GLenum glalTextureMapTexUnits[GLAL_TEXTURE_MAP_MAX] = {

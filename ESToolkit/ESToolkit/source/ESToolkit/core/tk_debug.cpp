@@ -531,11 +531,7 @@ bool DebugLogTreeWidget::eventFilter(QObject* /*object*/, QEvent *event) {
 
                     //don't append newline character to last line
                     if(curIndex++ < size-1) {
-#ifdef _WIN32
-                    selectionText.append("\r\n");
-#else
                     selectionText.append("\n");
-#endif
                     }
                 }
 

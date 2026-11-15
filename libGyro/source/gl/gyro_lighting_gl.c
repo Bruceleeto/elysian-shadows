@@ -357,19 +357,12 @@ void gyVidLightSourceInit(GYLightSource* const light, const GY_LIGHT_TYPE type) 
         //glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
        // glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-#if GYRO_PLATFORM != GYRO_PLATFORM_iOS
         glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BORDER_COLOR, 1.0f);
         //Does this REALLY have to have 6 faces!?
         for (unsigned i = 0; i < GY_CUBE_MAP_FACE_MAX; ++i) {
             //shadowDepth? lolz
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
         }
-#else
-        for (unsigned i = 0; i < GY_CUBE_MAP_FACE_MAX; ++i) {
-            //shadowDepth? lolz
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
-        }
-#endif
 #endif
       //  glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
         break;
@@ -653,9 +646,6 @@ void gyVidLightSourceBeginShadowPasses(void) {
     _shadowPass = 1;
     _firstShadowPass = 1;
 
-#if GYRO_PLATFORM == GYRO_PLATFORM_iOS
- //   glGetIntegerv(GL_FRAMEBUFFER_BINDING, &iosFramebuffer);
-#endif
 
 }
 
@@ -735,13 +725,6 @@ void gyVidLightSourceBeginShadowPass(GYLightSource* const light, const GY_CUBE_M
         glalGetDirectionalLightProjectionMatrix(lightProjMatrix, light);
         glalGetDirectionalLightViewMatrix(lightViewMatrix, light);
 
-#if GYRO_PLATFORM == GYRO_PLATFORM_iOS
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glEnable(GL_DEPTH_TEST);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-#endif
 
       //  glCullFace(GL_BACK);
         //glEnable(GL_TEXTURE_2D);
@@ -846,10 +829,8 @@ void gyVidLightSourceBeginShadowPass(GYLightSource* const light, const GY_CUBE_M
       //  glCullFace(GL_FRONT);
 
   //  if(_firstShadowPass) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_iOS && GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
          glClearDepth(1.0f);
          glDepthRange(0.0f, 1.0f);
-#endif
 
 
          GYVidPipelineState pipelineState = {
@@ -899,10 +880,6 @@ void gyVidLightSourceEndShadowPasses(void) {
     glalCurLightShader = &glalLightingShader;
 
   // gyVidVertexBatchFlush();
-#if GYRO_PLATFORM == GYRO_PLATFORM_iOS
-    //glBindFramebuffer(GL_FRAMEBUFFER, iosFramebuffer);
-        glalVidBindDefaultFbo();
-#else
 
     glBindFramebuffer(GL_FRAMEBUFFER, _glalMainFbo);
     _updateLightingUBO();
@@ -911,13 +888,7 @@ void gyVidLightSourceEndShadowPasses(void) {
     gyVidResolution(&width, &height);
     glViewport(0, 0, (float)width, (float)height);
 
- #endif
     // glDrawBuffer(GL_BACK);
-#if GYRO_PLATFORM == GYRO_PLATFORM_iOS || GYRO_PLATFOMR==GYRO_PLATFORM_ANDROID
-    glDisable(GL_CULL_FACE);
-    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-#endif
     //gyVidDepthTest(0);
     //glDepthMask(GL_TRUE);
     //glEnable(GL_BLEND);

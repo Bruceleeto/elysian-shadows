@@ -7,15 +7,6 @@
 #include <ESGamma/utility/elysian_sort_sweep.hpp>
 
 #ifdef ELYSIAN_OPENCL_ACCELERATED
-#	ifdef __APPLE__
-#include <OpenCL/cl_gl_ext.h>
-#include <OpenGL/CGLDevice.h>
-#include <OpenGL/CGLCurrent.h>
-#		include <OpenCL/opencl.h>
-#	else
-    #ifdef __WIN32
-        #include <windows.h>
-    #endif
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifndef CL_TARGET_OPENCL_VERSION
@@ -26,7 +17,6 @@
 #       include <GL/glext.h>
 #		include <CL/cl.h>
 #       include <CL/cl_gl.h>
-#	endif
 #endif
  extern GLuint                       glalLightingUBO;
 namespace elysian {

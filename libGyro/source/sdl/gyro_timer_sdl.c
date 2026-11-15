@@ -5,14 +5,7 @@
  */
 
 #include <gyro_performance_api.h>
-#if GYRO_PLATFORM == GYRO_PLATFORM_RASPI
-#include <SDL2/SDL_timer.h>
-
-#elif defined(__WIN32)
-#include <sdl/SDL.h>
-#include <sdl/SDL_timer.h>
-
-#elif defined(__linux__)
+#if   defined(__linux__)
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_timer.h
 #else

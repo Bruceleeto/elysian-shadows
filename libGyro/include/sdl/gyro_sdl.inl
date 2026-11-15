@@ -8,23 +8,12 @@
 #define GYRO_SDL_H
 
 
-#if GYRO_PLATFORM == GYRO_PLATFORM_WEB
-    #include <SDL2/SDL.h>
-#else
 
-#ifdef __WIN32 // :D Mmmmmm
-#   include <windows.h>
-#   include <SDL/SDL.h>
-#endif
 
 #ifdef __linux__ // :) Sweet!
 #   include <SDL2/SDL.h>
 #endif
 
-#ifdef __APPLE__ // D: Fuck my life...
-#	include <SDL.h>
-#endif
-#endif
 
 /*
 #ifdef WIN32 Yeah, WHAT?

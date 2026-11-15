@@ -184,7 +184,6 @@ void DebugBase::writeLog(const DebugBase::SOURCE source, const int level, const 
 
     if(!_logMutex->acquire()) return;
 
-#if !defined(ANDROID) && GYRO_PLATFORM != GYRO_PLATFORM_iOS
 	fputs(buffer, _dbgFile);
     fputs(str, _dbgFile);
     fputc('\n', _dbgFile);
@@ -194,7 +193,6 @@ void DebugBase::writeLog(const DebugBase::SOURCE source, const int level, const 
 		fputc('\n', _luaDbgFile);
 		fflush(_luaDbgFile);
 	}
-#endif
 
     //Only print to standard IO if we give a shit about this kind of output
     if(level >= _level) {
@@ -253,20 +251,16 @@ DebugBase::DebugBase(void):
 	//Register debug callback with LibGyro
     gySysDebugEnable(ELYSIAN_DEBUG_LIBGYRO_SEVERITY_DEFAULT, &_gyDbgCallbacks);
 	//Register pointer to asset debug interface with AssetIO
-#if !defined(ANDROID)
 	_dbgFile = fopen(ELYSIAN_DEBUG_FILE, "w");
 	_luaDbgFile = fopen(ELYSIAN_LUA_DEBUG_FILE, "w");
-#endif
     //printf(LOG_VERBOSE, "-----Debug Initialized-----");
 
     _logMutex = new Mutex;
 }
 
 DebugBase::~DebugBase(void) {
-#if !defined(ANDROID)
 	fclose(_luaDbgFile);
 	fclose(_dbgFile);
-#endif
 }
 
 void DebugBase::initialize(void) {

@@ -156,11 +156,7 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
 
     switch(type) {
     case ENGINE_PC:
-#ifdef Q_OS_WIN
-        startCommand(_engine, _enginePathx86);
-#elif defined(Q_OS_LINUX)
-        startCommand(_engine, _enginePathx86);
-#elif defined(Q_OS_MAC)
+#if   defined(Q_OS_LINUX)
         startCommand(_engine, _enginePathx86);
 #endif
         break;
@@ -168,9 +164,7 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
         {
         //Check if we have all of the required Dreamcast settings
         if(_dcIpAddr.isNull() || _dcMacAddr.isNull()) return false;
-#ifdef Q_OS_WIN
-        startCommand(_engine, QString(ENGINE_DIALOG_DCTOOL_PATH)+QString(" -t ")+_dcIpAddr+QString(" -m ")+_dcMacAddr+QString(" -x ")+QString(ENGINE_DIALOG_DC_PATH)+QString(" -c ")+getCurrentProject()->getLocation());
-#elif defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+#if   defined(Q_OS_LINUX)
         if(_sudoPswd.isNull()) return false; //required for OSX/Linux
 
         static QProcess *echo = NULL;

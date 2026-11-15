@@ -15,16 +15,13 @@
 #include <assert.h>
 
 typedef struct _GYAudWavPayload {
-    #if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     ALsizei size, freq;
     ALenum 	format;
     ALuint buffer;
     char *data;
-#endif
 } GYAudWavPayload;
 
 void gyAudSourcePlayWav(GYAudioSource*const src, const struct GYWav* wav) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     assert(src);
     if(!wav) return;
     const GYAudWavPayload* payload = wav->_data;
@@ -40,7 +37,6 @@ void gyAudSourcePlayWav(GYAudioSource*const src, const struct GYWav* wav) {
     GY_AL_CLEAR_ERROR();
         alSourcePlay(*(ALuint*)src);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 /*
@@ -84,7 +80,6 @@ typedef struct _WAVE_Chunk {
 /*
  * Load wave file function. No need for ALUT with this
  */
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
 static int _loadWavFile(const char* filename, ALuint* buffer, ALsizei* size,
                        ALsizei* frequency, ALenum* format) {
     int success = 0;
@@ -221,14 +216,11 @@ error_post_file:
     gyFileClose(&soundFile);
     return success;
 }
-#endif
 
 int _gyAudWavAlloc(GYWav *const wav) {
     GYAudWavPayload *payload = malloc(sizeof(GYAudWavPayload));
 
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     _loadWavFile(wav->filename, &payload->buffer, &payload->size, &payload->freq, &payload->format);
-#endif
     wav->_data = payload;
     wav->bytes = payload->size;
     return 1;
@@ -238,11 +230,9 @@ int _gyAudWavAlloc(GYWav *const wav) {
 int _gyAudWavFree(GYWav *const wav) {
     GYAudWavPayload *payload = wav->_data;
     if(payload->buffer != AL_NONE) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
         GY_AL_CLEAR_ERROR();
         alDeleteBuffers(1, &payload->buffer);
         GY_AL_CHECK_ERROR();
-#endif
     }
     free(payload);
     return 1;

@@ -129,10 +129,8 @@ void SourceView::autoScrollLogic(void) {
 
 	if(_autoScrollEnabled && dragMode() == NoDrag) {
 
-#ifndef Q_OS_MAC
 		if(verticalScrollBar()->underMouse() ||
 				horizontalScrollBar()->underMouse()) return;
-#endif
 
 		static const int MAX_SCROLL_AMOUNT_PER_FRAME = 32;
 		//Widget's width/height measurements INCLUDE the scrollbar!

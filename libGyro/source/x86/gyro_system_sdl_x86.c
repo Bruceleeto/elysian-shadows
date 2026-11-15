@@ -78,7 +78,7 @@ static void _checkCPUCapabilities(void) {
 }
 
 
-#if defined(__LINUX__) || defined(__APPLE__)
+#if defined(__LINUX__)
 #include <signal.h>
 #include <execinfo.h>
 #include <stdlib.h>
@@ -89,13 +89,7 @@ void gyDebugSigInit(void);
 
 int gySysInit(void) {
   const char* platString =
-#ifdef __APPLE__
-  "OSX";
-#elif defined(WIN32)
-  "WINDOWS";
-#else
   "LINUX";
-#endif
 	_gyLog(GY_DEBUG_VERBOSE, "Initializing libGyro_x86 [%s] v%s", platString, GYRO_LIB_VERSION);
 	gyDebugSigInit();
 	_checkCPUCapabilities();
@@ -128,7 +122,7 @@ unsigned int gySysStatsRam(void) {
 }
 
 
-#if defined(__LINUX__) || defined(__APPLE__)
+#if defined(__LINUX__)
 static const char* gyDebugSigCodeToStr(int sig, int sig_code) {
 	if(sig == SIGFPE)
 		switch(sig_code) {
@@ -183,7 +177,7 @@ static void gyDebugSigHandler(int sig, siginfo_t* info, void* unused) {
 #endif
 
 void gyDebugSigInit(void) {
-#if defined(__LINUX__) || defined(__APPLE__)
+#if defined(__LINUX__)
 	struct sigaction sa, so;
 
 	/* Set up handler. */

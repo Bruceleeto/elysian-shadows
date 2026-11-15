@@ -15,10 +15,8 @@
 
 static float		_zScale		= 1.0f;
 static int			_refDist	= 1;
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
 static ALCdevice*	_alDevice	= NULL;
 static ALCcontext*	_alContext	= NULL;
-#endif
 ALenum              _alFmtStereo32  = -1;
 ALenum              _alFmtMono32    = -1;
 ALboolean           _alExtFloat32   = 0;
@@ -26,7 +24,6 @@ ALboolean           _alExtFloat32   = 0;
 //==== PUBLIC API IMPLEMENTATION =====
 
 int gyAudInit(void) {
-    #if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     GY_AL_CLEAR_ERROR();
     alGetError(); //defaults to fucking error on Windows for whatever-the-fuck reason!
     _alDevice = alcOpenDevice(NULL);                                               //Open the device
@@ -64,19 +61,16 @@ int gyAudInit(void) {
     GY_AL_CHECK_ERROR();
     _gyPop(1);
 
-#endif
     return 1;
 }
 
 int gyAudUninit(void) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     _gyLog(GY_DEBUG_VERBOSE, "GYRO_AUDIO_API: Uninitializing OpenAL!");
     GY_AL_CLEAR_ERROR();
     alcMakeContextCurrent(NULL);
     alcDestroyContext(_alContext);
     alcCloseDevice(_alDevice);
     GY_AL_CHECK_ERROR();
-#endif
     return 1;
 }
 
@@ -88,34 +82,27 @@ void gyAudSetZScale(const float scale) {
     _zScale = scale;
 }
 void glalAudSourceAlloc(GYAudioSource*const src) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     GY_AL_CLEAR_ERROR();
     alGenSources(1, (ALuint*)src);
     alSourcei(*(ALuint*)src, AL_REFERENCE_DISTANCE, _refDist);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 struct GYAudioSource* gyAudSourceCreate(void) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     ALuint* src = malloc(sizeof(ALuint));
     glalAudSourceAlloc((void*)src);
     return (GYAudioSource*)src;
-#endif
 }
 
 void gyAudSourceDestroy(struct GYAudioSource*const src) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     if(!src) return;
     GY_AL_CLEAR_ERROR();
     alDeleteSources(1, (ALuint*)src);
     GY_AL_CHECK_ERROR();
     free(src);
-#endif
 }
 
 void gyAudSourceSetfv(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attrib, const GYVector3*const vec) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     int alIndex;
     GYVector3 newVec = *vec;
 
@@ -133,11 +120,9 @@ void gyAudSourceSetfv(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB att
     GY_AL_CLEAR_ERROR();
     alSourcefv(*(ALuint*)src, alIndex, (void*)&newVec);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 void gyAudSourceSetf(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attrib, const float val) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     int alIndex;
     switch(attrib) {
     case GY_SOURCE_GAIN:
@@ -154,11 +139,9 @@ void gyAudSourceSetf(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attr
     GY_AL_CLEAR_ERROR();
     alSourcef(*(ALuint*)src, alIndex, val);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 float gyAudSourceGetf(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attrib) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     int alIndex;
     switch(attrib) {
     case GY_SOURCE_GAIN:
@@ -178,11 +161,9 @@ float gyAudSourceGetf(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB att
     alGetSourcef(*(ALuint*)src, alIndex, &value);
     GY_AL_CHECK_ERROR();
     return value;
-#endif
 }
 
 void gyAudSourceSeti(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attrib, const int val) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     int alIndex;
     switch(attrib) {
     case GY_SOURCE_LOOPING:
@@ -196,20 +177,16 @@ void gyAudSourceSeti(struct GYAudioSource*const src, const GY_SOURCE_ATTRIB attr
     GY_AL_CLEAR_ERROR();
     alSourcei(*(ALuint*)src, alIndex, val);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 void gyAudSourceStop(struct GYAudioSource*const src) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     GY_AL_CLEAR_ERROR();
     alSourceStop(*(ALuint*)src);
     alSourcei(*(ALuint*)src, AL_BUFFER, 0);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 int gyAudSourceIsPlaying(struct GYAudioSource*const src) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     ALenum state;
 #if 0
     GY_AL_CLEAR_ERROR();
@@ -222,18 +199,15 @@ int gyAudSourceIsPlaying(struct GYAudioSource*const src) {
     alGetSourcei(*(ALuint*)src, AL_SOURCE_STATE, &state);
     GY_AL_CHECK_ERROR();
     return (state == AL_PLAYING);
-#endif
 }
 
 //audio listener
 void gyAudListenerSetPos(const struct GYVector3* const pos) {
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
     GYVector3 veccy = *pos;
     veccy.z *= _zScale;
     GY_AL_CLEAR_ERROR();
     alListenerfv(AL_POSITION, (void*)&veccy);
     GY_AL_CHECK_ERROR();
-#endif
 }
 
 void gyAudListenerSetGain(const float gain) {

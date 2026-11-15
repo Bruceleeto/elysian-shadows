@@ -4,9 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
-#ifndef __WIN32
 #   define GY_THREAD_PTHREADS
-#endif
 
 #ifdef GY_THREAD_PTHREADS
 #   if defined(__linux__)
@@ -24,90 +22,16 @@
 #include <libGyro/gyro_defines.h>
 #include <assert.h>
 
-#if GYRO_PLATFORM == GYRO_PLATFORM_RASPI
-#   include <SDL2/SDL_thread.h>
-#   include <SDL2/SDL_mutex.h>
-#else
-#   ifdef __WIN32 // :D Mmmmmm
-#       include <windows.h>
-#       include <SDL/SDL_thread.h>
-#       include <SDL/SDL_mutex.h>
-#   endif
 #   ifdef __linux__ // :) Sweet!
 #       include <SDL2/SDL_thread.h>
 #       include <SDL2/SDL_mutex.h>
 #   endif
-#   ifdef __APPLE__ // D: Fuck my life...
-#       include <SDL_thread.h>
-#       include <SDL_mutex.h>
-#   endif
-#endif
 
 #ifdef GY_THREAD_PTHREADS
 #   include <pthread.h>
 
 #if defined(__linux__)
 #   include <sched.h>
-//Manually provide the pthread functionality MacOS is missing from the POSIX standard
-#elif defined(__APPLE__)
-#   include <mach/mach.h>
-#   include <sys/sysctl.h>
-#   include <mach/mach_time.h>
-#   define SYSCTL_CORE_COUNT   "machdep.cpu.core_count"
-
-typedef struct cpu_set {
-  uint32_t    count;
-} cpu_set_t;
-
-static inline void
-CPU_ZERO(cpu_set_t *cs) { cs->count = 0; }
-
-static inline void
-CPU_SET(int num, cpu_set_t *cs) { cs->count |= (1 << num); }
-
-static inline int
-CPU_ISSET(int num, cpu_set_t *cs) { return (cs->count & (1 << num)); }
-
-static int sched_getaffinity(pid_t pid, size_t cpu_size, cpu_set_t *cpu_set)
-{
-  int32_t core_count = 0;
-  size_t  len = sizeof(core_count);
-  int ret = sysctlbyname(SYSCTL_CORE_COUNT, &core_count, &len, 0, 0);
-  if (ret) {
-    _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: error while geting core count: %d\n", ret);
-    return -1;
-  }
-  cpu_set->count = 0;
-  for (int i = 0; i < core_count; i++) {
-    cpu_set->count |= (1 << i);
-  }
-
-  return 0;
-}
-
-static int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
-                           cpu_set_t *cpu_set)
-{
-    int success = 1;
-    thread_port_t mach_thread;
-    int core = 0;
-    int retVal;
-
-    for (core = 0; core < 8 * cpu_size; core++) {
-        if (CPU_ISSET(core, cpu_set)) break;
-    }
-    thread_affinity_policy_data_t policy = { core };
-    mach_thread = pthread_mach_thread_np(thread);
-    if((retVal =
-        thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY, (thread_policy_t)&policy, 1)
-        != KERN_SUCCESS))
-    {
-        _gyLog(GY_DEBUG_ERROR, "GYRO_THEAD_API: Mach thread_policy_set failed! [Error Code: %d]", retVal);
-        success = 0;
-    }
-
-    return success;
-}
 #endif
 
 #endif
@@ -239,50 +163,9 @@ static inline int _pthreadPriority(GY_THREAD_PRIORITY gyPriority, int priorityMa
     return priorityMax*scalar;
 }
 
-#   ifdef __APPLE__
-static inline int _macEnableRealtimePriority(void) {
-    struct thread_time_constraint_policy ttcpolicy;
-    kern_return_t retVal;
-
-    const double kGuaranteedAudioDutyCycle = 0.75;
-    const double kMaxAudioDutyCycle = 0.85;
-
-    // About 128 frames @44.1KHz
-    const double kTimeQuantum = 16.666;
-    // Time guaranteed each quantum.
-    const double kAudioTimeNeeded = kGuaranteedAudioDutyCycle * kTimeQuantum;
-    // Maximum time each quantum.
-    const double kMaxTimeAllowed = kMaxAudioDutyCycle * kTimeQuantum;
-
-    mach_timebase_info_data_t tb_info;
-    mach_timebase_info(&tb_info);
-
-    double ms_to_abs_time =
-          ((double)(tb_info.denom) / tb_info.numer) * 1000000;
-
-    ttcpolicy.period = kTimeQuantum * ms_to_abs_time;
-    ttcpolicy.computation = kAudioTimeNeeded * ms_to_abs_time;
-    ttcpolicy.constraint = kMaxTimeAllowed * ms_to_abs_time;
-    ttcpolicy.preemptible   = 1;
-
-
-    if((retVal = thread_policy_set(mach_thread_self(),
-                                     THREAD_TIME_CONSTRAINT_POLICY,
-                                     (thread_policy_t)&ttcpolicy,
-                                     THREAD_TIME_CONSTRAINT_POLICY_COUNT)) != KERN_SUCCESS) {
-        _gyLog(GY_DEBUG_ERROR, "GYRO_THREAD_API: Failed to enable real-time scheduling!");
-        return 0;
-    }
-
-    return 1;
-}
-#   endif
 #endif
 
 int gyThreadPriority(GY_THREAD_PRIORITY priority) {
-#ifdef __APPLE__
-    if(priority == GY_THREAD_PRIORITY_REALTIME) return _macEnableRealtimePriority();
-#endif
     int success = 1;
 
 #ifdef GY_THREAD_PTHREADS
@@ -330,9 +213,7 @@ end:
 int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
     assert(mask);
 
-#ifdef __WIN32
-    int success = 0;
-#elif defined(GY_THREAD_PTHREADS)
+#if   defined(GY_THREAD_PTHREADS)
     int success = 1;
     SDL_threadID sdlId = SDL_ThreadID();
 

@@ -751,12 +751,12 @@ tests {
 
 dreamcast {
 
-    LIBS+=-L/home/jenkins/Dreamcast/cadcdev-kallistios/lib/dreamcast \
-        -L/home/jenkins/Dreamcast/cadcdev-kallistios/addons/lib/dreamcast \
+    LIBS+=-L$${KOS_BASE}/lib/dreamcast \
+        -L$${KOS_BASE}/addons/lib/dreamcast \
         -lstdc++ \
         -lm \
         -Wl,--start-group -lkallisti -lc -lgcc -Wl,--end-group \
-        -T/home/jenkins/Dreamcast/cadcdev-kallistios/utils/ldscripts/shlelf.xc \
+        -T$${KOS_BASE}/utils/ldscripts/shlelf.xc \
         -nodefaultlibs
 
 } else {

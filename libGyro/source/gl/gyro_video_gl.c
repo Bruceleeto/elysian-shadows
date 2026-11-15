@@ -423,8 +423,7 @@ int glalVidGlewInit(void) {
 
     if(!once) {
     //God fucking damnit, Windows....
-#if GYRO_PLATFORM != GYRO_PLATFORM_ANDROID && GYRO_PLATFORM != GYRO_PLATFORM_RASPI
-#   if defined(_WIN32) || defined(__linux__)
+#   if defined(__linux__)
         _gyLog(GY_DEBUG_VERBOSE, "Initializing GLEW...");
         _gyPush();
         glewExperimental = GL_TRUE; //FUCKING GLEW CANT HANDLE GL CORE CONTEXTS WITHOUT THIS.
@@ -444,7 +443,6 @@ int glalVidGlewInit(void) {
         once = 1;
 
 #   endif
-#endif
     }
     return 1;
 }
@@ -700,9 +698,7 @@ int glalVidOglInit(const int viewWidth, const int viewHeight, const int projWidt
     glalVidViewportResize(!once, viewWidth, viewHeight);
     if(!once) once = 1;
     glClearColor(_clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w);
-#if GYRO_PLATFORM != GYRO_PLATFORM_iOS
     glViewport(0, 0, viewWidth, viewHeight);
-#endif
 
   //  glalVidBindDefaultFbo();
     return 1;

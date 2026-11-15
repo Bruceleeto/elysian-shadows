@@ -75,7 +75,7 @@ void GLMapSystemCrtp::_orphanVbo(void) {
 void GLMapSystemCrtp::_drawElements(void) {
     if(!_elements) return;
     if(_size-_lastSize == 0) return;
-#if GYRO_PLATFORM != GYRO_PLATFORM_DC && GYRO_PLATFORM != GYRO_PLATFORM_ANDROID
+#if GYRO_PLATFORM != GYRO_PLATFORM_DC
 #if 1
     GLuint* ptr = (GLuint*)glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, _lastOffset, sizeof(GLuint)*(_size-_lastSize), /*GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_FLUSH_EXPLICIT_BIT |*/ GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
     if(ptr) {

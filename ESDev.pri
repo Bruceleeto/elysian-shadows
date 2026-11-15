@@ -4,11 +4,16 @@ exists( ESDevCommandLineArgs.pri ) {
 }
 
 dreamcast {
+    # KallistiOS locations come from the environment set up by KOS's environ.sh.
+    KOS_BASE = $$(KOS_BASE)
+    KOS_PORTS = $$(KOS_PORTS)
+    isEmpty(KOS_BASE): error("KOS_BASE is not set. Source your KallistiOS environ.sh first.")
+    isEmpty(KOS_PORTS): KOS_PORTS = $${KOS_BASE}/../kos-ports
 
-    INCLUDEPATH=/home/jenkins/Dreamcast/cadcdev-kallistios/include \
-        /home/jenkins/Dreamcast/cadcdev-kos-ports/include \
-        /home/jenkins/Dreamcast/cadcdev-kallistios/kernel/arch/dreamcast/include \
-        /home/jenkins/Dreamcast/cadcdev-kallistios/addons/include
+    INCLUDEPATH = $${KOS_BASE}/include \
+        $${KOS_PORTS}/include \
+        $${KOS_BASE}/kernel/arch/dreamcast/include \
+        $${KOS_BASE}/addons/include
 
     DEFINES+=_arch_dreamcast \
         _arch_sub_pristine \

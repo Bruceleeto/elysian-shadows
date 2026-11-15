@@ -17,25 +17,14 @@ extern "C" {
 
 #include <gl/gyro_gl.h>
 
-#ifdef __APPLE__
-#   ifdef GY_CL_OPENGL_INTEROP
-#       include <OpenCL/cl_gl_ext.h>
-#       include <OpenGL/CGLDevice.h>
-#       include <OpenGL/CGLCurrent.h>
-#   endif
-#	include <OpenCL/opencl.h>
-#else
 #   define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #   ifndef CL_TARGET_OPENCL_VERSION
 #       define CL_TARGET_OPENCL_VERSION 300
 #   endif
 #   ifdef GY_CL_OPENGL_INTEROP
 #       include <CL/cl_gl.h>
-#       ifndef __WIN32
 #           include <GL/glx.h>
-#       endif
 #   endif
-#endif
 
 #ifdef GY_COMPUTE_DEBUG
 #   define GY_CL_CHECK_ERROR(s) \
@@ -121,13 +110,8 @@ static inline int _clCheckError(const cl_int statusCode, const char* file, int l
 }
 #endif
 
-#ifdef __APPLE__
-#   define GY_CL_GL_DEVICE_SHARED_CONTEXT_EXTENSION     "cl_APPLE_gl_sharing"
-#   define GY_CL_GL_PLATFORM_SHARED_CONTEXT_EXTENSION   "cl_APPLE_gl_sharing"
-#else
 #   define GY_CL_GL_DEVICE_SHARED_CONTEXT_EXTENSION     "cl_khr_gl_sharing"
 #   define GY_CL_GL_PLATFORM_SHARED_CONTEXT_EXTENSION   "cl_khr_gl_sharing"
-#endif
 
 #define GY_CL_DEVICE_GL_EVENT_EXTENSION                 "cl_khr_gl_event"
 

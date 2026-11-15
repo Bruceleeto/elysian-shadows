@@ -12,23 +12,12 @@
 #include <stdio.h>
 #include <errno.h>
 
-#if GYRO_PLATFORM == GYRO_PLATFORM_RASPI
-    #include <SDL2/SDL_net.h>
-#else
 
-#ifdef __WIN32 // :D Mmmmmm
-#   include <windows.h>
-#   include <SDL/SDL_net.h>
-#endif
 
 #ifdef __linux__ // :) Sweet!
 #   include <SDL2/SDL_net.h>
 #endif
 
-#ifdef __APPLE__ // D: Fuck my life...
-#include <SDL_net.h>
-#endif
-#endif
 
 
 
