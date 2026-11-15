@@ -20,7 +20,8 @@
 #include <QTextEdit>
 #include <QKeyEvent>
 #include <libGyro/gyro_system_api.h>
-#include <QMutex>
+#include <QRecursiveMutex>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <QQueue>
 #include <QTimer>
 #include <QFontDatabase>
@@ -55,7 +56,7 @@ bool                TkDebug::_filterEnabled[TkDebug::SOURCE_MAX][TkDebug::LOG_OF
 QVector<QString>    TkDebug::_commandHistory;
 int                 TkDebug::_commandHistoryIndex;
 bool                TkDebug::_shiftDown = false;
-QMutex*             TkDebug::_mutex = nullptr;
+QRecursiveMutex*    TkDebug::_mutex = nullptr;
 QQueue<TkDebug::LogEntry>*
                     TkDebug::_pendingQueue = nullptr;
 QString*            TkDebug::_debugLogPath = nullptr;
@@ -98,7 +99,7 @@ TkDebug::TkDebug(void) {
     _vertLayout->setContentsMargins(0, 0, 0, 0);
     _vertLayout->setSpacing(0);
 
-    _mutex = new QMutex(QMutex::Recursive);
+    _mutex = new QRecursiveMutex;
     _pendingQueue = new QQueue<LogEntry>;
 
 /*
@@ -258,7 +259,7 @@ void TkDebug::Log(int flag, QString msg, int src) {
     {
         //Don't let shit from other threads fucking touch a GUI-thread widget!!!!
         if(flag == LOG_ERROR && QThread::currentThread() == QApplication::instance()->thread())
-            ESToolkit::showStatusBarMessage(msg, Qt::darkRed);
+            ESToolkit::showStatusBarMessage(msg, Theme::errorText());
     }
 
     _postToQueue((TK_SOURCE)src, flag, msg);
@@ -442,20 +443,22 @@ void TkDebug::_processLogEntry(const LogEntry& entry) {
     _prevItem = new QTreeWidgetItem;
     _prevItem->setText(0, msg);
 
+    //Engine output keeps the theme's text colour.
     switch(src) {
     case LUA:
-        brush = QBrush(Qt::darkCyan);
+        brush = QBrush(Theme::scriptText());
         break;
     case COMMAND:
-        brush = QBrush(Qt::darkGreen);
+        brush = QBrush(Theme::commandText());
         break;
     default:
-        brush = QBrush(Qt::black);
         break;
     }
 
-    _prevItem->setForeground(0, brush);
-    _prevItem->setForeground(1, brush);
+    if(brush.style() != Qt::NoBrush) {
+        _prevItem->setForeground(0, brush);
+        _prevItem->setForeground(1, brush);
+    }
     _prevItem->setText(1, _srcEnumToStr[src]);
 
     Q_ASSERT(_curParent); //better never happen!
@@ -473,7 +476,7 @@ void TkDebug::_processLogEntry(const LogEntry& entry) {
         _pendingError = true;
 
         QTreeWidgetItem *it = _prevItem;
-        brush = QBrush(flag == Debug::LOG_ERROR? Qt::darkRed : Qt::darkYellow);
+        brush = QBrush(flag == Debug::LOG_ERROR? Theme::errorText() : Theme::warningText());
         it->setForeground(0, brush);
         it->setForeground(1, brush);
         do {

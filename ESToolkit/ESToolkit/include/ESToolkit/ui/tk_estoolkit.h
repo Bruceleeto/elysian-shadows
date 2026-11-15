@@ -201,8 +201,6 @@ private Q_SLOTS:
     void on_actionFileSaveCurrentProject_triggered();
     void on_actionFileOpenProject_triggered();
     void on_actionFileQuit_triggered();
-    void onUseParticleAccelerationChanged(bool val);
-    void onParticleAccelerationAvailableChanged(bool val);
 
     //----CONNECTED MANUALLY----
     void onAltTabShortcutTriggered(void);
@@ -264,6 +262,7 @@ private Q_SLOTS:
     void on_actionInvoke_triggered(bool checked);
     void on_actionAdvance_Frame_triggered();
     void on_actionMap_Background_toggled(bool arg1);
+    void on_actionDark_Mode_toggled(bool checked);
     void on_action480p_toggled(bool arg1);
     void on_action720p_toggled(bool arg1);
     void on_actionDynamic_toggled(bool arg1);

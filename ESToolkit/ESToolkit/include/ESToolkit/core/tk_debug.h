@@ -24,7 +24,7 @@ class QString;
 class QTreeWidgetItem;
 class QVBoxLayout;
 class QTextEdit;
-class QMutex;
+class QRecursiveMutex;
 class QTimer;
 class QMenu;
 
@@ -162,7 +162,7 @@ private:
     static QStack<bool>         _ignoredPushes;
 
     static QQueue<LogEntry>*    _pendingQueue;
-    static QMutex*              _mutex;
+    static QRecursiveMutex*     _mutex;
 
     static QString*             _debugLogPath;
 

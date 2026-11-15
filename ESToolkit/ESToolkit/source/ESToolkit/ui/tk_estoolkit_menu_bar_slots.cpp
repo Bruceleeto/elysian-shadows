@@ -4,6 +4,8 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
+#include <QDirIterator>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <QStatusBar>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -84,7 +86,7 @@ void ESToolkit::on_actionFileSaveCurrentArea_triggered() {
         showStatusBarMessage("Area saved successfully!");
 
     } else {
-        showStatusBarMessage("Error Encountered while Saving Area!", Qt::darkRed);
+        showStatusBarMessage("Error Encountered while Saving Area!", Theme::errorText());
 
     }
 
@@ -179,7 +181,6 @@ void ESToolkit::on_actionFileNewArea_triggered() {
 }
 
 void ESToolkit::on_actionEnable_OpenGL_triggered() {
-//	if(!glUtilities::glSupported()) return;
 
 return;
   //  _ui->mapView->setViewport((_ui->actionEnable_OpenGL->isChecked())? _engineGLView : new QWidget);
@@ -507,7 +508,7 @@ void ESToolkit::on_actionScreenshot_triggered(void) {
     while(QFile::exists(fileBase+QString::number(num)+QString(".png"))) ++num;
     QString filePath = fileBase+QString::number(num)+QString(".png");
 
-    if(_engineGLView->grabFrameBuffer().save(filePath)) {
+    if(_engineGLView->grabFramebuffer().save(filePath)) {
         dbgprintf("Screenshot saved [%s].", Q_CSTR(dir.absoluteFilePath(filePath)));
     } else {
         errprintf("Could not save screenshot [%s].", Q_CSTR(dir.absoluteFilePath(filePath)));
@@ -566,6 +567,11 @@ void ESToolkit::on_actionAdvance_Frame_triggered()
 {
     _engineGLView->advanceFrame();
     showStatusBarMessage("Advancing Engine by one Frame");
+}
+
+void ESToolkit::on_actionDark_Mode_toggled(bool checked)
+{
+    Theme::apply(checked? Theme::Mode::Dark : Theme::Mode::Light);
 }
 
 void ESToolkit::on_actionMap_Background_toggled(bool arg1)

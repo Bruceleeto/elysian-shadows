@@ -8,104 +8,74 @@
 #define ENGINE_GL_SCENE_WIDGET_H
 
 #include <ESToolkit/core/tk_asset_manager.h>
-#include <QGLWidget>
-#include <QMatrix4x4>
-#include <QQuaternion>
-#include <QVector2D>
+#include <QOpenGLWidget>
 #include <QTimer>
 #include <ESGamma/utility/elysian_performance_monitor.hpp>
 #include <ESToolkit/ESGamma/tk_task_monitor.h>
-//#include <QOpenGLFunctions>
-//#include <QGLFunctions>
-
-class QOpenGLDebugLogger;
-class QOpenGLDebugMessage;
 
 class MapView;
 
-//#define TK_ENGINE_GL_SCENE_DYNAMIC_UDPATE_TIME
-#define TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME   (1000.0f/60.0f)
-//#define TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME   0.0f
-
+/* The engine's OpenGL surface. It is installed as the MapView's viewport, so the
+ * MapView paints it: MapView::paintEvent() calls renderFrame() inside
+ * native painting. */
 class EngineGLSceneWidget:
-        public QGLWidget,
-       // public QOpenGLFunctions,
+        public QOpenGLWidget,
         public AssetManager
 {
     Q_OBJECT
 public:
+    explicit    EngineGLSceneWidget(QWidget* parent = nullptr);
+    virtual     ~EngineGLSceneWidget(void) override;
 
-        void        startRenderTimer(void);
-        void        advanceFrame(void);
-        void        play(void);
-        void        stop(void);
-        bool        isPlaying(void) const;
-        bool        isCameraManual(void) const;
-        void        setCameraManual(const bool val);
-        bool        isCameraManualOnPlay(void) const;
-        void        setCameraManualOnPlay(const bool val);
-        void        setMapView(MapView* view);
-        void        dumpPerfMonitor(void);
-        bool        isEngineValid(void) const;
-        void        setEngineValid(bool val);
+    //Creates the GL context if it doesn't exist yet. Returns false if that failed.
+    bool        ensureContext(void);
+    void        startRenderTimer(void);
+    //Updates and renders one engine frame into this widget's framebuffer.
+    void        renderFrame(void);
 
-        explicit    EngineGLSceneWidget(QWidget* parent = nullptr);
-        virtual     ~EngineGLSceneWidget(void);
+    void        advanceFrame(void);
+    void        play(void);
+    void        stop(void);
+    bool        isPlaying(void) const;
+    bool        isCameraManual(void) const;
+    void        setCameraManual(const bool val);
+    bool        isCameraManualOnPlay(void) const;
+    void        setCameraManualOnPlay(const bool val);
+    void        setMapView(MapView* view);
+    void        dumpPerfMonitor(void);
+    bool        isEngineValid(void) const;
+    void        setEngineValid(bool val);
 
-        static void makeCurrentContext(void);
-        static void doneCurrentContext(void);
-
+    static void makeCurrentContext(void);
+    static void doneCurrentContext(void);
 
 protected:
-    QBasicTimer             _timer;
-    unsigned                _width              = 0;
-    unsigned                _height             = 0;
+    virtual void    initializeGL(void) override;
+    virtual void    paintGL(void) override;
+
+private Q_SLOTS:
+    void            _onUpdateTimer(void);
+
+Q_SIGNALS:
+    void            engineUpdated(void);
+
+private:
+    void            _resizeIfNeeded(void);
+
+    int                     _width              = 0;
+    int                     _height             = 0;
     bool                    _advanceFrame       = false;
     bool                    _cameraManual       = true;
     bool                    _cameraManualOnPlay = false;
     MapView*                _mapView            = nullptr;
     bool                    _initialized        = false;
-    QOpenGLDebugLogger*     _glLogger           = nullptr;
-    bool                    _wasGLError         = false;
     bool                    _engineValid        = true;
-    QString                 _prevGLError;
     TaskMonitor             _engineTask;
     elysian::PerformanceMonitor _monitor = elysian::PerformanceMonitor("Engine Frame");
     QTimer                  _engineUpdateTimer;
 
     static EngineGLSceneWidget* _self;
-
-
-    //reimplemented from QGLWidget
-    virtual void    initializeGL(void) override;
-    virtual void    resizeGL(int w, int h) override;
-    virtual void    paintGL(void) override;
-
- //   virtual QSize   sizeHint(void) const override;
-  //  virtual void    showEvent(QShowEvent *event) override;
-
-protected Q_SLOTS:
-
-    void    _updateEngine(void);
-    void    _onContextAboutToBeDestroyed(void);
-    void    _onResized();
-
-    void    _onGLMessageLogged(const QOpenGLDebugMessage& message);
-
-Q_SIGNALS:
-
-    void            engineUpdated(void);
-
-private Q_SLOTS:
-
-
 };
-
-
-
-
-
-
 
 
 // ===== INLINEZ =====
@@ -126,5 +96,4 @@ inline void EngineGLSceneWidget::setEngineValid(bool val) {
     }
 }
 
-
-#endif // TK_MAP_SYSTEM_H
+#endif // ENGINE_GL_SCENE_WIDGET_H

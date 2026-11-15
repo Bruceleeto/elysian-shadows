@@ -25,6 +25,8 @@ typedef TkEntity Entity;
 class TkComponent;
 typedef TkComponent Component;
 struct MapChange;
+//Signals pass QVector<MapChange>, which moc needs complete.
+Q_MOC_INCLUDE(<ESToolkit/AssetIO/tk_area.h>)
 
 
 class Project: public PropertyStackModel, public TreeNode, public AssetManager, public elysian::System {

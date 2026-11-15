@@ -35,7 +35,7 @@ void DestView<T>::_sceneSelectionAddRect(const QRectF &rect) {
     _selectingPath.addRect(rect);
     _selectedPath = _selectingPath;
     _tileSelectionRects.push_back(rect);
-    scene()->setSelectionArea(_selectingPath, Qt::IntersectsItemBoundingRect);
+    scene()->setSelectionArea(_selectingPath, Qt::ReplaceSelection, Qt::IntersectsItemBoundingRect);
 }
 template<typename T>
 void DestView<T>::_sceneSelectionUpdateLastRect(const QRectF &rect) {
@@ -43,7 +43,7 @@ void DestView<T>::_sceneSelectionUpdateLastRect(const QRectF &rect) {
     _selectingPath.addRect(rect);
     if(_tileSelectionRects.size() >= 1) _tileSelectionRects.last() = rect;
     else _tileSelectionRects.push_back(rect);
-    scene()->setSelectionArea(_selectingPath, Qt::IntersectsItemBoundingRect);
+    scene()->setSelectionArea(_selectingPath, Qt::ReplaceSelection, Qt::IntersectsItemBoundingRect);
 
 }
 
@@ -276,7 +276,7 @@ void DestView<T>::mousePressEvent(QMouseEvent *event) {
         //event->ignore();
         //return;
     }
-    else if(event->button() == Qt::MidButton) {
+    else if(event->button() == Qt::MiddleButton) {
         _startPan();
         //QMouseEvent fooledya(event->type(), event->pos(), Qt::LeftButton, Qt::LeftButton, event->modifiers());
         //setDragMode(ScrollHandDrag);
@@ -312,7 +312,7 @@ void DestView<T>::mouseReleaseEvent(QMouseEvent *event) {
         _endRegionSelection(event);
     }
 
-    if(event->button() == Qt::MidButton) {
+    if(event->button() == Qt::MiddleButton) {
         _endPan();
         //QMouseEvent fooledya(event->type(), event->pos(), Qt::LeftButton, Qt::LeftButton, event->modifiers());
         //QGraphicsView::mouseReleaseEvent(&fooledya);
@@ -322,7 +322,7 @@ void DestView<T>::mouseReleaseEvent(QMouseEvent *event) {
         _endRegionFill(event);
     }
 
-    if((event->button() == Qt::LeftButton || event->button() == Qt::MidButton) && _panning) {
+    if((event->button() == Qt::LeftButton || event->button() == Qt::MiddleButton) && _panning) {
         _endPan();
     }
 
@@ -373,7 +373,8 @@ void DestView<T>::keyReleaseEvent (QKeyEvent *event)  {
 template<typename T>
 void DestView<T>::mouseMoveEvent(QMouseEvent *event) {
     if(event) {
-        _lastMouseEvent = QMouseEvent(*event);
+        //The auto-scroll timer replays _lastMouseEvent itself; don't free it mid-dispatch.
+        if(event != _lastMouseEvent.get()) _lastMouseEvent.reset(event->clone());
     //_curMousePos = _mapViewPosToScenePos(event->pos());
         _viewMousePos = event->pos();
     //_sceneMousePos = _mapViewPosToScenePos(_viewMousePos);

@@ -5,6 +5,7 @@
  */
 
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
+#include <QESTkUtils/ui/tk_theme.h>
 
 #include <ESGamma/crtp/elysian_debug.hpp>
 #include <QESTkUtils/model/tk_lua_table_stack_model.h>
@@ -427,23 +428,23 @@ QMenu* TkEntity::createContextMenu(void) {
 }
 
 void TkEntity::setTreeWidgetItemState(const TreeItemState state) {
-    QBrush brush;
+    //Active items have no foreground of their own, so they follow the theme's text colour.
+    QVariant foreground;
 
     switch(state) {
     case TreeItemState::Active:
-        brush = QBrush(Qt::black);
         break;
     case TreeItemState::Inactive:
-        brush = QBrush(Qt::gray);
+        foreground = QBrush(Theme::dimText());
         break;
     case TreeItemState::Invalid:
-        brush = QBrush(Qt::red);
+        foreground = QBrush(Theme::errorText());
         break;
     }
 
-    setForeground(0, brush);
+    setData(0, Qt::ForegroundRole, foreground);
     for(int i = 0; i < childCount(); ++i) {
-        static_cast<Entity*>(child(0))->setForeground(0, brush);
+        child(i)->setData(0, Qt::ForegroundRole, foreground);
     }
 
 }

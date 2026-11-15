@@ -8,12 +8,12 @@
 #include "ui_tk_estoolkit.h"
 #include "ui_tk_sheet_dock_widget.h"
 
+#include <QESTkUtils/ui/tk_theme.h>
 #include <QSettings>
 #include <QStatusBar>
 #include <QMessageBox>
 #include <QToolButton>
 
-#include <QESTkUtils/tk_gl_utilities.h>
 #include <ESToolkit/ui/dock/asset/tk_asset_dock_widget.h>
 #include <ESToolkit/ui/dock//tk_entity_dock_widget.h>
 #include <ESToolkit/ui/dock/tk_layer_dock_widget.h>
@@ -119,7 +119,6 @@ ESToolkit::ESToolkit(QWidget *parent):
     _ui->mainToolBar->addAction(_ui->actionActionSecret);
 
     //Enable/Disable hardware acceleration based on OGL poll
-    _ui->actionEnable_OpenGL->setEnabled(glUtilities::glSupported());
 
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
     setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
@@ -185,7 +184,8 @@ ESToolkit::ESToolkit(QWidget *parent):
     Area::staticConstructor(_ui->mapView);
     _sheetDockWidget->SetSheetScene(Level::_sheetViewScene);
     _sheetDockWidget->getSourceView()->setEnabled(false);
-    _ui->mapView->setViewportUpdateMode(QGraphicsView::SmartViewportUpdate);
+    //The viewport is an OpenGL surface the engine redraws in full every frame.
+    _ui->mapView->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     //_ui->mapView->setScene(Area::editorScene);
     _ui->mapView->setFocus();
     setFocusPolicy(Qt::ClickFocus);
@@ -228,7 +228,6 @@ ESToolkit::ESToolkit(QWidget *parent):
     connect(altTabAction, SIGNAL(triggered()), this, SLOT(onAltTabShortcutTriggered()));
     addAction(altTabAction);
 
-    //glUtilities::printGLSupport();
     ReadSettings();
 
     setMouseTracking(true);
@@ -343,7 +342,7 @@ void ESToolkit::toggleProjectActions(bool enabled)
     _ui->actionActionSecret->setEnabled(enabled);
     _ui->actionCut->setEnabled(enabled);
     _ui->actionPaste->setEnabled(enabled);
-    _ui->actionEnable_OpenGL->setEnabled(enabled && glUtilities::glSupported());
+    _ui->actionEnable_OpenGL->setEnabled(enabled);
     _ui->actionInvoke->setEnabled(enabled);
     _ui->actionToggle_AutoScroll->setEnabled(enabled);
     _ui->actionHorizontal_SheetView->setEnabled(enabled);
@@ -386,6 +385,7 @@ void ESToolkit::WriteSettings()
     settings.setValue("sheetViewHorizontal", _ui->actionHorizontal_SheetView->isChecked());
     settings.setValue("engineResolution", _engineDialog->getResolution());
     settings.setValue("renderMapBackground", TkMapSystem::getRenderMapBackground());
+    settings.setValue("darkMode", Theme::isDark());
     settings.setValue("mapViewRes", _mapViewRes);
     settings.setValue("showHiddenEntities", _entityDockWidget->getTreeWidget()->getShowHidden());
     settings.setValue("shadowPassEnabled", _engineParams.shadowPassEnabled);
@@ -463,6 +463,7 @@ void ESToolkit::ReadSettings()
     bool autoScrollEnabled      = settings.value("autoScrollEnabled", true).toBool();
     _engineDialog->setResolution(settings.value("engineResolution", 0).toUInt());
     bool renderMapBg            = settings.value("renderMapBackground", false).toBool();
+    bool darkMode               = settings.value("darkMode", true).toBool();
     unsigned x                  = settings.value("engineStartPosX", 0).toUInt();
     unsigned y                  = settings.value("engineStartPosY", 0).toUInt();
     bool showHiddenEntities     = settings.value("showHiddenEntities", false).toBool();
@@ -502,6 +503,8 @@ void ESToolkit::ReadSettings()
     on_actionToggle_AutoScroll_triggered();
     _ui->actionHorizontal_SheetView->setChecked(sheetViewHorizontal);
     _ui->actionMap_Background->setChecked(renderMapBg);
+    _ui->actionDark_Mode->setChecked(darkMode);
+    on_actionDark_Mode_toggled(darkMode);
     on_actionHorizontal_SheetView_triggered(sheetViewHorizontal);
     _ui->actionHidden_Entities->setChecked(showHiddenEntities);
     _ui->actionShadows->setChecked(shadowPassEnabled);
@@ -776,23 +779,20 @@ bool ESToolkit::openProjectDir(const QString dir) {
         QDir::setCurrent(dir);
     }
 
-        auto* viewport = _engineGLView = new EngineGLSceneWidget(this);
+    _engineGLView = new EngineGLSceneWidget(this);
+    connect(_engineGLView, SIGNAL(engineUpdated()), _ui->mapView, SLOT(onEngineUpdated()));
+    _engineGLView->setMouseTracking(true);
+    _engineGLView->setMapView(_ui->mapView);
+    _ui->mapView->setViewport(_engineGLView);
 
-        connect(viewport, SIGNAL(engineUpdated()), _ui->mapView, SLOT(onEngineUpdated()));
-        connect(_assets.getEngine()->getRenderSystem(), SIGNAL(useParticleAccelerationChanged(bool)), this, SLOT(onUseParticleAccelerationChanged(bool)));
-        connect(_assets.getEngine()->getRenderSystem(), SIGNAL(particleAccelerationAvailableChanged(bool)), this, SLOT(onParticleAccelerationAvailableChanged(bool)));
-        viewport->setMouseTracking(true);
-        _engineGLView->setMapView(_ui->mapView);
-        _engineGLView->makeCurrent();
-        _engineGLView->update();
-        _engineGLView->show();
-        _engineGLView->updateGL();
-        _ui->mapView->setViewport(viewport);
-
+    if(!_engineGLView->ensureContext()) {
+        QMessageBox::critical(this, "Error!", "Could not create an OpenGL 4.1 core context for the map view.");
+        return false;
+    }
 
     GYInputInitParams inputParams = {
         static_cast<QObject*>(_ui->mapView),
-        static_cast<QGLWidget*>(_engineGLView),
+        static_cast<QOpenGLWidget*>(_engineGLView),
         10
     };
 
@@ -800,8 +800,6 @@ bool ESToolkit::openProjectDir(const QString dir) {
 
     _engineGLView->makeCurrent();
     success &= glalVidGlewInit();
-
-    _engineGLView->updateGL();
 
     _engineGLView->startRenderTimer();
 
@@ -1232,15 +1230,7 @@ void ESToolkit::showStatusBarMessage(QString message, QColor color) {
 }
 
 void ESToolkit::showStatusBarMessage(QString message) {
-    ESToolkit::showStatusBarMessage(message, Qt::black);
-}
-
-void ESToolkit::onUseParticleAccelerationChanged(bool val) {
-    _ui->actionParticles->setChecked(val);
-}
-
-void ESToolkit::onParticleAccelerationAvailableChanged(bool val) {
-    _ui->actionParticles->setEnabled(val);
+    ESToolkit::showStatusBarMessage(message, _instance? _instance->palette().color(QPalette::WindowText) : QColor());
 }
 
 QString ESToolkit::messageBoxQuestion(QString message, LuaVariant buttons, QString informativeText) {

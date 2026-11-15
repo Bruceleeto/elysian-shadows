@@ -7,6 +7,7 @@
 #include <QMouseEvent>
 #include <QDebug>
 #include <QMenu>
+#include <QPainter>
 #include <QPainterPath>
 #include <QScrollBar>
 
@@ -510,7 +511,19 @@ void MapView::mousePressEvent(QMouseEvent *event) {
 }
 
 void MapView::_forceSceneUpdate(void) {
-    //if(viewport()) static_cast<EngineGLSceneWidget*>(viewport())->updateGL();
+    if(viewport()) viewport()->update();
+}
+
+//The engine renders the map itself. The view has no scene of its own (QGraphicsView would
+//skip painting entirely), so render here; a scene, if one is ever set, is drawn over it.
+void MapView::paintEvent(QPaintEvent* event) {
+    if(auto* engineView = qobject_cast<EngineGLSceneWidget*>(viewport())) {
+        QPainter painter(viewport());
+        painter.beginNativePainting();
+        engineView->renderFrame();
+        painter.endNativePainting();
+    }
+    if(scene()) DestView<TileEntry>::paintEvent(event);
 }
 
 inline bool MapView::_entityIsSelected(const TkEntity * const entity) const {
@@ -767,7 +780,8 @@ void MapView::dropEvent(QDropEvent *event) {
 
 void MapView::_registerDropEventCallbacks(void) {
     auto createBasicEntity = [&](QString filename, QDropEvent* event) {
-        QPointF scenePos = _mapViewPosToScenePos(event->pos(), scenePos);
+        QPointF scenePos;
+        _mapViewPosToScenePos(event->position().toPoint(), scenePos);
         Entity* entity = new Entity;
         entity->setName(filename.split(".")[0]);
         entity->getTransform().setPosX(scenePos.x());
@@ -789,7 +803,8 @@ void MapView::_registerDropEventCallbacks(void) {
             }
 
             Entity* entity = new Entity(prefabEntity);
-            QPointF scenePos = _mapViewPosToScenePos(event->pos(), scenePos);
+            QPointF scenePos;
+            _mapViewPosToScenePos(event->position().toPoint(), scenePos);
 
             elysian::TileEntry tileEntries[ELYSIAN_AREA_MAP_LAYERS];
            int highestElev = 0;

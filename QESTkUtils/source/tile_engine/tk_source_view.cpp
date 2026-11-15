@@ -168,7 +168,7 @@ void SourceView::autoScrollLogic(void) {
 			didMove = true;
 		}
 
-		if(didMove) mouseMoveEvent(&_lastMouseEvent);
+		if(didMove && _lastMouseEvent) mouseMoveEvent(_lastMouseEvent.get());
 	}
 }
 
@@ -190,8 +190,8 @@ void SourceView::mousePressEvent(QMouseEvent *event){
 		_startRegionSelection(event);
         _endPan();
 	}
-	else if(event->button() == Qt::MidButton) {
-		QMouseEvent fooledya(event->type(), event->pos(), Qt::LeftButton, Qt::LeftButton, event->modifiers());
+	else if(event->button() == Qt::MiddleButton) {
+		QMouseEvent fooledya(event->type(), event->position(), event->scenePosition(), event->globalPosition(), Qt::LeftButton, Qt::LeftButton, event->modifiers(), event->pointingDevice());
         //_startPan();
         setDragMode(ScrollHandDrag);
         _startRegionSelection(event);
@@ -229,7 +229,8 @@ void SourceView::_endPan(void) {
 }
 
 void SourceView::mouseMoveEvent(QMouseEvent *event) {
-	_lastMouseEvent = QMouseEvent(*event);
+	//The auto-scroll timer replays _lastMouseEvent itself; don't free it mid-dispatch.
+	if(event != _lastMouseEvent.get()) _lastMouseEvent.reset(event->clone());
 	_viewMousePos = event->pos();
 	_updateSceneMousePos();
 
@@ -248,8 +249,8 @@ void SourceView::mouseReleaseEvent(QMouseEvent *event) {
 		  Staggered selection will reest! --FG */
 		if(!(event->modifiers() &= Qt::ControlModifier)) Q_EMIT releaseFocus();
 	}
-	else if(event->button() == Qt::MidButton) {
-		QMouseEvent fooledya(event->type(), event->pos(), Qt::LeftButton, Qt::LeftButton, event->modifiers());
+	else if(event->button() == Qt::MiddleButton) {
+		QMouseEvent fooledya(event->type(), event->position(), event->scenePosition(), event->globalPosition(), Qt::LeftButton, Qt::LeftButton, event->modifiers(), event->pointingDevice());
 		QGraphicsView::mouseReleaseEvent(&fooledya);
 	} else QGraphicsView::mousePressEvent(event);
 
@@ -338,13 +339,13 @@ void SourceView::_sceneSelectionAddRect(const QRectF &rect) {
 	_selectingPath = _selectedPath;
 	_selectingPath.addRect(rect);
 	_selectedPath = _selectingPath;
-	scene()->setSelectionArea(_selectingPath, Qt::IntersectsItemBoundingRect);
+	scene()->setSelectionArea(_selectingPath, Qt::ReplaceSelection, Qt::IntersectsItemBoundingRect);
 }
 
 void SourceView::_sceneSelectionUpdateLastRect(const QRectF &rect) {
 	_selectingPath = _selectedPath;
 	_selectingPath.addRect(rect);
-	scene()->setSelectionArea(_selectingPath, Qt::IntersectsItemBoundingRect);
+	scene()->setSelectionArea(_selectingPath, Qt::ReplaceSelection, Qt::IntersectsItemBoundingRect);
 
 }
 

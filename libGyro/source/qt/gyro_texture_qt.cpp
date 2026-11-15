@@ -11,108 +11,61 @@
 #include <libGyro/gyro_texture_api.h>
 #include <libGyro/gyro_system_api.h>
 #include <gl/gyro_gl.h>
-#include <QGLWidget>
-//#include <QOpenGLWidget>
+#include <QOpenGLWidget>
 #include <libGyro/gyro_input_api.h>
-#include <QHash>
 #include <QImage>
-#include <QDebug>
-#include <cassert>
-
 
 extern GYInputInitParams    _initParams;
-//static QHash<GLuint, QOpenGLTexture*> _qTextures;
 //glalDefaultFbo() lives in gyro_input_qt.cpp: it needs <QOpenGLContext>, which is incompatible with GLEW.
 
+static bool _isPowerOfTwo(const int dimension) {
+    return dimension > 0 && (dimension & (dimension - 1)) == 0;
+}
+
 int _gyVidTexAlloc(GYTexture *const tex) {
-    auto checkPowerOfTwo = [](const unsigned dimension) {
-        return (dimension == 2 || dimension == 4 || dimension == 8 || dimension == 16 ||
-                dimension == 32 || dimension == 64 || dimension == 128 || dimension == 256 ||
-                dimension == 512 || dimension == 1024);
-    };
-
-
-     //static_cast<QOpenGLWidget*>(_initParams.glWidget)->makeCurrent();
-
     QString fileName = tex->filename;
+    if(fileName.startsWith("/assets/")) fileName.remove(0, (int)strlen("/assets/"));
 
-    QStringList list = fileName.split("/");
-    if(list.size() >= 2) {
-        if(list[1] == "assets") {
-            //qDebug() << fileName;
-            fileName = fileName.remove("/assets/");
-            //qDebug() << fileName;
-        }
-    }
     QImage qimg(fileName);
+    if(qimg.isNull()) {
+        tex->_data = nullptr;
+        return 0;
+    }
+
+    tex->bpp    = qimg.depth();
+    //Uploaded top row first: the engine's texture coordinates expect the image unflipped.
+    qimg        = qimg.convertToFormat(QImage::Format_RGBA8888);
     tex->width  = qimg.width();
     tex->height = qimg.height();
 
-    if(qimg.isNull()) {
-        //_gyLog(GY_DEBUG_ERROR,"SHIT HAS REESTED TO ALL FUCK! <%d, %d>", tex->width, tex->height);
-        tex->_data = nullptr;
-//         static_cast<QOpenGLWidget*>(_initParams.glWidget)->doneCurrent();
-        return 0; //fuck.
-    }
-
-        tex->bpp    = qimg.depth();
-      //  _gyLog(GY_DEBUG_WARNING, "BIT DEPTH BITCH - %d", tex->bpp);
-#if 1
-        qimg = qimg.mirrored();
-
-         qimg = QGLWidget::convertToGLFormat(qimg);
-#endif
-
-
-    tex->width  = qimg.width();
-    tex->height = qimg.height();
-
-    if(qimg.isNull()) {
-      //  _gyLog(GY_DEBUG_ERROR,"SHIT HAS REESTED TO ALL FUCK!");
-        tex->_data = nullptr;
-//         static_cast<QOpenGLWidget*>(_initParams.glWidget)->doneCurrent();
-        return 0; //fuck.
-    }
-
-    if(!checkPowerOfTwo(tex->width) || !checkPowerOfTwo(tex->height)) {
+    if(!_isPowerOfTwo(tex->width) || !_isPowerOfTwo(tex->height)) {
         _gyLog(GY_DEBUG_WARNING, "%s - <%d, %d> dimensions are not powers of two (suboptimal performance on some platforms).", tex->filename, tex->width, tex->height);
     }
 
-    static_cast<QGLWidget*>(_initParams.glWidget)->makeCurrent();
+    static_cast<QOpenGLWidget*>(_initParams.glWidget)->makeCurrent();
 
-#if 0
-     tex->_data = (void*)(uintptr_t) static_cast<QGLWidget*>(_initParams.glWidget)->bindTexture(qimg, GL_TEXTURE_2D, GL_RGBA, QGLContext::NoBindOption);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-#else
     GLuint texId = 0;
     glGenTextures(1, &texId);
     tex->_data = (void*)(uintptr_t)texId;
     glBindTexture(GL_TEXTURE_2D, texId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, qimg.width(), qimg.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, qimg.bits());
-    glEnable(GL_TEXTURE_2D);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, qimg.width(), qimg.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, qimg.constBits());
     glGenerateMipmap(GL_TEXTURE_2D);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-#endif
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    return (int)(uintptr_t)tex->_data;
+    return (int)texId;
 }
 
 int _gyVidTexFree(GYTexture *const tex) {
-    if(!tex) return 0;
-    static_cast<QGLWidget*>(_initParams.glWidget)->deleteTexture((GLuint)(uintptr_t)tex->_data);
-   // QOpenGLTexture* qgl = _qTextures[(GLuint)(uintptr_t)tex->_data];
-   // qgl->destroy();
-   // _qTextures.remove((GLuint)(uintptr_t)tex->_data);
-    //delete qgl;
-   // long int id = reinterpret_cast<long int>(tex->_data);
-    //((QOpenGLContext*)QOpenGLContext::currentContext())->deleteTexture(id);
+    if(!tex || !tex->_data) return 0;
+    static_cast<QOpenGLWidget*>(_initParams.glWidget)->makeCurrent();
+    const GLuint texId = (GLuint)(uintptr_t)tex->_data;
+    glDeleteTextures(1, &texId);
+    tex->_data = nullptr;
     return 1;
 }
 

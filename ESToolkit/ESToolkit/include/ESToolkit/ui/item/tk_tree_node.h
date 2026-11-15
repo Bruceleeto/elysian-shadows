@@ -8,6 +8,7 @@
 #define TREENODE_H
 
 #include <QTreeWidgetItem>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <ESToolkit/core/tk_selectable.h>
 
 
@@ -53,8 +54,8 @@ inline auto TreeNode::getTreeWidgetItemType(void) -> ITEM_TYPE { return ITEM_SUB
 inline QAbstractItemModel* TreeNode::getModel(void) const { return nullptr; }
 inline auto TreeNode::getType(void) const -> TYPE { return EMPTY; }
 inline void TreeNode::setValid(const bool val) {
-    QBrush brush = val? QBrush(Qt::black) : QBrush(Qt::darkRed);
-    setForeground(0, brush);
+    //Valid nodes have no foreground of their own, so they follow the theme's text colour.
+    setData(0, Qt::ForegroundRole, val? QVariant() : QVariant(QBrush(Theme::errorText())));
 }
 inline bool TreeNode::hasChanged(void) const { return _hasChanged; }
 inline bool TreeNode::isValid(void) const { return _valid; }

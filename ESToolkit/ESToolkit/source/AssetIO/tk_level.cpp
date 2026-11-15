@@ -4,6 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
+#include <QRegularExpression>
 #include <QStringList>
 #include <QDir>
 #include <QMessageBox>
@@ -198,7 +199,7 @@ void TkLevel::setNodeName(const QString str) {
 	bool renamed = false;
 	QString name = str;
     QString oldName = getNodeName();
-	name.replace(QRegExp("[\\\\/ ]"), QString("_"));
+	name.replace(QRegularExpression("[\\\\/ ]"), QString("_"));
 
     if(getNodeName() == name) return;
 

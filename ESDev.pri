@@ -59,12 +59,11 @@ dreamcast {
     DEFINES += GYRO_PLATFORM=GYRO_PLATFORM_Qt
 }
 
-QMAKE_CXXFLAGS += -std=c++1z
-#QMAKE_CFLAGS += -std=c11
+#Qt 6 requires C++17.
+CONFIG += c++17
 
 !dreamcast {
-QMAKE_CXXFLAGS += -Wno-unknown-warning-option #-fno-rtti -fno-exceptions
-    CONFIG += c++14
+    QMAKE_CXXFLAGS += -Wno-unknown-warning-option
 }
 
 CONFIG -= exceptions rtti

@@ -77,7 +77,7 @@ bool PropertyItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
         if(mouseEvent->button() == Qt::RightButton) {
             auto* menu = getContextMenu(propItem);
-            if(menu) menu->exec(mouseEvent->globalPos());
+            if(menu) menu->exec(mouseEvent->globalPosition().toPoint());
             return true;
         }
 

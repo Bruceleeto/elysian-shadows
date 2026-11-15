@@ -204,6 +204,7 @@
     <addaction name="separator"/>
     <addaction name="menuDynamic_Lighting"/>
     <addaction name="separator"/>
+    <addaction name="actionDark_Mode"/>
     <addaction name="actionToggle_Fullscreen"/>
    </widget>
    <widget class="QMenu" name="menuLevel">
@@ -1132,6 +1133,14 @@
   <action name="actionClear">
    <property name="text">
     <string>Clear</string>
+   </property>
+  </action>
+  <action name="actionDark_Mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dark Mode</string>
    </property>
   </action>
   <action name="actionMap_Background">

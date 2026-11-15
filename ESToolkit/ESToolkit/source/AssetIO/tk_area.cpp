@@ -4,6 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
+#include <QRegularExpression>
 #include <new>
 #include <QDir>
 #include <QMessageBox>
@@ -120,7 +121,7 @@ void Area::setNodeName(const QString str) {
     bool _renamed = false;
     QString oldName = getNodeName();
     QString name = str;
-    name.replace(QRegExp("[\\\\/ ]"), QString("_"));
+    name.replace(QRegularExpression("[\\\\/ ]"), QString("_"));
 
     if(getNodeName() == name) return;
 
@@ -741,7 +742,6 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
 
                                     if(isValid) {
                                         if(isPlaying) {
-                                            option.palette.setColor(QPalette::Text, QColor(Qt::black));
                                             musicTrackDelegate->setToolTip("Track is active.");
                                         } else {
                                             musicTrackDelegate->setToolTip("Track is inactive.");

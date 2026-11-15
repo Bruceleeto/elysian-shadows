@@ -114,6 +114,7 @@ public:
     virtual void timerEvent(QTimerEvent *event) override;
     virtual void keyPressEvent(QKeyEvent *event) override;
     virtual void scrollContentsBy(int dx, int dy) override;
+    virtual void paintEvent(QPaintEvent* event) override;
 
     //DestView virtual implementation
     virtual void createSelectionItemGroup(void) override;

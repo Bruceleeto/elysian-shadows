@@ -5,6 +5,7 @@
  */
 
 #include <QProcess>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <QListWidget>
 #include <QPushButton>
 #include <QLabel>
@@ -101,7 +102,7 @@ EngineDialog::EngineDialog(QWidget *parent): QMainWindow(parent), _currentType(E
     connect(_engine, SIGNAL(readyReadStandardError()), this, SLOT(onReadyReadStandardError()));
     connect(_engine, SIGNAL(finished(int)), this, SLOT(OnFinish(int)));
     connect(_engine, SIGNAL(stateChanged(QProcess::ProcessState)), this, SLOT(onStateChange(QProcess::ProcessState)));
-	connect(_engine, SIGNAL(error(QProcess::ProcessError)), this, SLOT(OnError(QProcess::ProcessError)));
+	connect(_engine, SIGNAL(errorOccurred(QProcess::ProcessError)), this, SLOT(OnError(QProcess::ProcessError)));
 
     //Load from file through settings dialog
     //_enginePathx86 = ENGINE_DIALOG_DEFAULT_PATH;
@@ -259,7 +260,7 @@ void EngineDialog::onReadyReadStandardError(void) {
     for(int i = 0; i < stringList.size(); ++i) {
         QListWidgetItem *item = new QListWidgetItem();
         item->setText(stringList[i]);
-        item->setForeground(QBrush(Qt::darkRed));
+        item->setForeground(QBrush(Theme::errorText()));
         item->setSelected(true);
         _log->addItem(item);
         //qWarning() << stringList[i];

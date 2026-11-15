@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QTimer>
 #include <QMouseEvent>
+#include <memory>
 #include <libGyro/gyro_matrix_api.h>
 
 class SourceView : public QGraphicsView {
@@ -37,10 +38,8 @@ protected:
 
     bool _autoScrollEnabled             = true;
     QTimer *_autoScrollTimer            = new QTimer(this);
-    QMouseEvent _lastMouseEvent         = QMouseEvent(QEvent::None, QPoint(),
-                                              Qt::LeftButton,
-                                              Qt::RightButton,
-                                              Qt::ControlModifier);
+    //Replayed by the auto-scroll timer so the selection follows the scroll.
+    std::unique_ptr<QMouseEvent> _lastMouseEvent;
 
     QLabel *_sceneMousePosLabel         = new QLabel;
     QLabel *_sceneMouseTileLabel        = new QLabel;

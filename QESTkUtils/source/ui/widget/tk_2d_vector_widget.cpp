@@ -53,10 +53,10 @@ void Vector2DWidget::paintEvent(QPaintEvent *event) {
     painter.begin(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QPen pen(Qt::black);
+    QPen pen(palette().color(QPalette::Text));
     pen.setWidth(2);
 
-    painter.setBrush(Qt::white);
+    painter.setBrush(palette().color(QPalette::Base));
     painter.setPen(pen);
 
 

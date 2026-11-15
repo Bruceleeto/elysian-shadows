@@ -13,7 +13,7 @@ namespace OOLUA {
     bool push<QVariant>(lua_State* state, QVariant const& variant) {
 
         QString str = variant.toString();
-        if(variant.canConvert(QMetaType::QString)) {
+        if(variant.canConvert(QMetaType(QMetaType::QString))) {
             if(str == "true") {
                 lua_pushboolean(state, true);
                 return true;

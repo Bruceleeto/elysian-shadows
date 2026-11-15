@@ -53,7 +53,7 @@ public:
 protected:
 
     void                        _updateLuaAttribMask(void);
-    virtual QVariant            retrieveData(const QString& mimetype, QVariant::Type preferredType) const override;
+    virtual QVariant            retrieveData(const QString& mimetype, QMetaType preferredType) const override;
 
 
 private:

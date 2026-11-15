@@ -97,7 +97,7 @@ bool DynamicContentPropertyItemDelegate::editorEvent(QEvent *event, QAbstractIte
 
                 if(mousePos.x() >= x && mousePos.x() <= x+w && mousePos.y() >= y && mousePos.y() <= y+h) {
                     if(!it.toolTip.isEmpty()) {
-                        QToolTip::showText(mouseEvent->globalPos(), it.toolTip, nullptr, QRect(), _toolTipTime);
+                        QToolTip::showText(mouseEvent->globalPosition().toPoint(), it.toolTip, nullptr, QRect(), _toolTipTime);
                         showedToolTip = true;
                     }
                     if(mouseEvent->button() == Qt::LeftButton) {
@@ -112,7 +112,7 @@ bool DynamicContentPropertyItemDelegate::editorEvent(QEvent *event, QAbstractIte
             }
         }
         if(!showedToolTip && !_toolTip.isEmpty()) {
-            QToolTip::showText(mouseEvent->globalPos(), _toolTip, nullptr, QRect(), _toolTipTime);
+            QToolTip::showText(mouseEvent->globalPosition().toPoint(), _toolTip, nullptr, QRect(), _toolTipTime);
         }
     } else if(event->type() == QEvent::KeyPress) {
         if(_deleteCallback) {

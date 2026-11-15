@@ -25,10 +25,6 @@ HistoryDockWidget::HistoryDockWidget(QWidget *parent) :
     font.setPointSize(10);
     m_undoView->setFont(font);
 
-    QPalette p = m_undoView->palette();
-    p.setColor(QPalette::Highlight, QColor(225,202,251));
-    p.setColor(QPalette::HighlightedText, Qt::black);
-    m_undoView->setPalette(p);
 
     setWidget(m_undoView);
 }

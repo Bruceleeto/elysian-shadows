@@ -17,7 +17,7 @@ ParticleAttribPreviewDockWidget::ParticleAttribPreviewDockWidget(QWidget *parent
     setObjectName("particlePreviewDockWidget");
     setWindowTitle("Particle Preview");
     auto layout = new QHBoxLayout;
-    layout->setMargin(0);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
     layout->addWidget(_vectorWidget);
     layout->addWidget(_treeView);
@@ -25,10 +25,6 @@ ParticleAttribPreviewDockWidget::ParticleAttribPreviewDockWidget(QWidget *parent
     widget->setLayout(layout);
     setWidget(widget);
 
-    QPalette p = _treeView->palette();
-    p.setColor(QPalette::Highlight, QColor(225,202,251));
-    p.setColor(QPalette::HighlightedText, Qt::black);
-    _treeView->setPalette(p);
 
 
 

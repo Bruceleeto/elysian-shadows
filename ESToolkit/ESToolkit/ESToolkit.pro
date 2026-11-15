@@ -14,7 +14,7 @@ dreamcast {
 }
 
 !dreamcast {
-    QT += sql gui opengl network help charts
+    QT += sql gui widgets opengl openglwidgets network help charts
     CONFIG += console
     tests {
         DEFINES += ESTK_UNIT_TESTS
@@ -31,9 +31,6 @@ dreamcast {
 }
 
 QMAKE_CXXFLAGS += -Wno-empty-body
-# Some engine types are over-aligned (e.g. TkArea via 32-byte aligned GYMatrix4 members);
-# make operator new honor their alignment even though we build as C++14.
-!dreamcast: QMAKE_CXXFLAGS += -faligned-new
 
 
 DEPENDPATH += 	../../AssetIO/include \
@@ -310,7 +307,8 @@ SOURCES += \
         ../../QESTkUtils/source/ui/delegate/tk_plain_text_edit_property_item_delegate.cpp \
         ../../QESTkUtils/source/ui/delegate/tk_slider_property_item_delegate.cpp \
         ../../QESTkUtils/source/ui/widget/tk_pie_chart_widget.cpp \
-        ../../QESTkUtils/source/ui/widget/tk_line_chart.cpp
+        ../../QESTkUtils/source/ui/widget/tk_line_chart.cpp \
+        ../../QESTkUtils/source/ui/tk_theme.cpp
 
 } else {
         SOURCES += ../../ESGamma/source/system/main.cpp
@@ -620,7 +618,6 @@ HEADERS += \
         ../../QESTkUtils/include/QESTkUtils/model/tk_property_stack_model.h \
         ../../QESTkUtils/include/QESTkUtils/model/tk_property_standard_item.h \
         ../../QESTkUtils/include/QESTkUtils/model/tk_rows_joiner_proxy_model.h \
-        ../../QESTkUtils/include/QESTkUtils/tk_gl_utilities.h \
         ../../QESTkUtils/include/QESTkUtils/tk_menu_stack.h \
         ../../QESTkUtils/include/QESTkUtils/tile_engine/tk_tile_graphics_item_impl.h \
         ../../QESTkUtils/include/QESTkUtils/tile_engine/tk_dest_view_impl.h \
@@ -642,6 +639,7 @@ HEADERS += \
         ../../QESTkUtils/include/QESTkUtils/ui/delegate/tk_plain_text_edit_property_item_delegate.h \
         ../../QESTkUtils/include/QESTkUtils/ui/widget/tk_pie_chart_widget.h \
         ../../QESTkUtils/include/QESTkUtils/ui/widget/tk_line_chart.h \
+        ../../QESTkUtils/include/QESTkUtils/ui/tk_theme.h \
         ../../QESTkUtils/include/QESTkUtils/ui/delegate/tk_slider_property_item_delegate.h
 }
 

@@ -31,7 +31,6 @@
 #include <ESToolkit/sheet_manager/tk_sheet_manager_dest_tile_graphics_item.h>
 #include <ESToolkit/core/tk_project.h>
 #include <ESToolkit/ui/item/tk_checkered_alpha_rect_graphics_item.h>
-#include <QESTkUtils/tk_gl_utilities.h>
 
 //=====STATIC=====
 QPixmap SheetManager::reorientPixmap(const QPixmap pixmap, const GY_RECT_TEX_ORIENT orient) {
@@ -186,10 +185,6 @@ SheetManager::SheetManager(QWidget *parent):
 	connect(_destLevelMenu, SIGNAL(triggered(QAction*)), this, SLOT(changeActiveLevel(QAction*)));
 	connect(getSMAssets(), SIGNAL(onCurrentSelectionChanged(SheetManagerTileSelection*const)), this, SLOT(onSelectionChanged(SheetManagerTileSelection*const)));
 	connect(_ui->_srcView, SIGNAL(releaseFocus()), this, SLOT(focusDestView()));
-
-	if(!glUtilities::glSupported()) {
-		_ui->actionEnable_OpenGL->setDisabled(true);
-	}
 
 	_ui->_srcView->setFocus();
 }
@@ -583,11 +578,7 @@ void SheetManager::on_actionSave_triggered() {
 }
 
 void SheetManager::on_actionEnable_OpenGL_triggered() {
-	if(!glUtilities::glSupported()) return;
-
-	//Cheating and only allowing GL for dest view, because of how shittily Qt handles QGLWidgets without
-	//a current scene. It artifacts out the ass and looks terrible.
-	//_ui->_srcView->setViewport((_ui->actionEnable_OpenGL->isChecked())? new QGLWidget : new QWidget);
+	//Only the dest view gets a GL viewport; the source view artifacts without a current scene.
     _ui->_destView->setViewport((_ui->actionEnable_OpenGL->isChecked())? new QOpenGLWidget : new QWidget);
 	if(_ui->_srcView->scene()) _ui->_srcView->scene()->update();
 	//if(_ui->_destView->scene()) _ui->_destView->scene()->update();

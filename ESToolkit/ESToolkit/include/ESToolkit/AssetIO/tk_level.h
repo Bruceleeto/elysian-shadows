@@ -39,6 +39,8 @@ class CheckeredAlphaRectGraphicsItem;
 class TkArea;
 typedef TkArea Area;
 struct MapChange;
+//Signals pass QVector<MapChange>, which moc needs complete.
+Q_MOC_INCLUDE(<ESToolkit/AssetIO/tk_area.h>)
 
 class TkLevel: public PropertyStackModel, public elysian::LevelBase, public TreeNode, public AssetManager, public elysian::System {
     friend class Assets;

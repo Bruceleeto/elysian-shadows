@@ -46,7 +46,6 @@ void TkDialogOption::initializeDelegates(void) {
                             option.palette.setColor(QPalette::Text, QColor(Qt::red));
                             luaFieldItem->setToolTip("Invalid screen index!");
                         } else {
-                            option.palette.setColor(QPalette::Text, QColor(Qt::black));
                             luaFieldItem->setToolTip("");
                         }
                     }
@@ -82,7 +81,6 @@ void TkDialogText::initializeDelegates(void) {
                             option.palette.setColor(QPalette::Text, QColor(Qt::red));
                             luaFieldItem->setToolTip("Invalid screen index!");
                         } else {
-                            option.palette.setColor(QPalette::Text, QColor(Qt::black));
                             luaFieldItem->setToolTip("");
                         }
                     }

@@ -39,17 +39,10 @@ namespace OOLUA {
 }
 
 //Overload this bitch for  Lua QVariant-indexed hashtables
-inline uint qHash( const QVariant & variant ) {
-    switch(variant.type()) {
-    case QMetaType::Bool:
-        return qHash(variant.toBool());
-    default:
-        if(variant.canConvert(QMetaType::Float)) {
-            return qHash(variant.toFloat());
-        } else {
-            return qHash(variant.toString());
-        }
-    }
+inline size_t qHash(const QVariant& variant, size_t seed = 0) {
+    if(variant.typeId() == QMetaType::Bool) return qHash(variant.toBool(), seed);
+    if(variant.canConvert(QMetaType(QMetaType::Float))) return qHash(variant.toFloat(), seed);
+    return qHash(variant.toString(), seed);
 }
 
 

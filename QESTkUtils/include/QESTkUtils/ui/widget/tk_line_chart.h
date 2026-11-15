@@ -205,6 +205,11 @@ private:
     QVector<AbstractFrameUpdatedValueSeries*>   _series;
     QChart*                                     _chart = nullptr;
 
+    void        _applyTheme(void);
+
+protected:
+    virtual void changeEvent(QEvent* event) override;
+
 public Q_SLOTS:
     void        onEngineUpdated(void);
 

@@ -117,6 +117,20 @@ void gyVidSetDefaultShaderProgram(void) {
     gyVidSetCurrentShaderProgram(glalLightingShader.program);
 }
 
+void glalShadersRestoreState(void) {
+    if(glalCurShaderProg) glUseProgram(glalCurShaderProg->program);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, glalLightingUBO);
+
+    glActiveTexture(glalTextureMapTexUnits[GLAL_DIRECTIONAL_SHADOW_MAP]);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, glalDirectionalShadowMapTextureArray);
+    glActiveTexture(glalTextureMapTexUnits[GLAL_SPOT_SHADOW_MAP]);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, glalSpotShadowMapTextureArray);
+    glActiveTexture(glalTextureMapTexUnits[GLAL_POINT_SHADOW_CUBE_MAP]);
+    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, glalPointShadowCubeMapTextureArray);
+    glActiveTexture(glalTextureMapTexUnits[GLAL_TEMP_MAP]);
+}
+
 void gyVidDbgTexMappingEnabled(const int enabled) { glalTextureMappingEnabled = enabled; }
 void gyVidDbgNormalMappingEnabled(const int enabled) { glalNormalMappingEnabled = enabled; }
 void gyVidDbgSpeculaMappingEnabled(const int enabled) { glalSpecularMappingEnabled = enabled; }

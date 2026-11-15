@@ -46,10 +46,12 @@ bool TkSkeleton::validate(QString &str) const {
     return success;
 }
 void TkSkeleton::setAttrib(std::shared_ptr<SkeletonAttrib> attrib) {
-    _attrib->disconnect(this);
+    if(_attrib) _attrib->disconnect(this);
 
-    connect(attrib.get(), SIGNAL(atlasChanged()), this, SLOT(onAtlasChanged()));
-    connect(attrib.get(), SIGNAL(jsonChanged()), this, SLOT(onJsonChanged()));
+    if(attrib) {
+        connect(attrib.get(), SIGNAL(atlasChanged()), this, SLOT(onAtlasChanged()));
+        connect(attrib.get(), SIGNAL(jsonChanged()), this, SLOT(onJsonChanged()));
+    }
 
     elysian::SkeletonBase::setAttrib(attrib);
 }
@@ -130,7 +132,7 @@ void TkSkeletonAttrib::initializeDelegates(void) {
         TkSkeletonAttrib* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
             if(attrib) {
                 option.text = attrib->getAtlasPath();
-                option.palette.setColor(QPalette::Text, attrib->isAtlasValid()? QColor(Qt::black) : QColor(Qt::red));
+                if(!attrib->isAtlasValid()) option.palette.setColor(QPalette::Text, QColor(Qt::red));
             }
         }
     });
@@ -152,7 +154,7 @@ void TkSkeletonAttrib::initializeDelegates(void) {
             TkSkeletonAttrib* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
             if(attrib) {
                 option.text = attrib->getJsonPath();
-                option.palette.setColor(QPalette::Text, attrib->isJsonValid()? QColor(Qt::black) : QColor(Qt::red));
+                if(!attrib->isJsonValid()) option.palette.setColor(QPalette::Text, QColor(Qt::red));
             }
         }
     });
@@ -423,7 +425,7 @@ void TkAnimationTrack::initializeDelegates(void) {
                 TkSkeletonAttrib* attrib = attribItem->getVariant().getValue<TkSkeletonAttrib*>();
                 if(attrib) {
                     option.text = item->data(Qt::EditRole).toString();
-                    option.palette.setColor(QPalette::Text, attrib->findSpineAnimation(Q_CSTR(option.text))? QColor(Qt::black) : QColor(Qt::red));
+                    if(!attrib->findSpineAnimation(Q_CSTR(option.text))) option.palette.setColor(QPalette::Text, QColor(Qt::red));
                 }
             }
         }

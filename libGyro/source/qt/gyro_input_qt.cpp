@@ -9,7 +9,7 @@
 #include <QKeyEvent>
 #include <QGraphicsView>
 #include <libGyro/gyro_system_api.h>
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <QOpenGLContext>
 
 extern "C" int  _sdlControllerInit(const struct GYInputInitParams*const  params);
@@ -24,7 +24,7 @@ static bool         _mouseScrollWheelChangedThisFrame                   = false;
 
 uint32_t glalDefaultFbo(void) {
     if(!_initParams.glWidget) return 0;
-    return static_cast<QGLWidget*>(_initParams.glWidget)->context()->contextHandle()->defaultFramebufferObject();
+    return static_cast<QOpenGLWidget*>(_initParams.glWidget)->defaultFramebufferObject();
 }
 
 static inline GY_KEY _TranslateKeyFromQt(const int keyCode) {

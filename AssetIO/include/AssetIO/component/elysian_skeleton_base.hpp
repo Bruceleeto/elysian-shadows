@@ -174,6 +174,8 @@ namespace elysian {
                         SkeletonBase(Entity& entity, const SkeletonBase* other=nullptr);
                         SkeletonBase(void) = default;
                         ~SkeletonBase(void);
+                        //Copies go through the prefab constructor or operator=, which rebuild the Spine state.
+                        SkeletonBase(const SkeletonBase&) = delete;
         SkeletonBase&   operator= (const SkeletonBase& other);
 
        //reimplemented from component

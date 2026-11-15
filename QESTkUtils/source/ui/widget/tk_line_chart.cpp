@@ -5,6 +5,8 @@
  */
 
 #include <QESTkUtils/ui/widget/tk_line_chart.h>
+#include <QESTkUtils/ui/tk_theme.h>
+#include <QEvent>
 
 
 namespace QESTkUtils {
@@ -18,6 +20,16 @@ LineChartView::LineChartView(void):
     _chart->setTitle("Performance Profiler");
     setChart(_chart);
     setRenderHint(QPainter::Antialiasing);
+    _applyTheme();
+}
+
+void LineChartView::_applyTheme(void) {
+    _chart->setTheme(Theme::isDark()? QChart::ChartThemeDark : QChart::ChartThemeLight);
+}
+
+void LineChartView::changeEvent(QEvent* event) {
+    if(event->type() == QEvent::PaletteChange) _applyTheme();
+    QChartView::changeEvent(event);
 }
 
 unsigned LineChartView::addSeries(AbstractFrameUpdatedValueSeries* series) {

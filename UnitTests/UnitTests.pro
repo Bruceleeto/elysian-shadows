@@ -8,7 +8,7 @@
 
 QT       += widgets network opengl sql testlib
 
-CONFIG += c++14
+CONFIG += c++17
 CONFIG -= exceptions rtti
 
 

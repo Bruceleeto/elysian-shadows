@@ -17,10 +17,8 @@
 #include <ESGamma/crtp/elysian_debug.hpp>
 #include <QDebug>
 #include <QRectF>
-#include <QGLFormat>
 #include <initializer_list>
 #include <iostream>
-#include <QOpenGLContext>
 #include <QCommandLineParser>
 #include <ESGamma/system/elysian_engine.hpp>
 #include <libGyro/gyro_file_api.h>
@@ -28,7 +26,6 @@
 #include <QMessageBox>
 #include <QSpacerItem>
 #include <QGridLayout>
-#include <QDebug>
 #include <QPushButton>
 #include <memory>
 #include <AssetIO/crtp/elysian_lua_variant.hpp>
@@ -99,36 +96,18 @@ static GYAppCbRet Init(int argc, char **argv) {
    // auto& [x, y, z] = loltuple;
 
    //
-    QApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); //WITHOUT THIS OSX SHITS ITSELF WHEN FUCKING WITH WIDGET SIZING/LOCATIONS
-    QApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
+    //The engine needs an OpenGL 4.1 core context with a depth buffer.
     QSurfaceFormat fmt;
-    fmt.setVersion( 4, 1 );
-   // fmt.setStencilBufferSize(0);
+    fmt.setVersion(4, 1);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
     fmt.setDepthBufferSize(24);
+    fmt.setStencilBufferSize(0);
     fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    fmt.setProfile( QSurfaceFormat::CoreProfile ); // Requires >=Qt-4.8.0
-    //fmt.setOption(QSurfaceFormat::DebugContext);
-    // Set the default GL format to OpenGL 3.2 Core
     QSurfaceFormat::setDefaultFormat(fmt);
 
-    //The editor's GL view has only been tested on Qt's X11 backend (XWayland on
-    //Wayland sessions), so use it unless the user asked for something else.
+    //libGyro loads GL entry points through GLEW, which resolves them via GLX, so run
+    //on Qt's X11 backend (XWayland on Wayland sessions) unless told otherwise.
     if(qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "xcb");
-
-    QGLFormat glfmt;
-    //glfmt.setStencil(false);
-    //glfmt.setDirectRendering(true);
-
-    glfmt.setSwapInterval(0);
-    glfmt.setDepthBufferSize(24);
-    glfmt.setStencilBufferSize(0);
-    glfmt.setDoubleBuffer(true);
-    glfmt.setAlphaBufferSize(0);
-    glfmt.setStereo(false);
-    glfmt.setVersion(4, 1);
-    glfmt.setProfile( QGLFormat::CoreProfile ); // Requires >=Qt-4.8.0
-    // Set the default GL format to OpenGL 3.2 Coåre
-    QGLFormat::setDefaultFormat(glfmt);
 
     QApplication a(argc, argv);
 

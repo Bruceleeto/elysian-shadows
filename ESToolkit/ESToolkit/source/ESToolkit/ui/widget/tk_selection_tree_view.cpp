@@ -17,10 +17,6 @@ SelectionTreeView::SelectionTreeView(void) {
     f.setPointSize(10);
     setFont(f);
 
-    QPalette p = palette();
-    p.setColor(QPalette::Highlight, QColor(225,202,251));
-    p.setColor(QPalette::HighlightedText, Qt::black);
-    setPalette(p);
     setIndentation(9);
     setAlternatingRowColors(true);
     setMouseTracking(true);

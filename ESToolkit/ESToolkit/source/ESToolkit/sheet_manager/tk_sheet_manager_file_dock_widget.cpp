@@ -26,10 +26,6 @@ SheetManagerFileDockWidget::SheetManagerFileDockWidget(QWidget *parent) :
     m_fileModel->setNameFilterDisables(false);
 
     // configure m_fileTreeView (FileDockWidget)
-    QPalette p = ui->m_fileTreeView->palette();
-    p.setColor(QPalette::Highlight, QColor(225,202,251));
-    p.setColor(QPalette::HighlightedText, Qt::black);
-    ui->m_fileTreeView->setPalette(p);
     ui->m_fileTreeView->setModel(m_fileModel);
     ui->m_fileTreeView->setRootIndex(idx);
     ui->m_fileTreeView->setColumnWidth(0, 10);

@@ -24,7 +24,7 @@ We're opening up the full *Elysian Shadows* codebase — engine, toolkit, and th
 Before you dive in, know what you're getting:
 
 - **No assets.** No art, music, maps, or game scripts are included — this is code only.
-- **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 5.15. The only supported targets are Linux (Debian/Ubuntu) and the Sega Dreamcast; the Dreamcast build hasn't been fixed up yet. Windows, macOS, iOS and Android support has been removed.
+- **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 6 (6.2 or newer). The only supported targets are Linux (Debian/Ubuntu) and the Sega Dreamcast; the Dreamcast build hasn't been fixed up yet. Windows, macOS, iOS and Android support has been removed.
 - **It could use some love.** Expect rough edges, dead code, and the occasional colorful comment.
 
 ## What's inside
@@ -44,15 +44,15 @@ Third-party libraries (OOLua, the Spine runtime, the Dreamcast SDK bits under `l
 
 ## Building
 
-ESToolkit builds with qmake and Qt 5. Linux is the tested platform.
+ESToolkit builds with qmake and Qt 6. Linux is the tested platform.
 
 ### 1. Install dependencies
 
 On Debian or Ubuntu:
 
 ```sh
-sudo apt install build-essential qtbase5-dev qt5-qmake libqt5opengl5-dev liblua5.2-dev \
-    libqt5charts5-dev qttools5-dev libglew-dev libglu1-mesa-dev \
+sudo apt install build-essential qt6-base-dev qt6-base-dev-tools qmake6 liblua5.2-dev \
+    qt6-charts-dev qt6-tools-dev libglew-dev libglu1-mesa-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
     zlib1g-dev
 ```
@@ -63,11 +63,9 @@ From the repository root:
 
 ```sh
 mkdir -p build && cd build
-qmake ../ESDev.pro
+qmake6 ../ESDev.pro
 make -j$(nproc)
 ```
-
-If `qmake` on your system is Qt 6, use the Qt 5 one instead (for example `/usr/lib/qt5/bin/qmake` on Debian/Ubuntu).
 
 The toolkit ends up at `build/executable/ESToolkit`. All build output stays in `build/`, so to start over just delete that folder.
 

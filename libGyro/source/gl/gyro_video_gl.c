@@ -246,6 +246,16 @@ void gyVidPipelineInvalidate(void) {
     _glState.texture = NULL;
 }
 
+void glalVidRestoreState(void) {
+    glalShadersRestoreState();
+    glClearColor(_clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_STENCIL_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+    gyVidPipelineInvalidate();
+}
+
 int _glIsLightShaderActive(void) {
     return glalCurShaderProg->program == glalLightingShader.program->program ||
             glalCurShaderProg->program == glalShadowMapShader.program->program;

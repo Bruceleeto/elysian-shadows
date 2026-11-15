@@ -5,6 +5,7 @@
  */
 
 #include <QESTkUtils/model/tk_lua_table_stack_model.h>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <ESToolkit/AssetIO/tk_lua_table_proxy.h>
 #include <QVariant>
 #include <ESToolkit/AssetIO/tk_area.h>
@@ -242,8 +243,8 @@ void LuaTableTableFieldData::insertTableFieldItem(LuaVariant key) {
     }
 
     if(!_parentRef.isNil() && (*_parentRef[valueItem->getKey()] == valueItem->getVariant())) {
-        labelItem->setData(QVariant(QColor(Qt::darkGreen)), Qt::ForegroundRole);
-        valueItem->setData(QVariant(QColor(Qt::darkGreen)), Qt::ForegroundRole);
+        labelItem->setData(QVariant(Theme::commandText()), Qt::ForegroundRole);
+        valueItem->setData(QVariant(Theme::commandText()), Qt::ForegroundRole);
     }
 
     items.push_back(labelItem);

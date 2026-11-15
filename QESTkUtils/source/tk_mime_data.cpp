@@ -24,7 +24,7 @@ TkMimeData::~TkMimeData(void) {
     }
 }
 
-QVariant TkMimeData::retrieveData(const QString& mimeType, QVariant::Type /*preferredType*/) const {
+QVariant TkMimeData::retrieveData(const QString& mimeType, QMetaType /*preferredType*/) const {
     if(mimeType == "text/plain") {
         return QString(LuaManager::callGlobalFunction<const char*>("serialize", nullptr, _variant));
     }

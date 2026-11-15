@@ -293,9 +293,16 @@ namespace elysian {
 
 
     template<bool is_const_iterator=true>
-    class const_noconst_iterator : public std::iterator<std::forward_iterator_tag, LuaVariantBase>, public LuaManager {
+    class const_noconst_iterator : public LuaManager {
         friend class const_noconst_iterator<true>;
         friend class LuaVariantBase;
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type        = LuaVariantBase;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = LuaVariantBase*;
+        using reference         = LuaVariantBase&;
+    private:
 
         typedef typename std::conditional<is_const_iterator, const LuaVariantBase*, LuaVariantBase*>::type DataStructurePointerType;
         typedef typename std::conditional<is_const_iterator, const LuaVariantBase&, LuaVariantBase&>::type ValueReferenceType;

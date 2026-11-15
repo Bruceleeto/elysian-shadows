@@ -145,6 +145,9 @@ int  glalVidDefaultFbo(void);
 void glalOrphanStreamingVbo(void);
 
 void gyVidPipelineInvalidate(void);
+/* Re-establishes the GL state libGyro sets once and expects to persist between frames.
+ * Call it before rendering when something else (such as Qt's QPainter) shares the context. */
+void glalVidRestoreState(void);
 
 static inline float glalOrientNormalMapZFactor(const GY_RECT_TEX_ORIENT orient) {
     switch(orient) {

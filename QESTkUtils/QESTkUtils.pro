@@ -37,6 +37,7 @@ SOURCES += \
     source/ui/delegate/tk_slider_property_item_delegate.cpp \
     source/ui/delegate/tk_spinbox_property_item_delegate.cpp \
     source/ui/widget/tk_2d_vector_widget.cpp \
+    source/ui/tk_theme.cpp \
     source/ui/widget/tk_documentation_browser.cpp \
     source/ui/widget/tk_pie_chart_view.cpp \
     source/tk_lua_mime_drop_manager.cpp \
@@ -70,9 +71,9 @@ HEADERS += \
     include/ui/delegate/tk_slider_property_item_delegate.h \
     include/ui/delegate/tk_spinbox_property_item_delegate.h \
     include/ui/widget/tk_2d_vector_widget.h \
+    include/ui/tk_theme.h \
     include/ui/widget/tk_documentation_browser.h \
     include/ui/widget/tk_pie_chart_view.h \
-    include/tk_gl_utilities.h \
     include/tk_lua_mime_drop_manager.h \
     include/tk_lua_qt_utils.h \
     include/tk_menu_stack.h \

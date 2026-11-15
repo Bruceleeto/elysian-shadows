@@ -63,7 +63,7 @@ void EntitySelectable::addEntity(const EntityEntry entry) {
     _entities.push_back(entry);
     //insertSourceModel(entry->getModel());
 
-    _tableRef[_entities.size()] = entry.entity;
+    _tableRef[(int)_entities.size()] = entry.entity;
 
 #if 0
     lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, _luaTableRef);

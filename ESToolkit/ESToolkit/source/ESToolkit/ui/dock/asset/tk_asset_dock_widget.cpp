@@ -5,6 +5,7 @@
  */
 
 #include <QCloseEvent>
+#include <QESTkUtils/ui/tk_theme.h>
 #include <QFileSystemModel>
 #include <ESToolkit/ui/dock/asset/tk_asset_dock_widget.h>
 #include <ESGamma/system/elysian_audio_system.hpp>
@@ -378,11 +379,11 @@ QVariant CustomAssetFileType::data(const QModelIndex& index, int role) {
     if(role == Qt::ForegroundRole) {
         switch(_fontState) {
         case FONT_INACTIVE:
-            return QVariant(QColor(Qt::gray));
+            return QVariant(Theme::dimText());
         case FONT_ACTIVE:
-            return QVariant(QColor(Qt::black));
+            return QVariant();
         case FONT_INVALID:
-            return QVariant(QColor(Qt::darkRed));
+            return QVariant(Theme::errorText());
         }
     }
     else if(role == Qt::DisplayRole && index.column() == 2 && !_typeName.isNull()) return _typeName;
@@ -558,7 +559,7 @@ QVariant WavAssetFileType::data(const QModelIndex &index, int role) {
 
     switch(role) {
     case Qt::ForegroundRole:
-        return QVariant(QColor(gyAudWavRefCount(Q_CSTR(_assetRelativePath))? Qt::black : Qt::gray));
+        return gyAudWavRefCount(Q_CSTR(_assetRelativePath))? QVariant() : QVariant(Theme::dimText());
     case Qt::ToolTipRole:
         return QString("Reference Count: %1").arg(gyAudWavRefCount(Q_CSTR(_assetRelativePath)));
     default:

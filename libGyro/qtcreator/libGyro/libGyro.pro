@@ -1,6 +1,6 @@
 #include(../../../ESDev.pri)
 TEMPLATE = lib
-QT += opengl
+QT += opengl openglwidgets
 CONFIG += staticlib console
 CONFIG -= app_bundle
 #QMAKE_CFLAGS += -std=c99

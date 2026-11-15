@@ -10,51 +10,126 @@
 #include <gl/gyro_video_gl.h>
 #include <ESGamma/system/elysian_engine.hpp>
 #include <ESGamma/crtp/elysian_timer_system.hpp>
-#include <ESGamma/system/elysian_light_system.hpp>
-#include <QMessageBox>
-
-#include <QOpenGLDebugLogger>
-#include <QOpenGLDebugMessage>
-#include <ESToolkit/ui/tk_estoolkit.h>
-
-#include <QMouseEvent>
-#include <spine/spine.h>
-#include <QOpenGLContext>
 #include <ESToolkit/ui/widget/tk_map_view.h>
+#include <QOpenGLContext>
+#include <QMessageBox>
 
 EngineGLSceneWidget* EngineGLSceneWidget::_self = nullptr;
 
 void EngineGLSceneWidget::makeCurrentContext(void) {
-    if(_self && QGLContext::currentContext() != _self->context()) {
-
+    if(_self && _self->context() && QOpenGLContext::currentContext() != _self->context()) {
         _self->makeCurrent();
-       //     glalVidOglInit(_self->_width, _self->_height, _self->_width, _self->_height);
     }
 }
 
 void EngineGLSceneWidget::doneCurrentContext(void) {
-    if(_self && QGLContext::currentContext() == _self->context()) _self->doneCurrent();
+    if(_self && _self->context() && QOpenGLContext::currentContext() == _self->context()) {
+        _self->doneCurrent();
+    }
 }
 
 EngineGLSceneWidget::EngineGLSceneWidget(QWidget *parent):
-    QGLWidget(parent),
+    QOpenGLWidget(parent),
     _engineTask("ESGamma")
 {
-    //setMouseTracking(true);
     assert(!_self);
-            _self = this;
-            setAttribute(Qt::WA_NativeWindow);
-            format().setDoubleBuffer(true);
-            //setAutoBufferSwap(true);
+    _self = this;
 
-    connect(this, SIGNAL(engineUpdated()), getAssets(), SIGNAL(engineUpdated()));
-    connect(&_engineUpdateTimer, SIGNAL(timeout()), this, SLOT(_updateEngine()));
+    connect(this, &EngineGLSceneWidget::engineUpdated, getAssets(), &Assets::engineUpdated);
+    connect(&_engineUpdateTimer, &QTimer::timeout, this, &EngineGLSceneWidget::_onUpdateTimer);
 
-    //Render at ~60fps. A 0ms timer (the old no-vsync path) re-renders back-to-back
-    //on the UI thread and starves input, leaving the editor unresponsive.
+    //Render at ~60fps. A 0ms timer re-renders back-to-back on the UI thread and
+    //starves input, leaving the editor unresponsive.
     _engineUpdateTimer.setInterval(16);
 }
 
+EngineGLSceneWidget::~EngineGLSceneWidget(void) {
+    if(_self == this) _self = nullptr;
+}
+
+bool EngineGLSceneWidget::ensureContext(void) {
+    //QOpenGLWidget only creates its context when it is first painted or grabbed.
+    //The engine needs it before then (GLEW, shaders, textures), so grab once to force it.
+    if(!context()) grabFramebuffer();
+    return context() && context()->isValid();
+}
+
+void EngineGLSceneWidget::initializeGL(void) {
+    DbgEvent event("EngineGLSceneWidget::initializeGL()");
+    if(getAssets()->getEngine()) getAssets()->getEngine()->getCameraSys()->initializeProjMatrix();
+}
+
+void EngineGLSceneWidget::startRenderTimer(void) {
+    makeCurrent();
+    _resizeIfNeeded();
+    _initialized = true;
+    _engineUpdateTimer.start();
+    update();
+}
+
+void EngineGLSceneWidget::_onUpdateTimer(void) {
+    //Schedules a repaint of the map view, which renders the engine (see MapView::paintEvent()).
+    update();
+}
+
+void EngineGLSceneWidget::_resizeIfNeeded(void) {
+    if(!_engineValid) return;
+
+    const int w = width();
+    const int h = height();
+    if(w == _width && h == _height) return;
+
+    const qreal dpr = devicePixelRatioF();
+    _engineValid = glalVidOglInit((int)(w*dpr), (int)(h*dpr), w, h);
+    _width  = w;
+    _height = h;
+
+    if(!_engineValid) {
+        QMessageBox::critical(nullptr, "Error!", "The libGyro Video API back-end (OpenGL) failed to initialize properly! Something is FUNDAMENTALLY fucked. Don't blame me, blame OpenGL.");
+        return;
+    }
+
+    if(getAssets()->getEngine()) getAssets()->getEngine()->getCameraSys()->initializeProjMatrix();
+}
+
+void EngineGLSceneWidget::paintGL(void) {
+    //Only reached when the widget is painted on its own (e.g. grabFramebuffer());
+    //as the MapView's viewport it is painted through MapView::paintEvent().
+    renderFrame();
+}
+
+void EngineGLSceneWidget::renderFrame(void) {
+    if(!getCurrentArea() || !_initialized || !_engineValid) return;
+
+    _resizeIfNeeded();
+    if(!_engineValid) return;
+
+    //Qt's painter draws the view's items with this same context between frames.
+    glalVidRestoreState();
+
+    auto* engine = getAssets()->getEngine();
+    engine->getTimerSys()->pushTaskMonitor(&_engineTask);
+
+    _monitor.start();
+    engine->processInput();
+    engine->update();
+    engine->render();
+    _monitor.stop();
+
+    if(_advanceFrame) {
+        _advanceFrame = false;
+        engine->setEngineState(elysian::System::ENGINE_ESTK_STOP);
+    }
+
+    auto* camera = engine->getCameraSys();
+    camera->setFollowEnabled(!_cameraManual);
+    camera->setDynamic(!_cameraManual);
+    camera->setBoundByMap(!_cameraManual);
+
+    engine->getTimerSys()->popTaskMonitor(&_engineTask);
+
+    Q_EMIT engineUpdated();
+}
 
 void EngineGLSceneWidget::stop(void) {
     getAssets()->getEngine()->setEngineState(elysian::Engine::ENGINE_ESTK_STOP);
@@ -71,167 +146,16 @@ void EngineGLSceneWidget::advanceFrame(void) {
     getAssets()->getEngine()->setEngineState(elysian::Engine::ENGINE_NORMAL);
 }
 
-bool EngineGLSceneWidget::isPlaying(void) const { return getAssets()->getEngine()->getEngineState() != elysian::System::ENGINE_ESTK_STOP; }
-
-
-
-
-void EngineGLSceneWidget::initializeGL(void) {
-    DbgEvent event("QGLWidget::initializeGL()");
-   // initializeOpenGLFunctions();
- //   auto* con = context();
-  //  assert(con->isValid());
-  //  makeCurrent();
-   // initializeGLFunctions();
-   // doneCurrent();
-
-    //unsigned parentWidth    = parentWidget()->size().width();
-    //unsigned parentHeight   = parentWidget()->size().height();
-
-  //  connect(context(), SIGNAL(aboutToBeDestroyed()), this, SLOT(_onContextAboutToBeDestroyed()));
-makeCurrent();
-//glalVidGlewInit();
-      // glalVidOglInit(1280, 720, 1280, 720);
-  //  glalVidOglInit(parentWidth, parentHeight, parentWidth, parentHeight);
-     if(getAssets()->getEngine()) getAssets()->getEngine()->getCameraSys()->initializeProjMatrix();
-
-    // auto* ctx = QOpenGLContext::currentContext();
-    // if(ctx && ctx->hasEx tension(QByteArrayLiteral("GL_KHR_debug"))) {
-#if 0
-         _glLogger = new QOpenGLDebugLogger(this);
-         connect(_glLogger, &QOpenGLDebugLogger::messageLogged, this, &EngineGLSceneWidget::_onGLMessageLogged);
-         if(_glLogger->initialize()) {
-             Debug::Logf(Debug::LOG_VERBOSE, "OpenGL debug logger initialized successfullly.");
-             _glLogger->startLogging();
-         } else {
-             Debug::Logf(Debug::LOG_WARNING, "OpenGL debug logger could not be initialized.");
-         }
-#endif
-
-    // } else {
-    //	 Debug::Logf(Debug::LOG_VERBOSE, "OpenGL debug logger extensions not detected!");
-    // }
-
-    // _mapView->setSceneRect(0, 0, parentWidth, parentHeight);
-
-   //  doneCurrent();
-
+bool EngineGLSceneWidget::isPlaying(void) const {
+    return getAssets()->getEngine()->getEngineState() != elysian::System::ENGINE_ESTK_STOP;
 }
 
+void EngineGLSceneWidget::setCameraManualOnPlay(const bool val) {
+    _cameraManualOnPlay = val;
 
-void EngineGLSceneWidget::startRenderTimer(void) {
-    makeCurrent();
-
-        //_timer.start(TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME, this);
-
-    //QTimer::singleShot(TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME, this, SLOT(_updateEngine()));
-    //_timer.start(TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME, this);
-   // doneCurrent();
-    _updateEngine();
-    _initialized = true;
-    _engineUpdateTimer.start();
-    //timerEvent(nullptr); //go ahead and update the nigger.
-}
-/*
-void EngineGLSceneWidget::showEvent(QShowEvent *event) {
-    //startRenderTimer();
-}*/
-
-
-void EngineGLSceneWidget::_updateEngine(void)
-{
-    makeCurrent();
-   // update();
-    updateGL();
-        //       _mapView->scene()->invalidate();
-    //_mapView->update();
-   // _mapView->updateSceneRect(_mapView->sceneRect());
-  //  paintGL();
-
- //  #ifndef __WIN32
-    unsigned parentWidth    = parentWidget()->size().width();
-        unsigned parentHeight   = parentWidget()->size().height();
-        if(_width != parentWidth || _height != parentHeight) {
-            resizeGL(parentWidth, parentHeight);
-        }
-//#endif
-
-    //QTimer::singleShot(TK_ENGINE_GL_SCENE_WIDGET_UPDATE_TIME, this, SLOT(_updateEngine()));
-
-}
-
-void EngineGLSceneWidget::resizeGL(int w, int h) {
-    if(!_engineValid) return;
-    makeCurrent();
-    _engineValid = glalVidOglInit(w, h, w, h);
-     _width = w;
-     _height = h;
-
-     if(!_engineValid) {
-        QMessageBox::critical(nullptr, "Error!", "The libGyro Video API back-end (OpenGL) failed to initialize properly! Something is FUNDAMENTALLY fucked. Don't blame me, blame OpenGL.");
-     }
-
-    // _mapView->setSceneRect(0, 0, w, h);
-
-    if(getAssets()->getEngine()) getAssets()->getEngine()->getCameraSys()->initializeProjMatrix();
-// doneCurrent();
-
-}
-
-void EngineGLSceneWidget::paintGL(void) {
-    if(!getCurrentArea() || !_initialized || !_engineValid) return;
-    makeCurrent();
-
-   // auto delta = gyTimerTicks();
-
-    _wasGLError = false;
-
-    getAssets()->getEngine()->getTimerSys()->pushTaskMonitor(&_engineTask);
-
-    _monitor.start();
-
-
-
-    //doneCurrent();
-    //swapBuffers();
-    getAssets()->getEngine()->processInput();
-    getAssets()->getEngine()->update();
-    getAssets()->getEngine()->render();
-
-    _monitor.stop();
-
-    if(_advanceFrame) {
-
-        _advanceFrame = false;
-        getAssets()->getEngine()->setEngineState(elysian::System::ENGINE_ESTK_STOP);
+    if(getAssets()->getEngine()->getEngineState() != elysian::Engine::ENGINE_ESTK_STOP) {
+        _cameraManual = val;
     }
-
-    if(_cameraManual) {
-        getAssets()->getEngine()->getCameraSys()->setFollowEnabled(false);
-        getAssets()->getEngine()->getCameraSys()->setDynamic(false);
-        getAssets()->getEngine()->getCameraSys()->setBoundByMap(false);
-    } else {
-        getAssets()->getEngine()->getCameraSys()->setFollowEnabled(true);
-        getAssets()->getEngine()->getCameraSys()->setDynamic(true);
-        getAssets()->getEngine()->getCameraSys()->setBoundByMap(true);
-    }
-    //  getAssets()->getEngine()->getLightSys()->setGlobalAmbientColor(GYVector4 { 1.0f, 1.0f, 1.0f, 1.0f});
-
-    //getAssets()->getEngine()->render(&_renderSpineShit);
-
-      //context()->swapBuffers(context()->surface()); // DO QOPENGL WIDGET'S FUCKING JOB FOR IT!
-        //  update();
-
-    getAssets()->getEngine()->getTimerSys()->popTaskMonitor(&_engineTask);
-
-   // auto result = gyTimerTicks() - delta;
-
-   // auto sec = (double)result/1000000000.0;
-   //qDebug() << "nsec - " << result << "sec - " << sec << "hz - " << 1.0/sec;
-
-    if(!autoBufferSwap()) swapBuffers();
-
-    Q_EMIT engineUpdated();
 }
 
 void EngineGLSceneWidget::dumpPerfMonitor(void) {
@@ -243,40 +167,4 @@ void EngineGLSceneWidget::dumpPerfMonitor(void) {
         once = true;
     }
     elysian::PerformanceMonitor::print(&_monitor);
-
-}
-
-
-EngineGLSceneWidget::~EngineGLSceneWidget(void){}
-/*
-QSize EngineGLSceneWidget::sizeHint(void) const {
-    if(getAssets()->getCurArea()) {
-        return QSize(getAssets()->getCurArea()->getMapWidth()*32.0f, getAssets()->getCurArea()->getMapHeight()*32.0f);
-    }
-    return QSize(10,10);
-}
-*/
-void EngineGLSceneWidget::setCameraManualOnPlay(const bool val) {
-    _cameraManualOnPlay = val;
-
-    if(getAssets()->getEngine()->getEngineState() != elysian::Engine::ENGINE_ESTK_STOP) {
-        _cameraManual = val;
-    }
-
-}
-
-void EngineGLSceneWidget::_onContextAboutToBeDestroyed(void) {
-    qDebug() << "DESTROYING CONTEXT!!!";
-}
-
-void EngineGLSceneWidget::_onResized(void) {
-    qDebug() << "RESIZERY!!!!";
-}
-
-void EngineGLSceneWidget::_onGLMessageLogged(const QOpenGLDebugMessage &message) {
-    if(!_wasGLError && _prevGLError != message.message()) {
-        dbgprintf(message.message().toStdString().c_str());
-        _prevGLError = message.message();
-        _wasGLError = true;
-    }
 }
