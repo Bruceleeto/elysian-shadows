@@ -266,6 +266,7 @@ namespace elysian {
             unsigned zIndex = (unsigned)relZCoord;
             if(zIndex >= _depthBuffMaxHeight) zIndex = _depthBuffMaxHeight-1;
             //assert(zIndex >= 0 && zIndex < depthBuffMaxHeight);
+            if(_entityCount[zIndex] >= ELYSIAN_DEPTH_BUFFER_ENTITY_WIDTH) continue; //row full
 
             _entityBuff[zIndex][_entityCount[zIndex]] = entityEntry;
             _entityBuff[zIndex][_entityCount[zIndex]].zCoordRelative = relZCoord;
@@ -308,8 +309,9 @@ namespace elysian {
         // ==== RENDER ENTITIES AND TILES QUEUED IN DEPTH BUFFER ====
 
 
-        //Iterate through depth buffers and render from lowest to highest z coord
-        for(int l = _depthBuffMaxHeight; l >= 0; --l) {
+        //Iterate through depth buffers and render from lowest to highest z coord.
+        //Only rows [0, _depthBuffMaxHeight) were cleared and filled this frame.
+        for(int l = (int)_depthBuffMaxHeight-1; l >= 0; --l) {
             unsigned i = (_isShadowPass() || _isDepthPrePass())? _depthBuffMaxHeight-l-1 : l;
             i = l;
 _enableDepthTest();
