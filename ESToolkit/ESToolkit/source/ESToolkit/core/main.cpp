@@ -111,6 +111,10 @@ static GYAppCbRet Init(int argc, char **argv) {
     // Set the default GL format to OpenGL 3.2 Core
     QSurfaceFormat::setDefaultFormat(fmt);
 
+    //OpenCL/OpenGL sharing is implemented for GLX only, so use Qt's X11 backend
+    //(XWayland on Wayland sessions) unless the user asked for something else.
+    if(qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "xcb");
+
     QGLFormat glfmt;
     //glfmt.setStencil(false);
     //glfmt.setDirectRendering(true);
@@ -183,12 +187,27 @@ static GYAppCbRet Init(int argc, char **argv) {
 
     if(!relaunching) {
 #ifndef QT_NO_DEBUG
+        const int showDelay = 2500;
         splash.show();
-        QTimer::singleShot(2500, &splash, SLOT(close()));
-        QTimer::singleShot(2500, &w, SLOT(showMaximized()));
+        QTimer::singleShot(showDelay, &splash, SLOT(close()));
 #else
-        QTimer::singleShot(0, &w, SLOT(showMaximized()));
+        const int showDelay = 0;
 #endif
+        QTimer::singleShot(showDelay, &w, SLOT(showMaximized()));
+
+        //Open a project on startup: --project <dir> if given, otherwise the repo's
+        //assets/ folder (the executable lives in <repo>/build/executable).
+        if(project.isNull()) {
+            const QString repoAssets = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../../assets");
+            if(QDir(repoAssets).exists("level")) project = QDir::cleanPath(repoAssets);
+        }
+        if(!project.isNull()) {
+            QTimer::singleShot(showDelay, &w, [&w, project, level, area]() {
+                if(!w.openProjectDir(project)) return;
+                if(!level.isNull())     w.getAssets().setCurrentLevel(level);
+                if(!area.isNull())      w.getAssets().setCurrentArea(area);
+            });
+        }
     } else {
 
         //No splash screen if we're recovering from a crash

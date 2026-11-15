@@ -50,12 +50,9 @@ EngineGLSceneWidget::EngineGLSceneWidget(QWidget *parent):
     connect(this, SIGNAL(engineUpdated()), getAssets(), SIGNAL(engineUpdated()));
     connect(&_engineUpdateTimer, SIGNAL(timeout()), this, SLOT(_updateEngine()));
 
-    if(format().swapInterval() == -1) {
-        qWarning() << "Swap buffers at V_blank not available: trying to force approx 60fps!";
-        _engineUpdateTimer.setInterval(17);
-    } else {
-        _engineUpdateTimer.setInterval(0);
-    }
+    //Render at ~60fps. A 0ms timer (the old no-vsync path) re-renders back-to-back
+    //on the UI thread and starves input, leaving the editor unresponsive.
+    _engineUpdateTimer.setInterval(16);
 }
 
 
