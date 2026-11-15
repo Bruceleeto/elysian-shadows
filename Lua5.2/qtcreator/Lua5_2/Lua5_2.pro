@@ -14,6 +14,9 @@ QMAKE_CFLAGS += -Wno-deprecated-declarations
 
 DEFINES += ELYSIAN_LUA_MODS
 
+# Use mkstemp() instead of the unsafe tmpnam() for os.tmpname() on POSIX hosts
+unix:!dreamcast: DEFINES += LUA_USE_MKSTEMP
+
 INCLUDEPATH += ../../include \
     ../../include/lua \
     ../../../libGyro/include
