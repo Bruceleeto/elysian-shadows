@@ -421,10 +421,11 @@ void GuiSystem::processInput(void) {
    // }
 }
 
-void GuiSystem::onObserveEvent(Event* event, EventTarget* target) {
+void GuiSystem::onObserveEvent(Event* event, EventTarget* /*target*/) {
     switch(event->getEventType()) {
         case EVENT_AREA_EXIT:
             _examineEntity = nullptr;
+            break;
         default:
             break;
     }

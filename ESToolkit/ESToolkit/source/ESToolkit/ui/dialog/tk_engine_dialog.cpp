@@ -24,6 +24,14 @@
 #include <ESGamma/crtp/elysian_debug.hpp>
 #include <ESToolkit/core/tk_file_utilities.h>
 
+// Equivalent of the deprecated QProcess::start(const QString& command):
+// split the command line into program + arguments the same way Qt did.
+static void startCommand(QProcess* process, const QString& command) {
+    QStringList args = QProcess::splitCommand(command);
+    const QString program = args.isEmpty()? QString() : args.takeFirst();
+    process->start(program, args);
+}
+
 EngineDialog::EngineDialog(QWidget *parent): QMainWindow(parent), _currentType(ENGINE_PC) {
 	QWidget *centralWidget = new QWidget;
 	_mainLayout = new QVBoxLayout;
@@ -149,11 +157,11 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
     switch(type) {
     case ENGINE_PC:
 #ifdef Q_OS_WIN
-        _engine->start(_enginePathx86);
+        startCommand(_engine, _enginePathx86);
 #elif defined(Q_OS_LINUX)
-        _engine->start(_enginePathx86);
+        startCommand(_engine, _enginePathx86);
 #elif defined(Q_OS_MAC)
-        _engine->start(_enginePathx86);
+        startCommand(_engine, _enginePathx86);
 #endif
         break;
     case ENGINE_DC:
@@ -161,7 +169,7 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
         //Check if we have all of the required Dreamcast settings
         if(_dcIpAddr.isNull() || _dcMacAddr.isNull()) return false;
 #ifdef Q_OS_WIN
-        _engine->start(QString(ENGINE_DIALOG_DCTOOL_PATH)+QString(" -t ")+_dcIpAddr+QString(" -m ")+_dcMacAddr+QString(" -x ")+QString(ENGINE_DIALOG_DC_PATH)+QString(" -c ")+getCurrentProject()->getLocation());
+        startCommand(_engine, QString(ENGINE_DIALOG_DCTOOL_PATH)+QString(" -t ")+_dcIpAddr+QString(" -m ")+_dcMacAddr+QString(" -x ")+QString(ENGINE_DIALOG_DC_PATH)+QString(" -c ")+getCurrentProject()->getLocation());
 #elif defined(Q_OS_LINUX) || defined(Q_OS_MAC)
         if(_sudoPswd.isNull()) return false; //required for OSX/Linux
 
@@ -173,14 +181,14 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
         arp = new QProcess(this);
         echo = new QProcess(this);
         echo->setStandardOutputProcess(arp);
-        echo->start(QString("echo ")+_sudoPswd);
-		arp->start(QString("sudo -S arp -s ")+_dcIpAddr+QString(" ")+_dcMacAddr);
+        startCommand(echo, QString("echo ")+_sudoPswd);
+		startCommand(arp, QString("sudo -S arp -s ")+_dcIpAddr+QString(" ")+_dcMacAddr);
         arp->waitForFinished();
         delete echo;
         echo = new QProcess(this);
         echo->setStandardOutputProcess(_engine);
-        echo->start(QString("echo ")+_sudoPswd);
-        _engine->start(QString("sudo -S ") + QString(ENGINE_DIALOG_DCTOOL_PATH)+QString(" -t ")+_dcIpAddr+QString(" -x ")+QString(ENGINE_DIALOG_DC_PATH)+QString(" -c ")+getCurrentProject()->getLocation());
+        startCommand(echo, QString("echo ")+_sudoPswd);
+        startCommand(_engine, QString("sudo -S ") + QString(ENGINE_DIALOG_DCTOOL_PATH)+QString(" -t ")+_dcIpAddr+QString(" -x ")+QString(ENGINE_DIALOG_DC_PATH)+QString(" -c ")+getCurrentProject()->getLocation());
 #endif
         break;
     }

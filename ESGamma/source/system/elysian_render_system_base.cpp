@@ -373,11 +373,12 @@ void RenderSystemBase::updateHDRExposure(void) {
 
 
 bool RenderSystemBase::_initializeAutomaticExposureKernel(void) {
+    return false; //not implemented
 }
 
 
 bool RenderSystemBase::_uninitializeAutomaticExposureKernel(void) {
-
+    return false; //not implemented
 }
 
 LuminanceHistogramComputeTask::LuminanceHistogramComputeTask(uintptr_t textureId):
@@ -418,7 +419,7 @@ LuminanceHistogramComputeTask::LuminanceHistogramComputeTask(uintptr_t textureId
 }
 
 
-LightCullingComputeTask::LightCullingComputeTask(uintptr_t depthBuffTexId,
+LightCullingComputeTask::LightCullingComputeTask(uintptr_t /*depthBuffTexId*/,
                                                  uintptr_t lightingUboId):
     ComputeTask(ELYSIAN_RENDER_SYSTEM_LIGHT_CULLING_KERNEL_NAME,
         {
@@ -476,8 +477,6 @@ bool LightCullingComputeTask::updateScreenResolution(unsigned int width, unsigne
 
 bool RenderSystemBase::forwardPlusCullLights(void) {
     bool success = true;
-    static unsigned prevWidth = 0;
-    static unsigned prevHeight = 0;
     unsigned scrWidth, scrHeight;
     gyVidResolution(&scrWidth, &scrHeight);
 
@@ -485,8 +484,6 @@ bool RenderSystemBase::forwardPlusCullLights(void) {
     assert(_lightCullComputeTask->isValid());
     if(!_lightCullComputeTask->isValid()) return false;
 
-    size_t globalOffsets[]  = { 0, 0 };
-    size_t localWorkSize[]  = {  8, 8 };
     size_t globalWorkSize[] = { scrWidth, scrHeight };
 
     ComputeBuffer* buffers[] = {

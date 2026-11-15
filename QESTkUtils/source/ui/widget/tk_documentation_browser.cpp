@@ -248,6 +248,7 @@ bool HelpDockWidget::openPage(QString page, QString section) {
 #else
     (void)page;
     (void)section;
+    return false;
 #endif
 }
 

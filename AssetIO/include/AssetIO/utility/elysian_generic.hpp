@@ -372,8 +372,8 @@ namespace elysian {
         decltype(auto)  operator[](size_t offset) const;
         decltype(auto)  operator*() const;
 
-        friend auto     operator+(size_t val, const ContiguousArrayIterator<T>& it) -> ContiguousArrayIterator<T>;
-        friend auto     operator-(size_t val, const ContiguousArrayIterator<T>& it) -> ContiguousArrayIterator<T>;
+        friend ContiguousArrayIterator<T> elysian::operator+ <>(size_t val, const ContiguousArrayIterator<T>& it);
+        friend ContiguousArrayIterator<T> elysian::operator- <>(size_t val, const ContiguousArrayIterator<T>& it);
     };
 
     template<typename T>
@@ -395,6 +395,7 @@ namespace elysian {
     {
         m_pCont = rhs.m_pCont;
         m_index = rhs.m_index;
+        return *this;
     }
 
     template<typename T>

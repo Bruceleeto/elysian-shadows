@@ -35,7 +35,6 @@ CameraDockWidget::CameraDockWidget(QWidget *parent): QDockWidget(parent), _ui(ne
 }
 
 void CameraDockWidget::onEngineInitialize(void) {
-    typedef elysian::Camera Camera;
     _cameraSystem = getAssets()->getEngine()->getCameraSys();
     _cameraState = _cameraSystem->getCurrentState();
     connect(_cameraSystem, SIGNAL(cameraIndexChanged(unsigned)), this, SLOT(onCameraIndexChange(unsigned)));

@@ -43,6 +43,7 @@ void CameraShakeSubProcess::_startNextKeyFrame(void) {
         time = _timePerOscillation*0.5f;
         break;
     default: GY_ASSERT(0); //Ya dun fucked up!
+        return;
     }
 
     keyFrame.translate(translation);

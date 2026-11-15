@@ -65,7 +65,8 @@ namespace elysian {
     inline DialogScreenBase::DialogScreenBase(const SCREEN_TYPE scrType): _screenType(scrType) {}
     inline DialogScreenBase::DialogScreenBase(const SCREEN_TYPE scrType, const char*const text):
         DialogScreenBase(scrType) { strcpy(_text, text); }
-    inline DialogScreenBase::DialogScreenBase(const DialogScreenBase &rhs) {
+    inline DialogScreenBase::DialogScreenBase(const DialogScreenBase &rhs):
+        LuaTableProxy<DialogScreenBase, DialogScreen>() {
         *this = rhs;
     }
     inline void DialogScreenBase::addSourceEntity(Entity*const entity) { _srcEntity = entity; }

@@ -5,6 +5,8 @@
  */
 
 #include <string.h>
+#include <stdio.h>
+#include <new>
 #include <AssetIO/proxy/elysian_area_proxy.hpp>
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
 #include <AssetIO/crtp/elysian_level.hpp>
@@ -91,9 +93,20 @@ void AreaBase::validateEntityName(Entity *entity) {
 
         tokenize(entity->getName(), strBuff, num);
 
-        sprintf(concatBuff, "%s%lu", strBuff, num);
+        //Truncate the base name if needed so the numeric suffix always fits
+        auto concatName = [&](const unsigned long n) {
+            char numBuff[24];
+            const int numLen = snprintf(numBuff, sizeof(numBuff), "%lu", n);
+            const int baseLen = (int)sizeof(concatBuff) - 1 - numLen;
+            if(snprintf(concatBuff, sizeof(concatBuff), "%.*s%s",
+                        (baseLen > 0)? baseLen : 0, strBuff, numBuff) >= (int)sizeof(concatBuff)) {
+                concatBuff[sizeof(concatBuff)-1] = '\0';
+            }
+        };
+
+        concatName(num);
         while(findEntity(concatBuff)) {
-            sprintf(concatBuff, "%s%lu", strBuff, ++num);
+            concatName(++num);
         }
 
         entity->setName(concatBuff);
@@ -155,7 +168,9 @@ void AreaBase::freeMap(void) {
 void AreaBase::resizeMap(const unsigned w, const unsigned h) {
     TileEntry *ntiles = (TileEntry *)malloc(sizeof(TileEntry)*w*h*ELYSIAN_AREA_MAP_LAYERS);
 
-    memset(ntiles, 0, sizeof(TileEntry)*w*h*ELYSIAN_AREA_MAP_LAYERS);
+    for(unsigned i = 0; i < w*h*ELYSIAN_AREA_MAP_LAYERS; ++i) {
+        new (&ntiles[i]) TileEntry();
+    }
 
     unsigned endX = (w < width)? w : width;
     unsigned endY = (h < height)? h : height;

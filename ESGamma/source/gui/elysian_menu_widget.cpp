@@ -221,13 +221,13 @@ void MenuItemView::update(void) {
 
             if(requiredSize > getSize((AXIS)a) + getMaximizeDelta((AXIS)a)) break;
             ++_bottomRightItem.indices[a];
-        } while(_bottomRightItem.getAxisIndex((AXIS)a) < getModel()->getAxisCount((AXIS)a));
+        } while((unsigned)_bottomRightItem.getAxisIndex((AXIS)a) < getModel()->getAxisCount((AXIS)a));
 
         if(_bottomRightItem.indices[a]) --_bottomRightItem.indices[a];
     }
 
-    for(unsigned r = _topLeftItem.getRow(); r <= _bottomRightItem.getRow(); ++r) {
-        for(unsigned c = _topLeftItem.getCol(); c <= _bottomRightItem.getCol(); ++c) {
+    for(int r = _topLeftItem.getRow(); r <= _bottomRightItem.getRow(); ++r) {
+        for(int c = _topLeftItem.getCol(); c <= _bottomRightItem.getCol(); ++c) {
             _layout->insertWidget(r - _topLeftItem.getRow(), c - _topLeftItem.getCol(), _delegate->getDisplayWidget(ItemModelIndex(r, c)));
         }
     }
@@ -242,8 +242,8 @@ void MenuItemView::setCurrentIndex(int index) {
     if(index < 0) {
         if(_topLeftItem.getRow() > 0) _topLeftItem.indices[Y]--;
          MenuWidget::setCurrentIndex(0);
-    } else if(index >= _layout->getWidgetCount()) {
-        if(_bottomRightItem.getRow() < _model->getRowCount() - 1) _topLeftItem.indices[Y]++;
+    } else if((unsigned)index >= _layout->getWidgetCount()) {
+        if((unsigned)_bottomRightItem.getRow() < _model->getRowCount() - 1) _topLeftItem.indices[Y]++;
         MenuWidget::setCurrentIndex(_layout->getWidgetCount()-1);
     } else {
         MenuWidget::setCurrentIndex(index);

@@ -473,8 +473,10 @@ void TileSelectable::setOrient(const GY_RECT_TEX_ORIENT orient) {
         break;
     case GY_RECT_TEX_ORIENT_ROT_270:
         rotateCC();
+        /* fallthrough */
     case GY_RECT_TEX_ORIENT_ROT_180:
         rotateCC();
+        /* fallthrough */
     case GY_RECT_TEX_ORIENT_ROT_90:
         rotateCC();
         break;

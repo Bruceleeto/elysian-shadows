@@ -21,8 +21,10 @@
 #		include <OpenCL/opencl.h>
 #	else
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifndef CL_TARGET_OPENCL_VERSION
+#   define CL_TARGET_OPENCL_VERSION 300
+#endif
 #       include <CL/cl_gl.h>
-#       include <CL/cl_gl_ext.h>
 #	endif
 #endif
 

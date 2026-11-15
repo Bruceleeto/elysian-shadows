@@ -790,16 +790,15 @@ Behavior* EntityBase::getBehaviorByIndex(const unsigned index) const {
 
 
 const BlendMode* EntityBase::getBlendMode(void) const {
-
+    return nullptr; //not implemented yet (only used by the disabled SceneObject render-priority path)
 }
 
 uint8_t EntityBase::getShader(void) const {
     return 0;
 }
 uint16_t EntityBase::getTexture(void) const {
-    if(getRenderable()) {
-        getRenderable()->getSpriteAttrib()->getTexture();
-    }
+    //GYTexture has no numeric id yet; not implemented (only used by the disabled SceneObject render-priority path)
+    return 0;
 }
 
 void EntityBase::updateBoundingVolume(void)  {

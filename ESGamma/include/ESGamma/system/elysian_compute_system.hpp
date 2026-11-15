@@ -429,32 +429,32 @@ public:
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_global_size(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return  globalSize[dim];
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_global_id(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return globalId[dim];
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_local_size(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return localSize[dim];
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_local_id(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return localId[dim];
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_num_groups(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return globalSize[dim] / localSize[dim];
     }
 
     inline uint32_t ComputeTask::NativeThreadData::get_group_id(uint32_t dim) const {
-        assert(dim >= 0 && dim < workDim);
+        assert(dim < workDim);
         return globalId[dim] / localSize[dim];
     }
 
@@ -491,7 +491,12 @@ public:
     inline bool ComputeTask::isValid(void) const { return _isValid; }
     inline bool ComputeTask::isAccelerated(void) const { return !_useNative; }
     inline void ComputeTask::setAccelerated(bool val) {
-        if(_nativeFallback) {
+        if(val) {
+            //only re-enable acceleration if the accelerated resources were successfully created
+            if(_kernel && _cmdQueue) {
+                _useNative = false;
+            }
+        } else if(_nativeFallback) {
             _useNative = true;
         } else {
             setValid(false);

@@ -44,7 +44,8 @@ void DaySystem::update(void) {
     gyMatMultVec(&_baseDir, &dir, 1);
     gyMatPop();
 
-    _sunLightSrc->setDirection(*(GYVector3*)&dir);
+    const GYVector3 dir3 = { dir.x, dir.y, dir.z };
+    _sunLightSrc->setDirection(dir3);
 }
 
 void DaySystem::onAreaEnter(void) {

@@ -905,6 +905,7 @@ void ESToolkit::on_actionGenerate_VMU_Icons_triggered(void) {
 #define VMU_SCREEN_WIDTH    48
 #define VMU_SCREEN_HEIGHT   32
     QString vmuDir = FileUtilities::getAbsoluteAssetPath("/assets/graphics/vmu");
+    Q_UNUSED(checked)
     DbgEvent dbg("Scanning VMU Directory for Icons: %s", Q_CSTR(vmuDir));
     (void)dbg;
 

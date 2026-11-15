@@ -395,7 +395,9 @@ QMenu* TkEntity::createContextMenu(void) {
     for(auto behav : _behaviors) {
         char strBuff[TK_ENTITY_CONTEXT_MENU_BEHAVIOR_NAME_SIZE];
 
-        sprintf(strBuff, "%d - %s", ++behavNum, behav->getBehavName());
+        if(snprintf(strBuff, sizeof(strBuff), "%u - %s", ++behavNum, behav->getBehavName()) >= (int)sizeof(strBuff)) {
+            strcpy(&strBuff[sizeof(strBuff)-4], "..."); //name too long for the menu label, mark it as truncated
+        }
         menuStack.insertCheckableAction(strBuff,
             [=](bool checked) {
                 if(!checked) {

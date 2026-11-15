@@ -32,9 +32,6 @@ void VirtualDPad::updateState(const GYVector2 &analog) {
 }
 
 void Controller::updateDerivedValues(void) {
-    float mags[GY_CONTROLLER_ANALOG_COUNT];
-    GYVector2 dirs[GY_CONTROLLER_ANALOG_COUNT];
-
     for(unsigned i = 0; i < GY_CONTROLLER_ANALOG_COUNT; ++i) {
         if(_gyHandle->analogsChanged[i]) {
 

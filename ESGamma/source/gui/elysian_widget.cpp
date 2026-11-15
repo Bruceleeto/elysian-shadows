@@ -198,6 +198,8 @@ namespace elysian {
                 }
             }
         }
+#else
+        (void)axis;
 #endif
         return maxDelta;
     }
@@ -268,16 +270,19 @@ void Widget::onObserveEvent(Event* event, EventTarget* target) {
     } else {
         KeyEventObserver::onObserveEvent(event, target);
     }
+#else
+    (void)event;
+    (void)target;
 #endif
 }
 
-void Widget::onMouseButtonEvent(const Mouse &mouse) {
+void Widget::onMouseButtonEvent(const Mouse & /*mouse*/) {
 }
 
-void Widget::onMouseMoveEvent(const Mouse &mouse) {
+void Widget::onMouseMoveEvent(const Mouse & /*mouse*/) {
 }
 
-void Widget::onMouseWheelEvent(const Mouse &mouse) {
+void Widget::onMouseWheelEvent(const Mouse & /*mouse*/) {
 }
 
 void Widget::setFocus(bool enabled) {

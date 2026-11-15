@@ -430,7 +430,8 @@ namespace elysian {
         constexpr           Matrix(const StdArrayND& stdArrayND);
 
         template<typename F = StdArray1D,
-                typename = std::enable_if_t<!std::is_same<F, StdArrayND>::value, bool>>
+                typename = std::enable_if_t<std::is_same<F, StdArray1D>::value &&
+                                            !std::is_same<F, StdArrayND>::value, bool>>
         constexpr           Matrix(const F& stdArray1D);
 
         constexpr           Matrix(const CArrayND& cArrayND);
@@ -747,7 +748,7 @@ namespace elysian {
         vet.getX();
 
         Vectorx4 ves;
-        ves *= ves.swizzle(0, 3, 1, 2);
+        ves.swizzle(0, 3, 1, 2);
 
     }
 

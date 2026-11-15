@@ -408,7 +408,9 @@ void MapView::keyPressEvent(QKeyEvent* event) {
 bool MapView::_isEntityRegionSelecting(void) const { return _selectionColliders.size() && _selectionColliders[0]->isActive(); }
 
 void MapView::wheelEvent(QWheelEvent* event) {
-    const float delta = (event->delta() > 0)? 1.05f : 0.95f;
+    const QPoint angleDelta = event->angleDelta();
+    const int wheelDelta = (qAbs(angleDelta.x()) > qAbs(angleDelta.y()))? angleDelta.x() : angleDelta.y();
+    const float delta = (wheelDelta > 0)? 1.05f : 0.95f;
     //setTransformationAnchor();
     //scale(delta, delta);
     getAssets()->getEngine()->getCameraSys()->scale(delta);
@@ -790,12 +792,10 @@ void MapView::_registerDropEventCallbacks(void) {
             QPointF scenePos = _mapViewPosToScenePos(event->pos(), scenePos);
 
             elysian::TileEntry tileEntries[ELYSIAN_AREA_MAP_LAYERS];
-           int index = -1;
            int highestElev = 0;
            for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS; ++i) {
                tileEntries[i] = getAssets()->getCurrentArea()->getTileEntry(QPoint(scenePos.x()/32, scenePos.y()/32), (Assets::LAYER_TYPE)i);
                if(tileEntries[i].getElev() > 0 && getAssets()->getCurrentLevel()->getTile(tileEntries[i].getIndex())->getStandOn()) {
-                    index = i;
                     highestElev = tileEntries[i].getElev();
                }
            }

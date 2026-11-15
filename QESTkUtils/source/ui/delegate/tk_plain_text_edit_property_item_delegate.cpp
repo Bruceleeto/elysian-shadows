@@ -96,7 +96,7 @@ QWidget* PlainTextEditPropertyItemDelegate::createEditor(QWidget *parent, const 
                         buff[i] = '\n';
                         buff[i+1] = temp;
                         for(unsigned j = i+3; j < ELYSIAN_DIALOG_SCREEN_TEXT_BUFFER_SIZE-1; ++j) buff[j-1] = buff[j];
-                        if(cursor.position() >= i) ++curOffset;
+                        if(cursor.position() >= (int)i) ++curOffset;
                         //if(cursor.position() >= (int)strlen(tempBuff)) {
                           //  cursor.setPosition(cursor.position()+1);
                        // }
@@ -117,6 +117,7 @@ QWidget* PlainTextEditPropertyItemDelegate::createEditor(QWidget *parent, const 
             case '\n':
                 ++curLine;      //Start next line
                 lineIdx = i+1;  //Next index is the beginning of the next line
+                /* fallthrough */
             case ' ':
                 wordIdx = i+1;  //next index is the beginning of the current word
                 break;
@@ -200,14 +201,14 @@ void PlainTextEditPropertyItemDelegate::setEditorData(QWidget *editor, const QMo
 }
 
 
-void PlainTextEditPropertyItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const {
+void PlainTextEditPropertyItemDelegate::setModelData(QWidget *editor, QAbstractItemModel * /*model*/, const QModelIndex &index) const {
     QTextEdit* edit = static_cast<QTextEdit*>(editor);
 
     auto* item = modelIndexToESTkStandardItem(index);
     item->setData(edit->toPlainText(), Qt::EditRole);
 }
 
-void PlainTextEditPropertyItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+void PlainTextEditPropertyItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem& option, const QModelIndex& /*index*/) const {
     editor->setGeometry(option.rect.x(), option.rect.y(), editor->width(), editor->height());
     //DynamicContentPropertyItemDelegate::updateEditorGeometry(editor, option, index);
 }

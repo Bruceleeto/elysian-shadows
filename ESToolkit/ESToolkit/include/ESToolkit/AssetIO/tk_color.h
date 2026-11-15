@@ -23,6 +23,8 @@ public:
                     TkColor4(unsigned char c);
                     TkColor4(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
+    TkColor4&       operator=(const TkColor4& rhs) = default;
+
     //operator        const QColor(void) const;
     //TkColor4&       operator=(const QColor& rhs);
 

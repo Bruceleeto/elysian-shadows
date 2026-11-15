@@ -321,11 +321,11 @@ void DebugBase::processInput(Keyboard*const input) {
 //	static unsigned size = 3;
 //	static unsigned intensity = 200;
     static bool freeCam = false;
-    static int i = 0;
 
     if(input->isTapped(GY_KEY_B)) {
 #if 0
 #if 0
+        static int i = 0;
         AsyncTask* task = new AsyncTask("BitchTask", [](void* data) {
             int val = (uintptr_t)data;
             dbgprintf("TROLOLO!!! %d", val);

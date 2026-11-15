@@ -199,7 +199,7 @@ bool operator!=(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v);
             return _union.lua(std::forward<_Args>(args)...).template getValue<Ret>();
         default: GY_ASSERT(false);
         }
-
+        return Ret();
     }
 
 

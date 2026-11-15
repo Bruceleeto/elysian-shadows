@@ -4,6 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
+#include <new>
 #include <QDir>
 #include <QMessageBox>
 #include <QESTkUtils/model/tk_lua_table_stack_model.h>
@@ -66,7 +67,9 @@ TkArea::TkArea(Level *const lev):
     width = height = 50;
     //Must allocate a map in case this map is to be saved before it is loaded.
     allocMap();
-    memset(tiles, 0, sizeof(elysian::TileEntry)*width*height*ELYSIAN_AREA_MAP_LAYERS);
+    for(unsigned i = 0; i < width*height*ELYSIAN_AREA_MAP_LAYERS; ++i) {
+        new (&tiles[i]) elysian::TileEntry();
+    }
     //memset(_elysianArea.lights, 0, sizeof(elysian::LightEntry)*_elysianArea.width*_elysianArea.height);
     strcpy(dir, "untitled");
     strcpy(string, "untitled");
@@ -695,7 +698,7 @@ void TkArea::initializeDelegates(void) {
 
 void TkArea::initializeVirtualTableDelegates(QString key) {
     if(key == "music") {
-        LuaVariant musicDelegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
+        LuaVariant musicDelegateFunc = [](LuaVariant /*t*/, LuaVariant k) -> PropertyItemDelegate* {
             if(QString(k.getValue<const char*>()) == "gain") {
                 return new QESTkUtils::SliderPropertyItemDelegate();
             } else return new PropertyItemDelegate();
@@ -764,19 +767,16 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
                             TkArea* area = luaFieldItem->getTableRef().getValue<TkArea*>();
                             if(!oggPath.isEmpty()) {
                                 unsigned track = luaFieldItem->getKey().getValue<unsigned>()-1;
-                                bool changed = false;
                                 if(key == "bgm") {
                                     if(area) elysian::System::getAudioSys()->setBgmTrackGain(area->getOggGain());
                                     elysian::System::getAudioSys()->stopBgmTrack();
                                     elysian::System::getAudioSys()->setBgmTrack(track);
                                     elysian::System::getAudioSys()->playBgmTrack();
-                                    changed = true;
                                     //elysian::System::getAudioSys()->fadeIntoBgmTrack(track, 1.0f);
                                 } else if(key == "aux") {
                                     if(area) elysian::System::getAudioSys()->setAuxTrackGain(track, area->getOggGain());
                                     elysian::System::getAudioSys()->stopAuxTrack(track);
                                     elysian::System::getAudioSys()->playAuxTrack(track);
-                                    changed = true;
                                 }
 #if 0
                                 if(changed) {

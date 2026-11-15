@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <utility>
 
 namespace elysian {
 
@@ -363,10 +364,21 @@ public:
         //memcpy(reinterpret_cast<void*>(_entries), reinterpret_cast<const void*>(old_entries), sizeof(T) * _maxSize);
         //free(old_entries);
 
-        _entries = (T*)realloc(_entries, sizeof(T)*size);
-        for(unsigned i = _maxSize; i < _maxSize; ++i) {
-            new (&_entries[i]) T();
+        //T is not necessarily trivially copyable, so it can't be realloc'd:
+        //move the surviving entries into a new buffer and construct the rest.
+        T* newEntries = (T*)malloc(sizeof(T)*size);
+        const unsigned keepCount = (size < _maxSize)? size : _maxSize;
+        for(unsigned i = 0; i < keepCount; ++i) {
+            new (&newEntries[i]) T(std::move(_entries[i]));
         }
+        for(unsigned i = keepCount; i < size; ++i) {
+            new (&newEntries[i]) T();
+        }
+        for(unsigned i = 0; i < _maxSize; ++i) {
+            _entries[i].~T();
+        }
+        free(_entries);
+        _entries = newEntries;
         _used    = (bool*)realloc(_used, sizeof(bool) * (size+1));
         _maxSize = size;
         clear();

@@ -1044,6 +1044,7 @@ namespace elysian {
                                 lua_pop(l, 2);      //4
                                 goto custom_construct;
                             }
+                            /* fallthrough */
                         default:
                             lua_remove(l, 1); //lets go ahead and not shit on Vector2:new(..) also
                             goto oolua_construct;

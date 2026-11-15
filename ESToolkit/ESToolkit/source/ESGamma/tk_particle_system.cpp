@@ -106,7 +106,7 @@ void TkParticleSystem::_createItems(void) {
 
 }
 
-void TkParticleSystem::popDockWidget(std::shared_ptr<ParticleEmitterAttrib> attrib) {
+void TkParticleSystem::popDockWidget(std::shared_ptr<ParticleEmitterAttrib> /*attrib*/) {
    _previewWidget->show();
    _previewWidget->setVisible(true);
    //_previewWidget->getVector2DWidget()->show();

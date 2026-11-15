@@ -11,7 +11,7 @@
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
 //#include <model/tk_property_item_delegate.h>
 
-static inline int alertprint(lua_State* const l) {
+static inline int alertprint(lua_State* const /*l*/) {
     QMessageBox::critical(nullptr, "Alert", elysian::LuaManager::getVariadicStringFromStack());
     return 0;
 }

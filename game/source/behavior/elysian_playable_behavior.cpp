@@ -240,6 +240,9 @@ void PlayableBehavior::_playerIndexChanged(int oldIndex, int newIndex) {
         });
         System::getEventSys()->sendEvent(&event, behav);
     }
+#else
+    (void)oldIndex;
+    (void)newIndex;
 #endif
 }
 

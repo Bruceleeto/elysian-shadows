@@ -12,8 +12,8 @@ EVENT_TARGET_TYPE EventTarget::getEventTargetType(void) const {
     return EVENT_TARGET_INVALID;
 }
 
-void EventTarget::onReceiveEvent(Event *event) {}
+void EventTarget::onReceiveEvent(Event * /*event*/) {}
 
-void EventObserver::onObserveEvent(Event *event, EventTarget *receiver) {}
+void EventObserver::onObserveEvent(Event * /*event*/, EventTarget * /*receiver*/) {}
 
 }

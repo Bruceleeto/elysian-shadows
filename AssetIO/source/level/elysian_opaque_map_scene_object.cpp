@@ -114,7 +114,7 @@ bool PopulateMapIboComputeTask::populateIbo(void) {
            _mapVboBuffer
         };
 
-        static CLCamera clCam, clCam2;
+        static CLCamera clCam;
         memcpy(clCam.planes, _camera->viewProjVolume.planes, sizeof(float)*4*6);
         memcpy(clCam.viewProj, _camera->projViewMat, sizeof(float)*4*4);
 

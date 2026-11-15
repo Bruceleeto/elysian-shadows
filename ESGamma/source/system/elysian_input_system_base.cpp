@@ -457,7 +457,7 @@ void InputSystemBase::update(void) {
     GY_SYSTEM_POWER_STATE prevPowerState = _powerSupply->getPowerState();
     if(_powerSupply->pollDevice()) {
         GY_SYSTEM_POWER_STATE newPowerState = _powerSupply->getPowerState();
-        if(newPowerState != newPowerState && newPowerState != GY_SYSTEM_POWER_STATE_UNKNOWN) {
+        if(newPowerState != prevPowerState && newPowerState != GY_SYSTEM_POWER_STATE_UNKNOWN) {
             _onPowerStateChanged();
         }
     }

@@ -14,7 +14,7 @@ void TaskMonitorBase::startNewFrame(void) {
     int64_t accum = 0;
     if(_buffDepth == PERFORMANCE_MONITOR_CIRC_BUFFER_SIZE) {
         _dirty = true;  //mark that this process isn't doing shit anymore
-        for(unsigned i = 0; i < _buffDepth; ++i) {
+        for(int i = 0; i < _buffDepth; ++i) {
             accum += _tickBuffer[i];
             if(_tickBuffer[i] != 0) {
                 _dirty = false;

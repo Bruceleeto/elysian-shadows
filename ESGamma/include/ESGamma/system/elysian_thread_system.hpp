@@ -290,11 +290,13 @@ namespace elysian {
         return _valid;
     }
 
-    inline bool Thread::setPriority(GY_THREAD_PRIORITY priority) {
+    inline bool Thread::setPriority(GY_THREAD_PRIORITY /*priority*/) {
      //   return gyThreadPriority(this, priority);
+        return false; //not implemented
     }
-    inline bool Thread::setCpuAffinity(GYCpuAffinityMask mask) {
+    inline bool Thread::setCpuAffinity(GYCpuAffinityMask /*mask*/) {
      //   return gyThreadCpuAffinity(this, mask);
+        return false; //not implemented
     }
 
     inline AsyncTask::AsyncTask(const char* name,

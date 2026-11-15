@@ -8,6 +8,7 @@
 #define SOURCE_VIEW_H
 
 #include <QGraphicsView>
+#include <QPainterPath>
 #include <QLabel>
 #include <QTimer>
 #include <QMouseEvent>

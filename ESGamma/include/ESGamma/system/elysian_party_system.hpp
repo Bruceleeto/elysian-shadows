@@ -152,7 +152,7 @@ namespace elysian {
 
 	public:
             PartySystem(void);
-            ~PartySystem(void);
+    virtual ~PartySystem(void);
 
         virtual void onObserveEvent(Event* event, EventTarget* target);
 		

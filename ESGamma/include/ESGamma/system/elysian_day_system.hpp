@@ -74,7 +74,7 @@ namespace elysian {
 
 	public:
 						DaySystem(void);
-						~DaySystem(void);
+		virtual				~DaySystem(void);
 
         auto            getSunLightAttrib(void) const -> std::shared_ptr<LightAttrib>;
         //void			setSunEnabled(const bool val);

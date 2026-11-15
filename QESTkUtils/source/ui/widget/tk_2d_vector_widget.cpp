@@ -109,14 +109,12 @@ void Vector2DWidget::paintEvent(QPaintEvent *event) {
 
 }
 void Vector2DWidget::mouseMoveEvent(QMouseEvent *event) {
-    bool updateVec = false;
     _mousePos = event->pos();
     _mouseClippedPos = _clipPointToCircle(_mousePos);
     if(event->buttons() & Qt::LeftButton) {
         _mouseDownPos           = event->pos();
         _mouseDownClippedPos    = _clipPointToCircle(_mouseDownPos);
         _updateVectorInfo();
-        updateVec = true;
     }
 
     update();

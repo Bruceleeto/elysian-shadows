@@ -686,11 +686,11 @@ ComputeTask::ComputeTask(const char*                        kernelName,
                          NativeKernel                       nativeFallbackFunc,
                          bool                               requireRendererSharedContext,
                          bool                               outOfOrderExecution):
+#if ELYSIAN_COMPUTE_PROFILING_ENABLED == 1
+    _perfMonitor(kernelName),
+#endif
     _categoryPriorityList(std::move(categoryPriorityList)),
     _nativeFallback(nativeFallbackFunc)
-#if ELYSIAN_COMPUTE_PROFILING_ENABLED == 1
-    ,_perfMonitor(kernelName)
-#endif
 {
     bool valid = true;
     DbgEvent event("Creating ComputeTask: [%s]", kernelName);
@@ -740,12 +740,6 @@ bool ComputeTask::_resolvePrioritizedDevices(bool rendererSharedContext) {
 
     DbgEvent event("Resolving Prioritized Category List");
 
-    enum {
-        INVALID,
-        UNAVAILABLE,
-        INCOMPATIBLE,
-        OK
-    } status = INVALID;
     char buff[100];
     ComputeDevice* firstDev = nullptr;
     ComputeDevice* dev;
@@ -755,24 +749,21 @@ bool ComputeTask::_resolvePrioritizedDevices(bool rendererSharedContext) {
     for(size_t i = 0; i < _categoryPriorityList.size(); ++i) {
 
         if(rendererSharedContext && !ComputeSystem::isRendererSharedContextDeviceCategory(_categoryPriorityList[i])) {
-            status      = INVALID;
             severity    = Debug::LOG_ERROR;
             success     = false;
             strcpy(buff, "INVALID");
         } else if(!(dev = getComputeSystem()->getDeviceByCategory(_categoryPriorityList[i]))) {
-            status = UNAVAILABLE;
             strcpy(buff, "UNAVAILABLE");
+        } else if(firstDev && dev->getPlatformIdx() != firstDev->getPlatformIdx()) {
+            //devices from different platforms can't share a context, so don't add it
+            strcpy(buff, "INCOMPATIBLE PLATFORM");
         } else {
-            if(firstDev && dev->getPlatformIdx() != firstDev->getPlatformIdx()) {
-                status = INCOMPATIBLE;
-                strcpy(buff, "INCOMPATIBLE PLATFORM");
-            } else if(!firstDev) {
+            if(!firstDev) {
                 firstDev = dev;
             }
 
-            status = OK;
             _devicePriorityList.push_back(*dev);
-            sprintf(buff, "[Priority: %u, Device: %s <%d, %d>]", _devicePriorityList.size()-1, dev->getInfo()->deviceName, dev->getPlatformIdx(), dev->getDeviceIdx());
+            snprintf(buff, sizeof(buff), "[Priority: %zu, Device: %.60s <%d, %d>]", _devicePriorityList.size()-1, dev->getInfo()->deviceName, dev->getPlatformIdx(), dev->getDeviceIdx());
         }
 
         Debug::Logf(severity, "[%d] - %s", i, buff);
@@ -964,7 +955,6 @@ void ComputeTask::optimizeWorkSize(size_t globalSize, size_t& paddedGlobalSize, 
     assert(_isValid);
     const GYComputeKernelWorkgroupInfo* info = getDevice()->getKernelWorkGroupInfo(getKernel());
 
-    size_t prefMult = info->preferredWorkGroupSizeMultiple;
     size_t maxSize  = info->workGroupSize;
 
     paddedGlobalSize = globalSize;
@@ -977,6 +967,7 @@ void ComputeTask::optimizeWorkSize(size_t globalSize, size_t& paddedGlobalSize, 
         paddedGlobalSize;
 #else
 #if 0
+    size_t prefMult = info->preferredWorkGroupSizeMultiple;
     size_t multiples = paddedGlobalSize / prefMult;
 
     localWorkSize = multiples * prefMult;

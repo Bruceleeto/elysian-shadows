@@ -147,6 +147,7 @@ namespace elysian {
     inline DialogTextBase::DialogTextBase(const char*const text):
         DialogScreen(DialogScreenBase::SCREEN_TEXT, text) {}
     inline DialogTextBase::DialogTextBase(const DialogTextBase &rhs):
+        LuaTableProxy<DialogTextBase, DialogText, DialogScreen>(),
         DialogScreen(rhs) {
         *this = rhs;
     }
@@ -166,7 +167,8 @@ namespace elysian {
     {
         strcpy(_text, string);
     }
-    inline DialogOptionBase::DialogOptionBase(const DialogOptionBase &rhs) {
+    inline DialogOptionBase::DialogOptionBase(const DialogOptionBase &rhs):
+        LuaTableProxy<DialogOptionBase, DialogOption>() {
         *this = rhs;
     }
     inline const char* DialogOptionBase::getText(void) const { return _text; }
@@ -185,6 +187,7 @@ namespace elysian {
     inline DialogPromptBase::DialogPromptBase(void):
         DialogScreen(DialogScreenBase::SCREEN_PROMPT) {}
     inline DialogPromptBase::DialogPromptBase(const DialogPromptBase &rhs):
+        LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>(),
         DialogScreen(rhs) {
         *this = rhs;
     }
@@ -196,7 +199,8 @@ namespace elysian {
 
     //==== DIALOG INLINEZ =====
 
-    inline DialogBase::DialogBase(const DialogBase &rhs) {
+    inline DialogBase::DialogBase(const DialogBase &rhs):
+        LuaTableProxy<DialogBase, Dialog>() {
         *this = rhs;
     }
     inline int DialogBase::getStartScreen(void) const { return _startScreen; }

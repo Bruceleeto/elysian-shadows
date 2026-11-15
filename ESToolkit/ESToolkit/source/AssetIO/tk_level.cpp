@@ -782,8 +782,12 @@ bool TkLevel::_loadMetaData(const QString dir) {
         return false;
     }
 
-    fread(_normalMapEnabled, sizeof(_normalMapEnabled), 1, file);
-    fread(_specularMapEnabled, sizeof(_specularMapEnabled), 1, file);
+    if(fread(_normalMapEnabled, sizeof(_normalMapEnabled), 1, file) != 1 ||
+       fread(_specularMapEnabled, sizeof(_specularMapEnabled), 1, file) != 1)
+    {
+        //Old or truncated metadata: whatever wasn't read keeps its default (disabled) value.
+        Debug::Log(Debug::LOG_WARNING, "estkTileset.bin is truncated, some normal/specular map flags could not be read!");
+    }
 
     fclose(file);
 

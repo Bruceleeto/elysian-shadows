@@ -551,7 +551,8 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
                     strcpy(_internalBuffer, str);
                 } else {
                     errprintf("String on Lua stack is too big to be pulled into C++ buffer [%d/%d]!", len, GYRO_PRINTF_BUFFER_SIZE);
-                    strncpy(_internalBuffer, str, GYRO_PRINTF_BUFFER_SIZE);
+                    strncpy(_internalBuffer, str, GYRO_PRINTF_BUFFER_SIZE-1);
+                    _internalBuffer[GYRO_PRINTF_BUFFER_SIZE-1] = '\0';
                 }
                 lua_pop(*_mainState, 1);
                 return _internalBuffer; //you better copy this shit asap!!!!

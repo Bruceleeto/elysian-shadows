@@ -18,12 +18,14 @@
     #endif
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#ifndef CL_TARGET_OPENCL_VERSION
+#   define CL_TARGET_OPENCL_VERSION 300
+#endif
 #include <gl/gyro_gl.h>
 //#       include <GL/glx.h>
 #       include <GL/glext.h>
 #		include <CL/cl.h>
 #       include <CL/cl_gl.h>
-#       include <CL/cl_gl_ext.h>
 #	endif
 #endif
  extern GLuint                       glalLightingUBO;

@@ -728,21 +728,21 @@ PartySystem::PartyMember::PartyMember(Entity* e):
 //remove player from party member, put back in unassigned state
 
 int PartySystem::getPlayerIndexFromSlot(int slot) const {
-    if(slot >= 0 && slot < _characterParty.size()) {
+    if(slot >= 0 && (size_t)slot < _characterParty.size()) {
         return _characterParty[slot].playerIndex;
     }
     return InvalidPlayerIndex;
 }
 
 int PartySystem::getSlotFromPlayerIndex(int index) const {
-    if(index >= 0 && index < _characterParty.size()) {
+    if(index >= 0 && (size_t)index < _characterParty.size()) {
         return _partySlotFromPlayerIndex[index];
     }
     return InvalidPlayerIndex;
 }
 
 bool PartySystem::setPlayerIndexBySlot(int slot, int playerIndex) {
-    if(slot >= 0 && slot < _characterParty.size()) {
+    if(slot >= 0 && (size_t)slot < _characterParty.size()) {
         _characterParty[slot].playerIndex = playerIndex;
         _characterParty[slot].playable->setPlayerIndex(playerIndex);
         return true;

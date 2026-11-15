@@ -24,10 +24,16 @@ unsigned LineChartView::addSeries(AbstractFrameUpdatedValueSeries* series) {
     unsigned pos = _series.size();
     _chart->addSeries(series);
     _chart->createDefaultAxes();
-    _chart->axisX()->setRange(0,1000);
-    _chart->axisX()->setTitleText("Frame");
-    _chart->axisY()->setRange(0,2000000);
-    _chart->axisY()->setTitleText("Nanoseconds");
+    const auto xAxes = _chart->axes(Qt::Horizontal);
+    const auto yAxes = _chart->axes(Qt::Vertical);
+    if(!xAxes.isEmpty()) {
+        xAxes.first()->setRange(0,1000);
+        xAxes.first()->setTitleText("Frame");
+    }
+    if(!yAxes.isEmpty()) {
+        yAxes.first()->setRange(0,2000000);
+        yAxes.first()->setTitleText("Nanoseconds");
+    }
     _series.push_back(series);
     return pos;
 }

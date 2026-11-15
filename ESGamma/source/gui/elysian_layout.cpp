@@ -151,8 +151,8 @@ namespace elysian {
         float maxSize[ELYSIAN_GRID_LAYOUT_DIM_MAX];
         for(unsigned i = 0; i < ELYSIAN_GRID_LAYOUT_DIM_MAX; ++i) maxSize[i] = FLT_MAX;
 
-        int primarySize = getDimensionSize(axis);
-        int secondarySize = getDimensionSize(getSecondaryAxis(axis));
+        unsigned primarySize = getDimensionSize(axis);
+        unsigned secondarySize = getDimensionSize(getSecondaryAxis(axis));
 
         //Find sizing properties for each row/column and accumulate total sizes
         for(unsigned i = 0; i < primarySize; ++i) {
@@ -257,8 +257,8 @@ namespace elysian {
         auto toCol = [&](unsigned i, unsigned j) {
             return (axis == X)? i : j;
         };
-        int primarySize = getDimensionSize(axis);
-        int secondarySize = getDimensionSize(getSecondaryAxis(axis));
+        unsigned primarySize = getDimensionSize(axis);
+        unsigned secondarySize = getDimensionSize(getSecondaryAxis(axis));
         float largestSize = 0.0f;
 
         //Find sizing properties for each row/column and accumulate total sizes
@@ -373,7 +373,7 @@ namespace elysian {
             float overflow = 0.0f;
             float underflow = 0.0f;
 
-            for(int i = 0; i < getWidgetCount(); ++i) {
+            for(unsigned i = 0; i < getWidgetCount(); ++i) {
                 Widget*       widget = getWidget(i);
                 float         size = widget->getSize(axis);
                 float         delta = parentSize - size;
@@ -433,7 +433,7 @@ namespace elysian {
         } else {
             float curSize = 0.0f;
 
-            for(int i = 0; i < getWidgetCount(); ++i) {
+            for(unsigned i = 0; i < getWidgetCount(); ++i) {
                 Widget*       widget = getWidget(i);
                 curSize += widget->getSize(axis);
             }
@@ -451,7 +451,7 @@ namespace elysian {
                     while(intDelta) {
                         bool didExpand = false;
 
-                        for(int i = 0; i < getWidgetCount(); ++i) {
+                        for(unsigned i = 0; i < getWidgetCount(); ++i) {
                             Widget*       widget = getWidget(i);
                             if(widget->getSizePolicy(axis) & Widget::expandFlag) {
                                 const float widgetSize = widget->getSize(axis);
@@ -499,7 +499,7 @@ namespace elysian {
         const float parentPos     = _parent->getPosition(axis);
 
         if(_groupingAxis != axis_) {
-            for(int i = 0; i < getWidgetCount(); ++i) {
+            for(unsigned i = 0; i < getWidgetCount(); ++i) {
                 Widget*       widget = getWidget(i);
                 widget->setPosition(axis, parentPos);
             }
@@ -508,7 +508,7 @@ namespace elysian {
             float startPos = parentPos - 0.5f*_parent->getSize(axis);
             float endPos;
 
-            for(int i = 0; i < getWidgetCount(); ++i) {
+            for(unsigned i = 0; i < getWidgetCount(); ++i) {
                 Widget*       widget = getWidget(i);
                 endPos = startPos + widget->getSize(axis);
                 widget->setPosition(axis, (endPos+startPos)*0.5f);

@@ -245,7 +245,7 @@ void LuaManagerBase::_runtimeStackDump(void) {
             int stackIndex = lua_gettop(*_mainState);
             LuaVariant v = LuaVariant::fromStack(stackIndex);
             LuaVariant s = v.asString();
-            sprintf(displayName, "_local[%d][%d] = %s (%s)", stackLevel, localIndex, localVarName, s.getValue<const char*>(), v.getTypeString());
+            snprintf(displayName, sizeof(displayName), "_local[%d][%d] %s = %s (%s)", stackLevel, localIndex, localVarName, s.getValue<const char*>(), v.getTypeString());
             dbgprintf("%s", displayName);
            // rPrintByIndex(stackIndex, 1, displayName);
 
@@ -467,7 +467,7 @@ unsigned LuaManagerBase::getKbytesUsed(void) {
 
 
 void LuaManagerBase::dumpStats(void) {
-    char buffer[100];
+    char buffer[256];   //must fit a script path (up to 200 chars) plus a short prefix
     unsigned int count = 0;
     LuaBehaviorScript* behav;
     LuaBehaviorScriptAttrib* attrib;

@@ -132,7 +132,7 @@ namespace elysian {
 	public:
 
                         GuiSystem(void);
-                        ~GuiSystem(void);
+    virtual             ~GuiSystem(void);
 
         void            setClearColor(const GYColor4 color);
 

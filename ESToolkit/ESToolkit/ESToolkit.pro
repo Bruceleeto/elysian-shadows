@@ -46,6 +46,9 @@ macx {
 
 
 !ios {
+# Some engine types are over-aligned (e.g. TkArea via 32-byte aligned GYMatrix4 members);
+# make operator new honor their alignment even though we build as C++14.
+!dreamcast: QMAKE_CXXFLAGS += -faligned-new
     #QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++
     #CONFIG += precompile_header
 }

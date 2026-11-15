@@ -108,6 +108,7 @@ void RigidBodySystem::update(void) {
         switch(shard->update(deltaTime)) {
         case RigidBodyShard::STATE_DONE:
             _removeShard(_shardHead);
+            /* fallthrough */
         case RigidBodyShard::STATE_FADE_OUT:
             --toFree;
             break;
@@ -266,7 +267,6 @@ void RigidBodySystem::_resolveContactZVelocities(void) {
 #if 1
             if(colBot) {
                 GYVector3 vel = colBot->getEntity()->getRigidBody()->getVelocity();
-                GYVector3 prevVel = vel;
 
                 //moving upwards
                 if(vel.z > 0.0f) {
@@ -825,6 +825,7 @@ void RigidBodySystem::breakRigidBody(RigidBody * const rigidBody) {
         //gyVec3Scale(&velDir, &velDir, xSize*ySize*mag);
 
 
+#if 0   //only used by the disabled code below
         auto getContactNormal = [&]() {
             auto* contact = entity->getRigidBody()->getBreakContact();
             if(contact) {
@@ -853,7 +854,6 @@ void RigidBodySystem::breakRigidBody(RigidBody * const rigidBody) {
         };
 
        // GYVector3 normal = getContactNormal();
-#if 0
 #if 1
         GYVector3 localPos;
         gyVec3Sub(&localPos, &shard->_transform._pos, &entity->_transform._pos);

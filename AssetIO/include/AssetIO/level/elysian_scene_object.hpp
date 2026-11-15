@@ -150,6 +150,7 @@ namespace elysian {
         }
 #endif
 
+                using SceneObject::updateBoundingVolume;
                 virtual void 					updateBoundingVolume(const Vector3& origin);
     };
 
@@ -282,7 +283,7 @@ inline const Vector4 AxisAlignedBoundingBox::operator[](size_t type) const {
     inline void SceneObject::render(void) {}
 
 
-    inline void EntitySceneObject::updateBoundingVolume(const Vector3& origin) {
+    inline void EntitySceneObject::updateBoundingVolume(const Vector3& /*origin*/) {
 #if 0
         if(_sceneObjTransformDirty) {
             pushViewTransform();

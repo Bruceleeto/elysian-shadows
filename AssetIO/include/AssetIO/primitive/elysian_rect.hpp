@@ -21,6 +21,7 @@ namespace elysian {
                 Rect(void) = default;
                 Rect(T value);
                 Rect(T top, T bottom, T left, T right);
+                Rect(const Rect& rhs) = default;
 
         Rect&   operator=(const Rect& rhs);
 

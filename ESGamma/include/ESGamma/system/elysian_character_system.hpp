@@ -92,8 +92,8 @@ namespace elysian {
             //charComp->move(dist);
             if(_walk) {
                 //gyVec3Scale(&dist, &_dir, _entity->getCharacter()->getWalkForce()*deltaTime);
-              // TODO Marius: strict-aliasing warning here, might interfere with optimization
-                _entity->getCharacter()->walk(*(const GYVector2*)&_dir);
+                const GYVector2 walkDir = { _dir.x, _dir.y };
+                _entity->getCharacter()->walk(walkDir);
             } else {
                 gyVec3Scale(&dist, &_dir, ELYSIAN_CHAR_WALK_DEFAULT_FORCE*deltaTime);
                 //gyVec3AddAccum(&_entity->transform._pos, &dist);

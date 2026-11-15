@@ -187,6 +187,7 @@ void LightSystem::shadowRenderPasses(void) {
         switch(it->getLightType()) {
         case GY_LIGHT_SPOT:
         if(/*!cam->isWithinScreenRegion(it->position.x, it->position.y, it->getAttrib()->getRadius(), it->getAttrib()->getRadius())*/ false) break;
+        /* fallthrough */
         case GY_LIGHT_DIRECTIONAL:
             _onscreenLights[_onscreenLightCount++] = it;
             it->updateBoundingVolume(cam, GY_CUBE_MAP_FACE_MAX);

@@ -42,9 +42,7 @@ void PartyMenu::update(void) {
     MenuWidget::update();
 }
 
-void PartyMenu::onCurrentChange(Widget* prev, Widget* next) {
-    auto* prevPlayablePane = static_cast<PlayablePane*>(prev);
-    auto* nextPlayablePane = static_cast<PlayablePane*>(next);
+void PartyMenu::onCurrentChange(Widget* /*prev*/, Widget* next) {
     auto* vertLayout = static_cast<VerticalLayout*>(getLayout());
 
     for(unsigned i = 0; i < getLayout()->getWidgetCount(); ++i) {

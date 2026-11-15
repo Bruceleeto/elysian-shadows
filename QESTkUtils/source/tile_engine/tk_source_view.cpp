@@ -262,7 +262,9 @@ void SourceView::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void SourceView::wheelEvent(QWheelEvent *event) {
-	const float delta = (event->delta() > 0)? 1.1f : 0.9f;
+	const QPoint angleDelta = event->angleDelta();
+	const int wheelDelta = (qAbs(angleDelta.x()) > qAbs(angleDelta.y()))? angleDelta.x() : angleDelta.y();
+	const float delta = (wheelDelta > 0)? 1.1f : 0.9f;
 	//setTransformationAnchor();
 	scale(delta, delta);
 	_updateSceneMousePos();

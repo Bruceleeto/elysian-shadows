@@ -24,7 +24,7 @@ namespace elysian {
 
         virtual bool hasAlpha(void) const override {
             for(unsigned i = 0; i < 4; ++i) {
-                if(getVertexAlpha(i) != 255 && getVertexAlpha(i) != 0);
+                if(getVertexAlpha(i) != 255 && getVertexAlpha(i) != 0)
                     return true;
             }
             return false;

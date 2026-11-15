@@ -18,9 +18,10 @@ namespace elysian {
             _strlen = 0;
             _width  = 0;
         } else {
-            strncpy(_text, str, ELYSIAN_LABEL_WIDGET_TEXT_SIZE);
-            _strlen = strlen(str);
-            if(_font) _width = _font->getStringPixelWidth(str);
+            strncpy(_text, str, ELYSIAN_LABEL_WIDGET_TEXT_SIZE-1);
+            _text[ELYSIAN_LABEL_WIDGET_TEXT_SIZE-1] = '\0';
+            _strlen = strlen(_text);
+            if(_font) _width = _font->getStringPixelWidth(_text);
         }
     }
 
@@ -45,7 +46,7 @@ namespace elysian {
         return _position[axis];
     }
 
-    void LabelWidget::setSize(AXIS axis, float size) {
+    void LabelWidget::setSize(AXIS /*axis*/, float /*size*/) {
         //Uhm, fuck you.
     }
 

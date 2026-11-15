@@ -1117,6 +1117,7 @@ void ESToolkit::setMainTextureUniform(const int uniform) {
 }
 
 
+        /* fallthrough */
 
 void ESToolkit::_onEngineInitialized(void) {
     _assets.getEngine()->getMapSys()->setView(_ui->mapView);

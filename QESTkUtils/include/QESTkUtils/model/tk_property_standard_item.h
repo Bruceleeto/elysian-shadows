@@ -7,6 +7,7 @@
 #ifndef PROPERTY_STANDARD_ITEM_H
 #define PROPERTY_STANDARD_ITEM_H
 
+#include <cstring>
 #include <QStandardItem>
 #include <QVector>
 #include <QIcon>
@@ -169,8 +170,11 @@ public:
         case Qt::CheckStateRole:
             if(!isCheckable()) return QStandardItem::data(role);
             //Fucking terrible, but I don't want to specialize for bool.
-            // TODO Marius: strict-aliasing warning here, might interfere with optimization
-            else return *(reinterpret_cast<bool*>(&data))? Qt::Checked : Qt::Unchecked;
+            else {
+                bool checked;
+                memcpy(&checked, &data, sizeof(bool));
+                return checked? Qt::Checked : Qt::Unchecked;
+            }
         case Qt::DisplayRole:
             //if(isCheckable())
             return _displayValue? QStandardItem::data(Qt::DisplayRole) : data;

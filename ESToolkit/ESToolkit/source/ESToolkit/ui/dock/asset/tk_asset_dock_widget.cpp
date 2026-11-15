@@ -346,8 +346,8 @@ CustomAssetFileType::CustomAssetFileType(QString typeName, QIcon icon, QString f
     _filePath(std::move(filePath)),
     _typeName(std::move(typeName)),
     _toolTip(std::move(toolTip)),
-    _icon(std::move(icon)),
-    _whatsThis(std::move(whatsThis))
+    _whatsThis(std::move(whatsThis)),
+    _icon(std::move(icon))
 {}
 
 QMimeData* CustomAssetFileType::mimeData(void) const {
@@ -395,6 +395,7 @@ QVariant CustomAssetFileType::data(const QModelIndex& index, int role) {
             return QString("*")+value.toString();
         return value;
     }
+    return QVariant();
 }
 
 AreaAssetFileType::AreaAssetFileType(const QString filePath): CustomAssetFileType("Area", QIcon(TK_AREA_ASSET_ICON), filePath) {}
@@ -452,6 +453,8 @@ void AreaAssetFileType::fileRemoved(void) {
     } else if(reply == QMessageBox::No) {
         _area->getLevel()->removeArea(_area->getPath(), false);
     }
+#else
+    (void)reply;
 #endif
 }
 
@@ -678,7 +681,7 @@ auto VmuIconAssetFileType::fromFilePath(QString path) -> CustomAssetFileType* {
     return nullptr;
 }
 
-void VmuIconAssetFileType::doubleClick(const QModelIndex &index) {
+void VmuIconAssetFileType::doubleClick(const QModelIndex & /*index*/) {
     elysian::VisualMemoryUnit* vmu = elysian::System::getInputSys()->getVMU(0);
     if(vmu) {
         vmu->loadIcon(Q_CSTR(FileUtilities::getAssetRelativePath(_filePath)));

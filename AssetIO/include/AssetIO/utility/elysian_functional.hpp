@@ -8,6 +8,8 @@
 #define ELYSIAN_FUNCTIONAL_HPP
 
 #include <functional>
+#include <cstddef>
+#include <initializer_list>
 
 // ======== CONVERT LAMBDA TO STD::FUNCTION SEAMLESSLY =======
 
