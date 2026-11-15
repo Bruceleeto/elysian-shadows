@@ -418,6 +418,22 @@ void gyVidResolution(unsigned int *const projWidth, unsigned int *const projHeig
     *projWidth = _projWidth; *projHeight = _projHeight;
 }
 
+void gyVidPresentScene(void) {
+    gyVidVertexBatchFlush();
+    GY_GL_CHECK_ERROR();
+    //glalVidBindDefaultFbo() binds the window for reading too, so bind it first,
+    //then read from the scene buffer.
+    glalVidBindDefaultFbo();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, _glalMainFbo);
+    glReadBuffer(GL_COLOR_ATTACHMENT0);
+    glBlitFramebuffer(0, 0, (GLint)_projWidth, (GLint)_projHeight,
+                      0, 0, (GLint)_projWidth, (GLint)_projHeight,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glalVidBindDefaultFbo();
+    glViewport(0, 0, (GLsizei)_projWidth, (GLsizei)_projHeight);
+    GY_GL_CHECK_ERROR();
+}
+
 int glalVidGlewInit(void) {
     static int once = 0;
 

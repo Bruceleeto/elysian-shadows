@@ -476,7 +476,9 @@ void LightSystem::_sortOnscreenLights(void) {
 }
 
 void LightSystem::applyBloomEffect(void) const {
+    //Bloom composites the scene into the window itself; without it, copy the scene over.
     if(_bloomEnabled) gyVidApplyBloom();
+    else gyVidPresentScene();
 }
 
 

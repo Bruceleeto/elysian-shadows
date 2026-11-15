@@ -114,6 +114,8 @@ void gyVidLightSourceBeginShadowPasses(void);
 
 //Bloom post-processing effect API
 void gyVidApplyBloom(void);
+//Copy the off-screen scene buffer to the window. Used when bloom (which composites itself) is off.
+void gyVidPresentScene(void);
 
 //Shader management
 GYShader*           gyShaderCreate(const char*const path);
