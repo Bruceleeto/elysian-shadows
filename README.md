@@ -35,9 +35,8 @@ Before you dive in, know what you're getting:
 | **ESToolkit** | The ESTk level editor and content-creation toolkit (Qt) |
 | **AssetIO** | Asset objects saved and loaded by the engine and toolkit |
 | **game** | Game-specific engine code |
-| **libGyro** | Cross-platform multimedia C API powering ESTk and ElysianVMU |
+| **libGyro** | Cross-platform multimedia C API powering the engine and ESTk |
 | **libGyro-Kinetic** | libGyro backend for the Sega Dreamcast |
-| **ElysianVMU** | Sega Dreamcast VMU emulator (with **evmu-core**) |
 | **QESTkUtils** | Shared Qt utilities and widgets |
 | **UnitTests** | Tests for ESToolkit |
 
@@ -56,7 +55,6 @@ Then pick what to build by adding a `CONFIG+=` argument under **Projects → Bui
 | Target | Argument | Extras |
 |---|---|---|
 | ESToolkit | `CONFIG+=estk` | `CONFIG+=tests` (unit tests), `CONFIG+=docs` (Lua API docs) |
-| ElysianVMU | `CONFIG+=vmu` | |
 
 From the command line, run `qmake` on the same `.pro` file with the same arguments, then `make`.
 

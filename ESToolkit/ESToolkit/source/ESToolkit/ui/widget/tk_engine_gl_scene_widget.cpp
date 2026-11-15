@@ -16,9 +16,6 @@
 #include <QOpenGLDebugLogger>
 #include <QOpenGLDebugMessage>
 #include <ESToolkit/ui/tk_estoolkit.h>
-#ifdef VMU_CHILD_APP
-#include <ElysianVMU/gyro_vmu_main_window.hpp>
-#endif
 
 #include <QMouseEvent>
 #include <spine/spine.h>
@@ -203,13 +200,6 @@ void EngineGLSceneWidget::paintGL(void) {
     getAssets()->getEngine()->processInput();
     getAssets()->getEngine()->update();
     getAssets()->getEngine()->render();
-#ifdef VMU_CHILD_APP
-    if(ESToolkit::getInstance()->getVMUMainWindow()) {
-        Debug::setEVMUActive(true);
-        ESToolkit::getInstance()->getVMUMainWindow()->update();
-        Debug::setEVMUActive(false);
-    }
-#endif
 
     _monitor.stop();
 

@@ -6,8 +6,6 @@
 #include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/fileextensions.qdocconf) #configuration common among QDoc projects
 #include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/qt-html-templates-offline.qdocconf) #offline HTML template for documentation shipped to Qt Creator
 
-include(../../ElysianVMU/app/qt/doc/ElysianVMU.qdocconf)
-
 project = ESToolkit
 description = ESToolkit help files, references, examples, and Lua API documentation
 

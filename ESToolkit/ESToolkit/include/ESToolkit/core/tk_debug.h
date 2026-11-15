@@ -62,7 +62,6 @@ public:
         SOURCE_QT,
         COMMAND,
         OPENGL,
-        EVMU,
         QESTKUTILS,
         SOURCE_MAX
     };
@@ -107,7 +106,6 @@ public:
         _window = nullptr;
 	}
 
-    static void setEVMUActive(bool active=true);
     static void setFilter(const TK_SOURCE source, const int severity, const bool enabled);
     static bool isFilterEnabled(const TK_SOURCE source, const int severity);
     static void clear(void);
@@ -162,7 +160,6 @@ private:
     static QString              _lastString;
     static bool                 _prevMsgDiscarded;
     static QStack<bool>         _ignoredPushes;
-    static bool                 _evmuActive;
 
     static QQueue<LogEntry>*    _pendingQueue;
     static QMutex*              _mutex;
@@ -171,7 +168,7 @@ private:
 
 
     constexpr static char    _srcEnumToStr[SOURCE_MAX][50] = {
-        "LIBGYRO", "ENGINE", "LUA", "TOOLKIT", "QT", "COMMAND", "OPENGL", "EVMU"
+        "LIBGYRO", "ENGINE", "LUA", "TOOLKIT", "QT", "COMMAND", "OPENGL", "QESTKUTILS"
     };
 
     constexpr static char _filterList[2][500] = {
@@ -206,7 +203,6 @@ inline bool TkDebug::isFilterEnabled(const TK_SOURCE source, const int severity)
     return _filterEnabled[source][severity];
 }
 
-inline void TkDebug::setEVMUActive(bool active) { _evmuActive = active; }
 
 
 

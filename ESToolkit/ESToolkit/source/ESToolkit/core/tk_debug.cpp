@@ -63,7 +63,6 @@ QString             TkDebug::_lastString;
 bool                TkDebug::_prevMsgDiscarded = false;
 QStack<bool>        TkDebug::_ignoredPushes;
 QMenu*              TkDebug::_filterMenu;
-bool                TkDebug::_evmuActive = false;
 QAction*            TkDebug::_filterActions[TkDebug::SOURCE_MAX][TkDebug::LOG_OFF] = {{nullptr}};
 
 TkDebug::TkDebug(void) {
@@ -145,7 +144,6 @@ TkDebug::TkDebug(void) {
     addFilterSource("OpenGL",       elysian::Debug::OPENGL);
     addFilterSource("Lua",          elysian::Debug::LUA);
     addFilterSource("Commands",     elysian::Debug::COMMAND);
-    addFilterSource("ElysianVMU",   elysian::Debug::EVMU);
     addFilterSource("QESTkUtils",   elysian::Debug::QESTKUTILS);
     sourcesMenu.insertAction("Enable All Filters", [](bool) {
         for(unsigned i = 0; i < elysian::Debug::SOURCE_MAX; ++i)
@@ -257,9 +255,7 @@ void TkDebug::Log(int flag, QString msg, int src) {
     }
 #endif
 
-    if(src == LIBGYRO && _evmuActive) {
-        src = EVMU;
-    } else {
+    {
         //Don't let shit from other threads fucking touch a GUI-thread widget!!!!
         if(flag == LOG_ERROR && QThread::currentThread() == QApplication::instance()->thread())
             ESToolkit::showStatusBarMessage(msg, Qt::darkRed);
@@ -452,9 +448,6 @@ void TkDebug::_processLogEntry(const LogEntry& entry) {
         break;
     case COMMAND:
         brush = QBrush(Qt::darkGreen);
-        break;
-    case EVMU:
-        brush = QBrush(Qt::darkMagenta);
         break;
     default:
         brush = QBrush(Qt::black);

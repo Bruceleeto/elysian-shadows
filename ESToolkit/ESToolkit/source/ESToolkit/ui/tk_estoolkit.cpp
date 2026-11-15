@@ -42,10 +42,6 @@
 #include <AssetIO/proxy/elysian_level_proxy.hpp>
 #include <ESToolkit/ESGamma/tk_render_system.h>
 #include <QESTkUtils/ui/widget/tk_line_chart.h>
-#ifdef GYRO_VMU_APP
-#include <ElysianVMU/gyro_vmu_main_window.hpp>
-#include <ui_gyro_vmu_main_window.h>
-#endif
 
 
 #ifdef ESTK_UNIT_TESTS
@@ -257,32 +253,8 @@ ESToolkit::ESToolkit(QWidget *parent):
 
     setMouseTracking(true);
 }
-#if 0
-bool ESToolkit::event(QEvent *event) {
-    switch(event->type()) {
-    case QEvent::Shortcut: {
-        auto* shortcutEvent = static_cast<QShortcutEvent*>(event);
-        if(shortcutEvent->isAmbiguous()) {
-            if(_evmuWindow && _evmuWindow->hasFocus()) {
-                shortcutEvent->accept();
-                return true;
-            }
-
-        }
-        break;
-    }
-
-
-    default: break;
-    }
-    return QMainWindow::event(event);
-}
-#endif
-
 
 ESToolkit::~ESToolkit(void) {
-    delete _vmuDockWidget;
-
     _ui->mapView->setEnabled(false);
     _assets.setCurrentArea(nullptr);
     _assets.setCurrentProject(nullptr);
@@ -1117,7 +1089,6 @@ void ESToolkit::setMainTextureUniform(const int uniform) {
 }
 
 
-        /* fallthrough */
 
 void ESToolkit::_onEngineInitialized(void) {
     _assets.getEngine()->getMapSys()->setView(_ui->mapView);
@@ -1146,6 +1117,7 @@ void ESToolkit::select(const LuaVariant& ref) {
             selection = ref.getValue<Level*>();
             break;
         }
+        /* fallthrough */
     case LUA_TTABLE:
     default:
         selection = new LuaTableSelectable(ref);

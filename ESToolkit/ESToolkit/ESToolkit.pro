@@ -14,10 +14,6 @@ dreamcast {
     TARGET_EXT=".elf"
 }
 
-vmu_child_app {
-    DEFINES+=VMU_CHILD_APP
-}
-
 !ios: !dreamcast: !android {
     QT += sql gui opengl network help charts
     CONFIG += console
@@ -46,13 +42,13 @@ macx {
 
 
 !ios {
-# Some engine types are over-aligned (e.g. TkArea via 32-byte aligned GYMatrix4 members);
-# make operator new honor their alignment even though we build as C++14.
-!dreamcast: QMAKE_CXXFLAGS += -faligned-new
     #QMAKE_OBJCXXFLAGS_PRECOMPILE += -std=c++11 -stdlib=libc++
     #CONFIG += precompile_header
 }
 QMAKE_CXXFLAGS += -Wno-empty-body
+# Some engine types are over-aligned (e.g. TkArea via 32-byte aligned GYMatrix4 members);
+# make operator new honor their alignment even though we build as C++14.
+!dreamcast: QMAKE_CXXFLAGS += -faligned-new
 
 
 ICON = resource/images/estk.icns
@@ -87,18 +83,6 @@ DEPENDPATH += 	../../AssetIO/include \
 #!ios: !dreamcast: !android {
     #PRECOMPILED_HEADER = include/tk_precompiled_headers.h
 #}
-
-vmu_child_app {
-    QT += serialport
-
-    INCLUDEPATH += $${ESDEV_ROOT}/ElysianVMU/app/qt/include \
-                $${ESDEV_ROOT}/ElysianVMU/evmu-core/include \
-                $${ESDEV_ROOT}/ElysianVMU/evmu-core/wrappers/cpp/include
-
-    DEPENDPATH += ../../ElysianVMU/app/qt/include \
-        ../../ElysianVMU/build/qtcreator/ElysianVMU \
-        ../../ElysianVMU/evmu-core
-}
 
 #SPLIT UP SO ITS STILL PRIORITIZED!!!
 INCLUDEPATH += include \
@@ -730,10 +714,6 @@ macx {
 
 RESOURCES += resource/resource.qrc
 
-vmu_child_app {
-    RESOURCES += ../../ElysianVMU/app/qt/resource/evmu.qrc
-}
-
 docs {
 
     DEFINES+=QESTKUTILS_DOCUMENTATION_RESOURCES
@@ -791,43 +771,6 @@ linux {
     DESTDIR = ../../executable
 }
 
-
-vmu_child_app {
-
-    EVMU_PATH = ../../ElysianVMU
-
-    win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/release/ -lElysianVMU
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/debug/ -lElysianVMU
-    else:unix: LIBS += -L$$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App -lElysianVMU
-
-    INCLUDEPATH += $$PWD/../../ElysianVMU/build/qtcreator/EVMU-App
-    DEPENDPATH += $$PWD/../../ElysianVMU/build/qtcreator/EVMU-App
-
-    win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/release/libElysianVMU.a
-    else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/debug/libElysianVMU.a
-    else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/release/ElysianVMU.lib
-    else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/debug/ElysianVMU.lib
-    else:unix: PRE_TARGETDEPS += $$OUT_PWD/../../ElysianVMU/build/qtcreator/EVMU-App/libElysianVMU.a
-
-
-    EVMU_CORE_PATH      = $${EVMU_PATH}/evmu-core
-    EVMU_CORE_BUILD_PATH = $${EVMU_CORE_PATH}/build/qtcreator/EVMU-Core
-
-    win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/release/ -levmu-core
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/debug/ -levmu-core
-    else:unix: LIBS += -L$$OUT_PWD/$${EVMU_CORE_BUILD_PATH} -levmu-core
-
-    INCLUDEPATH += $$PWD/$${EVMU_CORE_PATH}
-    DEPENDPATH += $$PWD/$${EVMU_CORE_PATH}
-
-    win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/release/libevmu-core.a
-    else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/debug/libevmu-core.a
-    else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/release/evmu-core.lib
-    else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/debug/evmu-core.lib
-    else:unix: PRE_TARGETDEPS += $$OUT_PWD/$${EVMU_CORE_BUILD_PATH}/libevmu-core.a
-
-
-}
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/release/ -llibGyroKinetic
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../libGyro-Kinetic/debug/ -llibGyroKinetic

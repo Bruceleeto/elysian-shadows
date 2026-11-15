@@ -18,17 +18,8 @@ tests {
     SUBDIRS += ../../UnitTests
 }
 
-vmu_child_app {
-    DEFINES += VMU_CHILD_APP
-    SUBDIRS += ../../ElysianVMU/build/qtcreator/ElysianVMU
-}
-
 estk {
     SUBDIRS += ../../ESToolkit/ESToolkit
-}
-
-vmu {
-    SUBDIRS += ../../ElysianVMU/build/qtcreator/ElysianVMU
 }
 
 
@@ -53,16 +44,6 @@ estk {
 
 tests {
     ESToolkit.depends += UnitTests
-}
-
-vmu {
-    ElysianVMU.depends += libGyro \
-            QESTkUtils
-}
-
-vmu_child_app {
-    ElysianVMU.depends += libGyro
-    ESToolkit.depends += ElysianVMU
 }
 
 

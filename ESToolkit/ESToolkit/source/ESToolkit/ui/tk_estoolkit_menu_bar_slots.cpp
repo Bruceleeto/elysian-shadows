@@ -44,11 +44,6 @@
 #include <ESToolkit/core/tk_file_utilities.h>
 #include <ESToolkit/ESGamma/tk_render_system.h>
 
-#ifdef VMU_CHILD_APP
-#include <ElysianVMU/gyro_vmu_main_window.hpp>
-#include <evmu-core/gyro_vmu_display.h>
-#endif
-
 #include "ui_tk_estoolkit.h"
 #include "ui_tk_sheet_dock_widget.h"
 
@@ -829,39 +824,6 @@ void ESToolkit::on_actionAudio_Dump_triggered() {
     _assets.getEngine()->getAudioSys()->dumpDebugInfo();
 }
 
-void ESToolkit::on_actionVMU_View_triggered(bool checked) {
-#ifdef VMU_CHILD_APP
-    if(checked) {
-        if(!_evmuWindow) {
-            Debug::setEVMUActive(true);
-            _evmuWindow = new VMUMainWindow(this);	// no parent
-            //ubMainWindow->setWindowFlags(subMainWindow->windowFlags() & ~Qt::Window);
-            //evmuWindow->setWindowFlags(Qt::Widget);
-           _evmuWindow->setFocusPolicy(Qt::ClickFocus);
-
-            //subMainWindow->setUnifiedTitleAndToolBarOnMac(true); _vmuDockWidget = new QDockWidget(nullptr);
-           _vmuDockWidget = new QDockWidget(this);
-           _vmuDockWidget->setFocusPolicy(Qt::ClickFocus);
-            _vmuDockWidget->setWindowTitle("VMU View");
-            _evmuWindow->menuBar()->setNativeMenuBar(false);
-
-           _vmuDockWidget->setWidget(_evmuWindow);
-           _evmuWindow->loadBios(FileUtilities::getAbsoluteAssetPath(ESTOOLKIT_EVMU_BIOS_FILE_PATH));
-
-        //dock->setMouseTracking(false);
-           //evmuWindow->setParent(dock) ;	// here
-            addDockWidget(Qt::RightDockWidgetArea, _vmuDockWidget);
-            Debug::setEVMUActive(false);
-
-            showStatusBarMessage("Starting ElysianVMU");
-        }
-    }
-
-    _vmuDockWidget->setVisible(checked);
-    _ui->actionVMU_View->setChecked(checked);
-#endif
-}
-
 static bool _convertVMUImageToIco(const QImage& img, QString outFile) {
     bool success = true;
     FILE* file = fopen(Q_CSTR(outFile), "wb");
@@ -905,7 +867,6 @@ void ESToolkit::on_actionGenerate_VMU_Icons_triggered(void) {
 #define VMU_SCREEN_WIDTH    48
 #define VMU_SCREEN_HEIGHT   32
     QString vmuDir = FileUtilities::getAbsoluteAssetPath("/assets/graphics/vmu");
-    Q_UNUSED(checked)
     DbgEvent dbg("Scanning VMU Directory for Icons: %s", Q_CSTR(vmuDir));
     (void)dbg;
 
@@ -928,19 +889,6 @@ void ESToolkit::on_actionGenerate_VMU_Icons_triggered(void) {
 #undef VMU_SCREEN_HEIGHT
 }
 
-void ESToolkit::on_actionConnectEVMUTcp_toggled(bool arg1)
-{
-    if(!_evmuWindow) return;
-    if(arg1) {
-#ifdef VMU_CHILD_APP
-        _evmuWindow->startTcpServer(1234);
-#endif
-        _assets.getEngine()->getInputSys()->getVMU(0)->connectToEVMU("localhost", 1234);
-    } else {
-        _assets.getEngine()->getInputSys()->getVMU(0)->disconnectFromEVMU();
-    }
-}
-
 void ESToolkit::on_actionTexture_Dump_triggered(void)
 {
 #ifndef GY_VIDEO_DEBUG
@@ -957,5 +905,6 @@ void ESToolkit::on_actionTexture_Dump_triggered(void)
 
 void ESToolkit::on_actionParticles_triggered(bool checked)
 {
+    Q_UNUSED(checked)
   //  getAssets().getEngine()->getRenderSystem()->setUseParticleAcceleration(checked);
 }
