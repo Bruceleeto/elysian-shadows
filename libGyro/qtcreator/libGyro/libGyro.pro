@@ -1,4 +1,4 @@
-#include(../../../qtcreator/ESDev/ESDev.pri)
+#include(../../../ESDev.pri)
 TEMPLATE = lib
 QT += opengl
 CONFIG += staticlib console

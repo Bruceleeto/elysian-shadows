@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-#include(../qtcreator/ESDev/ESDev.pri)
+#include(../ESDev.pri)
 
 QT       += widgets network opengl sql testlib
 

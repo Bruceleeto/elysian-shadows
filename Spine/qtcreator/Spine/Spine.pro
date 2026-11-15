@@ -1,4 +1,4 @@
-#include(../../../qtcreator/ESDev/ESDev.pri)
+#include(../../../ESDev.pri)
 TEMPLATE = lib
 CONFIG += staticlib
 

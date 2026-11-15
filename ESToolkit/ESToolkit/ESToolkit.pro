@@ -2,7 +2,7 @@
 # Project created by QtCreator 2010-03-06T14:23:27
 # And modified to all fuck by Falco ALL THE DAYS
 # -------------------------------------------------
-#include(../../qtcreator/ESDev/ESDev.pri)
+#include(../../ESDev.pri)
 
 TARGET = ESToolkit
 
@@ -736,7 +736,7 @@ docs {
 macx {
     DESTDIR = ../../executable
     #    CONFIG(release, debug|release):
-    release: QMAKE_POST_LINK = "sh ./macdeployes.sh"
+    release: QMAKE_POST_LINK = "sh $$PWD/macdeployes.sh"
 }
 
 dreamcast {
