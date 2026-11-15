@@ -51,7 +51,9 @@ public:
 
     void updateGauge(float curVal, float maxVal) {
         _fg->getTransform() = getEntity()->getTransform();
-        float scale = curVal/maxVal;
+        float scale = (maxVal > 0.0f)? curVal/maxVal : 0.0f;
+        if(scale < 0.0f) scale = 0.0f;
+        if(scale > 1.0f) scale = 1.0f;
         float oldSize = _fg->getTransform().getSizeX();
         float newSize = oldSize*scale;
         _fg->getTransform().setSizeX(newSize);
@@ -163,7 +165,7 @@ PlayablePane::PlayablePane(void) {
 void PlayablePane::update(void) {
     char buff[50];
     EntityWidget::update();
-    if(_playable) {
+    if(_playable && !_combatTable.isNil() && _playable->getCombat()) {
 
         CombatStatus& stats = _playable->getCombat()->getStatus();
 
@@ -182,10 +184,16 @@ void PlayablePane::update(void) {
         _hpGauge->updateGauge(stats.getHp(), stats.getMaxHp());
 
 
-        sprintf(buff, "Lv. %d", _combatTable["echo"]["level"].getVariant().getValue<int>());
-        _echoLevelText->setText(buff);
-
-        _echoNameText->setText(_combatTable["echo"]["attrib"]["name"].getVariant().getValue<const char*>());
+        //self.echo is the Echoes table entry; its progress (level) lives in self.echoes[name]
+        LuaVariant echoName = _combatTable["echo"]["name"].getVariant();
+        if(echoName.getType() == LUA_TSTRING) {
+            _echoNameText->setText(echoName.getValue<const char*>());
+            sprintf(buff, "Lv. %d", _combatTable["echoes"][echoName.getValue<const char*>()]["level"].getVariant().getValue<int>());
+            _echoLevelText->setText(buff);
+        } else {
+            _echoNameText->setText("");
+            _echoLevelText->setText("");
+        }
 
         sprintf(buff, "MP %d/%d", stats.getMp(), stats.getMaxMp());
         _mpText->setText(buff);
@@ -208,10 +216,15 @@ void PlayablePane::setPartyMember(Entity* entity) {
 
     _playable = entity;
 
-    if(_playable) {
+    LuaBehavior* combat = _playable? _playable->getLuaBehavior(ELYSIAN_PLAYABLE_PANE_COMBAT_BEHAV) : nullptr;
+    if(_playable && !combat) {
+        errprintf("PlayablePane: party member [%s] has no %s behavior!", _playable->getName(), ELYSIAN_PLAYABLE_PANE_COMBAT_BEHAV);
+    }
+
+    if(combat) {
         _nameText->enable();
         _nameText->setText(_playable->getName());
-        _combatTable = _playable->getLuaBehavior(ELYSIAN_PLAYABLE_PANE_COMBAT_BEHAV)->getSelfTable();
+        _combatTable = combat->getSelfTable();
         _portrait->enable();
         _portrait->getEntity()->getRenderable()->getSpriteAttrib()->setTexPath(_combatTable["playable"]["portrait"].getVariant().getValue<const char*>());
         _echoIcon->getEntity()->getRenderable()->getSpriteAttrib()->setTexPath("/assets/graphics/items/health_globe.png");

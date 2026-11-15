@@ -814,7 +814,8 @@ public:
     inline double LuaVariantBase::getValue<double>(void) const { return _value.number; }
 
     template<>
-    inline  const char* LuaVariantBase::getValue<const char*>(void) const { return _value.string; }
+    //Only a string variant holds a valid string pointer; anything else shares the union
+    inline  const char* LuaVariantBase::getValue<const char*>(void) const { return getType() == LUA_TSTRING? _value.string : nullptr; }
 
     template<>
     inline  int LuaVariantBase::getValue<int>(void) const { return _value.number; }

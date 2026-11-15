@@ -127,6 +127,7 @@ namespace elysian {
         void            addWidget(Widget* widget);
         Widget*         getWidget(unsigned index) const;
         void            insertWidget(unsigned index, Widget* widget);
+        Widget*         replaceWidget(unsigned index, Widget* widget);
         Widget*         removeWidget(unsigned index);
         auto            getWidgets(void) const -> std::vector<Widget*>;
         LuaVariant      getWidgetsLua(void) const;

@@ -287,29 +287,46 @@ namespace elysian {
         setWidgets(widgets);
     }
 
+    //Inserts widget at index, shifting the widgets at and after it along by one.
+    //A widget already in the layout is moved rather than duplicated.
     void SingleAxisLayout::insertWidget(unsigned index, Widget *widget) {
-        if(getWidget(index) == widget) return; //already at that location, dickwisp.
+        if(!widget || getWidget(index) == widget) return;
 
-        auto pair = _indexToRowColPair(index);
-
-        bool relocate = false;
+        bool present = false;
         for(auto&& it : _widgets) {
             if(it.second == widget) {
-                relocate = true;
+                present = true;
                 break;
             }
         }
+        if(present) removeWidget(widget);
 
-        if(relocate) {
-            removeWidget(widget);
+        const unsigned count = getWidgetCount();
+        if(index > count) index = count;
 
-            int i = getWidgetCount() - 1;
-            for(; i >= (int)index; --i) {
-                auto newPair = _indexToRowColPair(i+1);
-                TableLayout::insertWidget(newPair.first, newPair.second, getWidget(i));
-            }
+        for(int i = (int)count - 1; i >= (int)index; --i) {
+            auto newPair = _indexToRowColPair(i+1);
+            TableLayout::insertWidget(newPair.first, newPair.second, getWidget(i));
         }
+
+        auto pair = _indexToRowColPair(index);
         TableLayout::insertWidget(pair.first, pair.second, widget);
+    }
+
+    //Puts widget in the slot at index, returning the widget it displaced (if any).
+    Widget* SingleAxisLayout::replaceWidget(unsigned index, Widget *widget) {
+        Widget* old = getWidget(index);
+        if(old == widget) return nullptr;
+        if(old) old->setParentLayout(nullptr);
+
+        auto pair = _indexToRowColPair(index);
+        if(widget) {
+            TableLayout::insertWidget(pair.first, pair.second, widget);
+        } else if(old) {
+            _widgets.erase(pair);
+            _updateDimensions();
+        }
+        return old;
     }
 
     Widget* SingleAxisLayout::removeWidget(Widget* widget) {

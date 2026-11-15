@@ -79,63 +79,6 @@ PauseMenu::PauseMenu(void):
     System::getEventSys()->addEventObserver(this, EVENT_MOUSE_MOVED);
     System::getEventSys()->addEventObserver(this, EVENT_MOUSE_SCROLLED);
 #endif
-
-
-    //=======DELETE MEEEEE!!!!!!!=======
-    auto* testWidget = new GridLayoutTestWidget();
-    _mainFrameWidgets[1] = testWidget;
-
-    Entity* e = new Entity();
-    e->addRenderable();
-    auto attr = std::make_shared<elysian::SpriteAttrib>();
-    attr->setColor(255, 100, 50, 40);
-    e->getRenderable()->setSpriteAttrib(attr);
-    testWidget->setEntity(e);
-
-    //MenuWidget synchronicity
-    //1) virualize item count (return from total count)
-    //2) virtualize current item change  (sync curItemIndex=>_topLeftIndex)
-
-    LuaArrayModel* luaModel = new LuaArrayModel(LuaVariant::fromArray({
-                "Test1",
-                "Bitch",
-                "Wench",
-                "Franz Ferdinand",
-                  "Test2",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand",
-                  "Test3",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand",
-                  "Test4",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand",
-                  "Test5",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand",
-                  "Franz Ferdinand",
-                  "Test4",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand",
-                  "Test5",
-                  "Bitch",
-                  "Wench",
-                  "Franz Ferdinand"
-        }));
-
-    MenuItemView* menu = new MenuItemView(luaModel, new DefaultItemDelegate(luaModel));
-    menu->setLayout(new VerticalLayout);
-    //menu->setMaxSize(Vector2(600, 440));
-   // menu->setMaxSize(Vector2(750, 600));
-    _mainFrameWidgets[2] = menu;
-    //_optionsGroupWidget->getLayout<VerticalLayout>()->insertWidget(0, menu);
-
-    //===== END TEMP FUCKERY =====
 }
 
 PauseMenu::~PauseMenu(void) {
@@ -145,7 +88,7 @@ PauseMenu::~PauseMenu(void) {
 
 
 void PauseMenu::setCurrentMenuOption(MAIN_MENU_OPTION_TYPE type) {
-    _centralLayout->insertWidget(FRAME_RIGHT, _mainFrameWidgets[type]);
+    _centralLayout->replaceWidget(FRAME_RIGHT, _mainFrameWidgets[type]);
     _optionsPane->setCurrentIndex(type);
 }
 

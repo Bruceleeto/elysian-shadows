@@ -232,7 +232,7 @@ namespace elysian {
     inline const char* SpriteAttribBase::getTexPath(void) const { return _tex? _tex->filename : ""; }
     inline void SpriteAttribBase::setTexPath(const char*const path) {
         gyVidTexDestroy(_tex);
-        if(strcmp(path, "") != 0) _tex = gyVidTexCreate(path);
+        _tex = (path && path[0])? gyVidTexCreate(path) : nullptr;
 
     }
 
