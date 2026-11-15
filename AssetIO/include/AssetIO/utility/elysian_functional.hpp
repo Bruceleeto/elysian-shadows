@@ -296,7 +296,7 @@ constexpr void foreach_in_tuple_reverse(T&& tuple, F&& f) {
 }
 
 //https://stackoverflow.com/questions/9083593/is-an-is-functor-c-trait-class-possible
-namespace // implementation detail
+namespace is_callable_detail // implementation detail
 {
     // build R (*)(Args...) from R (Args...)
     // compile error if signature is not a valid function signature
@@ -380,7 +380,7 @@ namespace // implementation detail
 // function pointers: R (*)(Args...), but not R (Args...)!
 template <typename Callable, typename Signature>
 struct is_callable
-    : is_callable_impl<
+    : is_callable_detail::is_callable_impl<
         Callable, Signature,
         std::is_class<Callable>::value
       >

@@ -501,7 +501,7 @@ namespace elysian {
                         lua_remove(l, -2);
 
                         return 2;
-                    } else;// qDebug() << "couldn't find field!";
+                    } // else qDebug() << "couldn't find field!";
                 } else {
                  //   qDebug() << "getNextKey() - FALSE";
                 }

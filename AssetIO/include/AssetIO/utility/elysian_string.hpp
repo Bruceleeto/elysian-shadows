@@ -489,7 +489,10 @@ namespace elysian
         if (len)
         {
             resized = Resize(GetLength() + len + 1);
-            strncat(m_pStrPtr, str, len);
+            // Append exactly len chars (may be a prefix of str), then terminate.
+            const size_t cur = strlen(m_pStrPtr);
+            memcpy(m_pStrPtr + cur, str, len);
+            m_pStrPtr[cur + len] = '\0';
         }
         return resized;
     }
