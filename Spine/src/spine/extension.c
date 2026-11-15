@@ -31,6 +31,7 @@
 
 #include <spine/extension.h>
 #include <stdio.h>
+#include <limits.h>
 
 static void* (*mallocFunc) (size_t size) = malloc;
 static void* (*debugMallocFunc) (size_t size, const char* file, int line) = NULL;
@@ -63,17 +64,23 @@ void _setFree (void (*free) (void* ptr)) {
 }
 
 char* _readFile (const char* path, int* length) {
-	char *data;
-	FILE *file = fopen(path, "rb");
-	if (!file) return 0;
-
-	fseek(file, 0, SEEK_END);
-	*length = (int)ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	data = MALLOC(char, *length);
-	fread(data, 1, *length, file);
-	fclose(file);
-
-	return data;
+    char* data;
+    long size;
+    FILE* file = fopen(path, "rb");
+    *length = 0;
+    if (!file) return 0;
+    if (fseek(file, 0, SEEK_END) != 0 || (size = ftell(file)) < 0 ||
+        size > INT_MAX || fseek(file, 0, SEEK_SET) != 0) {
+        fclose(file);
+        return 0;
+    }
+    data = MALLOC(char, size ? size : 1);
+    if (!data || fread(data, 1, (size_t)size, file) != (size_t)size) {
+        FREE(data);
+        fclose(file);
+        return 0;
+    }
+    fclose(file);
+    *length = (int)size;
+    return data;
 }

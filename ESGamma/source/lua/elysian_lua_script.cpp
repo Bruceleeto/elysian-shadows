@@ -8,11 +8,6 @@
 #include <AssetIO/crtp/elysian_lua_behavior.hpp>
 #include <lua.hpp>
 
-OOLUA_EXPORT_FUNCTIONS(LuaBehaviorScriptAttrib,
-                       inheritFromBehavior,
-                       addSupportedTrigger)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScriptAttrib)
-
 /*!
     \qmltype LuaBehaviorScriptAttrib
     \since 1.5.8
@@ -56,19 +51,19 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScriptAttrib)
     \since 1.5.8
     \inmodule Engine
 
-    \brief Base class representing an executable Lua 5.2 script. The
+    \brief Base class representing an executable Lua 5.5 script. The
     script may either be a standalone script file (ie area_init.lua)
     or it can be a LuaBehavior script, which can be attached to an \l Entity
     to give it custom logic.
 
-    \section2 Lua5.2 Language and Features
-    The Engine includes the full Lua 5.2 Interpreter (with a few minor additions) and all of the standard libraries and
+    \section2 Lua 5.5 Language and Features
+    The Engine includes the full Lua 5.5 Interpreter (with a few minor additions) and all of the standard libraries and
     features supported by it (including the optional debug library). For the complete language documentation,
-    please refer to the \l{https://www.lua.org/manual/5.2/}{Lua 5.2 Reference Manual}.
+    please refer to the \l{https://www.lua.org/manual/5.5/}{Lua 5.5 Reference Manual}.
 
-    \section2 OOLua Proxy Classes
-    The Engine relies upon a heavily extended implementation of the \l{http://oolua.org/}{OOLua C++ and Lua Binding Library}
-    for generating "proxy classes" which are used to give Lua access to
+    \section2 C++ Usertypes
+    The Engine relies upon a \l{https://sol2.readthedocs.io/}{sol2 C++ and Lua Binding Library}
+    for registering usertypes which are used to give Lua access to
     the C++ classes of the Engine. Many of the script errors such as type-checking and function
     argument/return value validation are handled by the library.
 
@@ -78,8 +73,8 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScriptAttrib)
     achieved by giving each LuaScript its own unique, _ENV table, which simply falls back to
     the true global environment table, \c _G, when a global key cannot be found within it.
 
-    \e{NOTE: Refer to the Lua 5.2 Documentation for a more detailed description of environment
-    tables (\c _ENV) and the global environment (\c _G): \l{https://www.lua.org/manual/5.2/manual.html#2.2}}.
+    \e{NOTE: Refer to the Lua 5.5 Documentation for a more detailed description of environment
+    tables (\c _ENV) and the global environment (\c _G): \l{https://www.lua.org/manual/5.5/manual.html#2.2}}.
 
     Because each LuaScript is given its own \c _ENV table, anything declared globally within a LuaScript is
     not actually a true global value but rather is only global within the execution environment of the script.
@@ -170,8 +165,8 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScriptAttrib)
     Because of this, array-style table storage and indexing should be favored over the hash-style indexing scheme
     when table access performance is critical.
 
-    \sa LuaBehaviorScript, LuaBehavior, {https://www.lua.org/manual/5.2/}{Lua 5.2 Reference Manual},
-       {http://oolua.org/}{OOLua C++ and Lua Binding Library}
+    \sa LuaBehaviorScript, LuaBehavior, {https://www.lua.org/manual/5.5/}{Lua 5.5 Reference Manual},
+       {https://sol2.readthedocs.io/}{sol2 C++ and Lua Binding Library}
 
 */
 /*!
@@ -195,15 +190,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScriptAttrib)
  * Scripts in an error will report their error, then abort
  * execution.
  */
-
-
-OOLUA_EXPORT_FUNCTIONS(LuaScript)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaScript,
-                             getPath,
-                             getRefCount,
-                             getError)
-
-
 
 
 /*!
@@ -253,14 +239,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LuaScript,
 
 
 
-OOLUA_EXPORT_FUNCTIONS(LuaBehaviorScript,
-                       getAttrib)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehaviorScript,
-                             getParent)
-
-
-
-
 namespace elysian {
 
 LuaScript::LuaScript(const char *path): _environRef(LUA_NOREF) { strcpy(_path, path); }
@@ -273,11 +251,11 @@ void LuaBehaviorScript::cacheTriggers(lua_State*const state) {
 
     for(unsigned i = 0; i < LuaBehavior::TRIGGER_ENGINE_MAX_INDEX; ++i) {
         if((_attrib.getSupportedTriggers()&(1ul<<i))) {
-            lua_pushnumber(state, i);
+            lua_pushinteger(state, i);
             lua_getfield(state, -2, LuaBehavior::triggerStrings[i]);
-            LuaVariant f = LuaVariant::fromStack(-1, false);
-            if(f.getType() != LUA_TFUNCTION) {
-                errprintf("Expected trigger function for [%s], got [%s] instead!", LuaBehavior::triggerStrings[i], f.getTypeString());
+            sol::object f = elysian::lua::fromStack(-1, false);
+            if(elysian::lua::type(f) != LUA_TFUNCTION) {
+                errprintf("Expected trigger function for [%s], got [%s] instead!", LuaBehavior::triggerStrings[i], elysian::lua::typeName(f).c_str());
             }
             lua_settable(state, -3);
         }
@@ -290,4 +268,37 @@ void LuaBehaviorScript::cacheTriggers(lua_State*const state) {
 
 
 
+}
+
+namespace elysian::lua {
+using namespace elysian;
+using LuaBehaviorScriptAttrib = elysian::LuaBehaviorScriptAttrib;
+using LuaScript = elysian::LuaScript;
+using LuaBehaviorScript = elysian::LuaBehaviorScript;
+
+void registerLuaBehaviorScriptAttrib(sol::state_view state) {
+    if (state["LuaBehaviorScriptAttrib"].valid()) return;
+    using T = elysian::LuaBehaviorScriptAttrib;
+    auto type = registerType<T>(state, "LuaBehaviorScriptAttrib");
+    type["inheritFromBehavior"] = method<T>(&T::inheritFromBehavior);
+    type["addSupportedTrigger"] = method<T>(&T::addSupportedTrigger);
+}
+
+void registerLuaScript(sol::state_view state) {
+    if (state["LuaScript"].valid()) return;
+    using T = elysian::LuaScript;
+    auto type = registerType<T>(state, "LuaScript");
+    type["getPath"] = method<T, const char*() const>(&T::getPath);
+    type["getRefCount"] = method<T, unsigned() const>(&T::getRefCount);
+    type["getError"] = method<T, bool() const>(&T::getError);
+}
+
+void registerLuaBehaviorScript(sol::state_view state) {
+    if (state["LuaBehaviorScript"].valid()) return;
+    registerLuaScript(state);
+    using T = elysian::LuaBehaviorScript;
+    auto type = registerType<T, elysian::LuaScript>(state, "LuaBehaviorScript");
+    type["getParent"] = method<T, LuaBehaviorScript*() const>(&T::getParent);
+    type["getAttrib"] = method<T, LuaBehaviorScriptAttrib*()>(&T::getAttrib);
+}
 }

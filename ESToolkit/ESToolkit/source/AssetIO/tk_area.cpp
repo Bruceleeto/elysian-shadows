@@ -31,9 +31,6 @@
 #include <QDateTime>
 
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(TkArea)
-
-
 //====STATIC====
 SelectionScene*                 Area::_editorScene              = nullptr;
 unsigned int                    Area::_currentSceneWidth        = 0;
@@ -79,7 +76,7 @@ TkArea::TkArea(Level *const lev):
 
 QAbstractItemModel* TkArea::getModel(void) const {
     if(!_luaModel) {
-        _luaModel = new LuaTableStackModel(const_cast<TkArea*>(this));
+        _luaModel = new LuaTableStackModel(elysian::lua::make(const_cast<TkArea*>(this)));
         _luaModel->populateModel();
     }
     return _luaModel;
@@ -588,32 +585,31 @@ void TkArea::removeEntity(Entity *entity) {
 void TkColor4::initializeDelegates(void) {
     auto* typeDelegate = new ColorSwatchPropertyItemDelegate();
 
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
     auto* spinBox = new SpinboxPropertyItemDelegate(0, 255);
-    LuaVariant fieldDelegate = {
-        { "r", spinBox },
-        { "g", spinBox },
-        { "b", spinBox },
-        { "a", spinBox }
-    };
+    sol::table fieldDelegate = elysian::lua::table();
+    fieldDelegate.set("r", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("g", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("b", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("a", static_cast<PropertyItemDelegate*>(spinBox));
     fieldDelegate.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
 }
 #endif
 
 void TkArea::initializeDelegates(void) {
- //   lua_newtable(*_mainState);
-   // lua_pushvalue(*_mainState, -1);
-    //lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+ //   lua_newtable(_mainState);
+   // lua_pushvalue(_mainState, -1);
+    //lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
 
     DynamicContentPropertyItemDelegate* outerDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkArea* area = luaFieldItem->getVariant().getValue<TkArea*>();
+            TkArea* area = luaFieldItem->getVariant().as<TkArea*>();
             if(area) {
                 option.text = area->getNameString();
                 option.palette.setColor(QPalette::Text, QColor(Qt::gray));
@@ -622,13 +618,13 @@ void TkArea::initializeDelegates(void) {
     });
     outerDelegate->setReadOnly();
 
-    OOLUA::push(*_mainState, outerDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, outerDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
     DynamicContentPropertyItemDelegate* sizeDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkArea* area = luaFieldItem->getTableRef().getValue<TkArea*>();
+            TkArea* area = luaFieldItem->getTableRef().as<TkArea*>();
             if(area) {
                 unsigned short w = area->getMapWidth();
                 unsigned short h = area->getMapHeight();
@@ -642,7 +638,7 @@ void TkArea::initializeDelegates(void) {
     DynamicContentPropertyItemDelegate* startPosDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkArea* area = luaFieldItem->getTableRef().getValue<TkArea*>();
+            TkArea* area = luaFieldItem->getTableRef().as<TkArea*>();
             if(area) {
                 elysian::Vector3 pos = area->getStartPosition();
                 option.text = QString("<%1, %2, %3>").arg(pos.getX()).arg(pos.getY()).arg(pos.getZ());
@@ -653,7 +649,7 @@ void TkArea::initializeDelegates(void) {
     startPosDelegate->addButton(QIcon(DYNAMIC_CONTENT_PROPERTY_ITEM_DELEGATE_ICON_POSITION_PATH), [](ESTkStandardItem* item) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkArea* area = luaFieldItem->getTableRef().getValue<TkArea*>();
+            TkArea* area = luaFieldItem->getTableRef().as<TkArea*>();
             if(area) {
                 TkEntity* leader = elysian::System::getPartySys()->getPartyLeader();
                 if(leader) {
@@ -669,58 +665,57 @@ void TkArea::initializeDelegates(void) {
     entityDelegate->setReadOnly();
 
 
-    LuaVariant v = {
-        { "size",               sizeDelegate },
-        { "path",               new PropertyItemDelegate(true) },
-        { "startPosition",      startPosDelegate },
-        { "activeEntities",     entityDelegate },
-        { "inactiveEntities",   entityDelegate },
-        { "ambientColor",       new QESTkUtils::ColorSwatchPropertyItemDelegate<elysian::Vector4>() }
-    };
+    sol::table v = elysian::lua::table();
+    v.set("size", static_cast<PropertyItemDelegate*>(sizeDelegate));
+    v.set("path", static_cast<PropertyItemDelegate*>(new PropertyItemDelegate(true)));
+    v.set("startPosition", static_cast<PropertyItemDelegate*>(startPosDelegate));
+    v.set("activeEntities", static_cast<PropertyItemDelegate*>(entityDelegate));
+    v.set("inactiveEntities", static_cast<PropertyItemDelegate*>(entityDelegate));
+    v.set("ambientColor", static_cast<PropertyItemDelegate*>(new QESTkUtils::ColorSwatchPropertyItemDelegate<elysian::Vector4>()));
 
     v.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
 
 
 
     /*
     auto* normalDelegate = new FileBrowserPropertyItemDelegate;
-    OOLUA::push(*_mainState, normalDelegate);
-    lua_setfield(*_mainState, -2, "normalMap");
+    sol::stack::push(_mainState, normalDelegate);
+    lua_setfield(_mainState, -2, "normalMap");
 */
     //auto* widthDelegate = new SpinboxPropertyItemDelegate(0, ELYSIAN_AREA_MAP_WIDTH);
-    //OOLUA::push(*_mainState, widthDelegate);
-    //lua_setfield(*_mainState, -2, "lkkfsdklj;fsdalk;jasdfl;kj");
+    //sol::stack::push(_mainState, widthDelegate);
+    //lua_setfield(_mainState, -2, "lkkfsdklj;fsdalk;jasdfl;kj");
 
-   // lua_pop(*_mainState, 1);
+   // lua_pop(_mainState, 1);
 
 }
 
 void TkArea::initializeVirtualTableDelegates(QString key) {
     if(key == "music") {
-        LuaVariant musicDelegateFunc = [](LuaVariant /*t*/, LuaVariant k) -> PropertyItemDelegate* {
-            if(QString(k.getValue<const char*>()) == "gain") {
+        auto musicDelegateFunc = [](sol::object /*t*/, sol::object k) -> PropertyItemDelegate* {
+            if(QString(k.as<const char*>()) == "gain") {
                 return new QESTkUtils::SliderPropertyItemDelegate();
             } else return new PropertyItemDelegate();
         };
-        musicDelegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(musicDelegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     } else if(key == "bgm" || key == "aux") {
-        LuaVariant delegateFunc = [=](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            TkArea* area = t["__ud"]->getValue<TkArea*>();
-            if(area && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [=](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            TkArea* area = elysian::lua::get(t, "__ud").as<TkArea*>();
+            if(area && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if((key == "bgm" && index <= ELYSIAN_AREA_BGM_TRACKS) || (key == "aux" && index <= ELYSIAN_AREA_AUX_TRACKS)) {
                     DynamicContentPropertyItemDelegate* musicTrackDelegate = new FileBrowserPropertyItemDelegate();
                     musicTrackDelegate->setTextCallback([=](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
                             //luaFieldItem->setToolTip("");
-                            QString oggPath = luaFieldItem->getVariant().getValue<const char*>();
+                            QString oggPath = luaFieldItem->getVariant().as<const char*>();
                             if(!oggPath.isEmpty()) {
-                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().getValue<TkArea*>();
-                                const unsigned trackIndex   = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().as<TkArea*>();
+                                const unsigned trackIndex   = luaFieldItem->getKey().as<unsigned>()-1;
                                 auto* audioSys              = elysian::System::getAudioSys();
                                 bool isPlaying              = false;
                                 bool isValid                = false;
@@ -763,10 +758,10 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
                     musicTrackDelegate->addButton(QApplication::style()->standardIcon(QStyle::SP_MediaPlay), [=](ESTkStandardItem* item) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            QString oggPath = luaFieldItem->getVariant().getValue<const char*>();
-                            TkArea* area = luaFieldItem->getTableRef().getValue<TkArea*>();
+                            QString oggPath = luaFieldItem->getVariant().as<const char*>();
+                            TkArea* area = luaFieldItem->getTableRef().as<TkArea*>();
                             if(!oggPath.isEmpty()) {
-                                unsigned track = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned track = luaFieldItem->getKey().as<unsigned>()-1;
                                 if(key == "bgm") {
                                     if(area) elysian::System::getAudioSys()->setBgmTrackGain(area->getOggGain());
                                     elysian::System::getAudioSys()->stopBgmTrack();
@@ -792,10 +787,10 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
                     [=](ESTkStandardItem* item) -> bool {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            QString oggPath = luaFieldItem->getVariant().getValue<const char*>();
+                            QString oggPath = luaFieldItem->getVariant().as<const char*>();
                             if(!oggPath.isNull()) {
-                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().getValue<TkArea*>();
-                                unsigned track = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().as<TkArea*>();
+                                unsigned track = luaFieldItem->getKey().as<unsigned>()-1;
                                 auto* audioSys = elysian::System::getAudioSys();
                                 if(area) {
                                     if(key == "bgm") {
@@ -821,7 +816,7 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
                             if(key == "bgm") {
                                 audioSys->stopBgmTrack();
                             } else if(key == "aux") {
-                                unsigned track = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned track = luaFieldItem->getKey().as<unsigned>()-1;
                                 audioSys->stopAuxTrack(track);
                             }
                         }
@@ -832,10 +827,10 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
                     [=](ESTkStandardItem* item) -> bool {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            QString oggPath = luaFieldItem->getVariant().getValue<const char*>();
+                            QString oggPath = luaFieldItem->getVariant().as<const char*>();
                             if(!oggPath.isNull()) {
-                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().getValue<TkArea*>();
-                                unsigned track = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                TkArea* area = luaFieldItem->getAncestorSiblingLuaItem({"*", "music", "*"}, 1)->getVariant().as<TkArea*>();
+                                unsigned track = luaFieldItem->getKey().as<unsigned>()-1;
                                 auto* audioSys = elysian::System::getAudioSys();
                                 if(area) {
                                     if(key == "bgm") {
@@ -861,8 +856,8 @@ void TkArea::initializeVirtualTableDelegates(QString key) {
             return nullptr;
         };
 
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     }
 }
 

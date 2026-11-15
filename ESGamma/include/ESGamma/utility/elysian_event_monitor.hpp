@@ -43,21 +43,21 @@ public:
 
 class LuaEventMonitor: public EventMonitor, public LuaManager {
 protected:
-		OOLUA::Lua_table_ref	_table;
+		sol::object	_table;
 public:
-		void					setTable(OOLUA::Lua_table_ref& table);
-		OOLUA::Lua_table_ref&	getTable(void);
+		void					setTable(const sol::object& table);
+		sol::object&	getTable(void);
 };
 
 
 
 class LuaEventCallback: public LuaEventMonitor {
 private:
-	OOLUA::Lua_func_ref		_callback;
+	sol::protected_function		_callback;
 
 public:
-					LuaEventCallback(OOLUA::Lua_func_ref& callback);
-	void			setCallbackFunction(OOLUA::Lua_func_ref& callback);
+					LuaEventCallback(const sol::protected_function& callback);
+	void			setCallbackFunction(const sol::protected_function& callback);
 	virtual void	onFinish(void) override;
 };
 
@@ -101,12 +101,12 @@ inline void EventCallback::onFinish(void) {
     _callback();
 }
 
-inline void LuaEventMonitor::setTable(OOLUA::Lua_table_ref& table) { _table = table; }
-inline OOLUA::Lua_table_ref& LuaEventMonitor::getTable(void) { return _table; }
+inline void LuaEventMonitor::setTable(const sol::object& table) { _table = table; }
+inline sol::object& LuaEventMonitor::getTable(void) { return _table; }
 
-inline LuaEventCallback::LuaEventCallback(OOLUA::Lua_func_ref &callback):
+inline LuaEventCallback::LuaEventCallback(const sol::protected_function &callback):
     _callback(callback) {}
-inline void LuaEventCallback::setCallbackFunction(OOLUA::Lua_func_ref &callback) {
+inline void LuaEventCallback::setCallbackFunction(const sol::protected_function &callback) {
     _callback = callback;
 }
 

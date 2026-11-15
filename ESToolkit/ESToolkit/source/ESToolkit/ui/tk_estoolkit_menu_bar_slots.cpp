@@ -780,7 +780,7 @@ void ESToolkit::on_actionAdd_Player_triggered()
     }
 
     Entity* newPlayer = new Entity;
-    newPlayer->fromTable(LuaVariant(leader));
+    newPlayer->fromTable(elysian::lua::make(leader));
     _assets.getCurrentArea()->addEntity(newPlayer);
     _assets.getEngine()->getPartySys()->addCharacterToParty(newPlayer);
 

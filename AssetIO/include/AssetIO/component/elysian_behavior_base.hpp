@@ -51,9 +51,7 @@ namespace elysian {
 
     public:
 
-       /* ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(triggers, getTriggers)
-        ELYSIAN_LUA_PROXY_FIELDS_END()*/
+       /* public:*/
 
         virtual     ~BehaviorBase(void) = default;
 

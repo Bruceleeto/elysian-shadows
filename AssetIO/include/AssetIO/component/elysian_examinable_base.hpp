@@ -9,7 +9,7 @@
 
 #include <AssetIO/crtp/elysian_component.hpp>
 #include <AssetIO/level/elysian_direction.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 
 #define ELYSIAN_EXAMINABLE_DESC_LENGTH    50
 
@@ -20,8 +20,10 @@ namespace elysian {
 
     class ExaminableBase:
         public Component,
-        public LuaTableProxy<ExaminableBase, Examinable>
+        public LuaObject<ExaminableBase, Examinable>
     {
+    public: using LuaObjectType = LuaObject<ExaminableBase, Examinable>;
+
 	private:
         std::shared_ptr<Dialog>	_dialog;
         bool                    _isDialogActive		= false;
@@ -31,13 +33,7 @@ namespace elysian {
         bool                    _hasDesc            = true;
 
 	public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(enabled,        isEnabled,      setEnabled)
-            ELYSIAN_LUA_PROXY_FIELD(maxDist,        getMaxDist,     setMaxDist)
-            ELYSIAN_LUA_PROXY_FIELD(relativeDir,    getRelativeDir, setRelativeDir)
-        //    ELYSIAN_LUA_PROXY_FIELD(description,    hasDescription, setHasDescription)
-            ELYSIAN_LUA_PROXY_FIELD(dialog,         getDialog,      setDialog)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                         ExaminableBase(Entity& parent, ExaminableBase*const prefab=nullptr);
                         ExaminableBase(void) = default;

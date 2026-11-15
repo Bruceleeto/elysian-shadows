@@ -106,14 +106,14 @@ inline void FunctionalTest::forwardTupleToCFuncPtr(void) {
 
 inline void FunctionalTest::foreachInTuple(void) {
     elysian::InstanceTransform xform;
-    lua_pushboolean(*_mainState, true);
-    lua_pushnumber(*_mainState, 12.0f);
-    OOLUA::push(*_mainState, &xform);
+    lua_pushboolean(_mainState, true);
+    lua_pushnumber(_mainState, 12.0f);
+    sol::stack::push(_mainState, &xform);
 
     std::tuple<elysian::InstanceTransform*, float, bool> tuplett;
 
     foreach_in_tuple(tuplett, [](auto&& element) {
-        OOLUA::pull(*_mainState, element);
+        element = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(element)>>>(_mainState);
     });
 
 
@@ -124,14 +124,14 @@ inline void FunctionalTest::foreachInTuple(void) {
 
 inline void FunctionalTest::foreachInTupleReverse(void) {
     elysian::InstanceTransform transform;
-    lua_pushboolean(*_mainState, true);
-    lua_pushnumber(*_mainState, -12.0f);
-    OOLUA::push(*_mainState, &transform);
+    lua_pushboolean(_mainState, true);
+    lua_pushnumber(_mainState, -12.0f);
+    sol::stack::push(_mainState, &transform);
 
     std::tuple<bool, float, elysian::InstanceTransform*> tuple;
 
     foreach_in_tuple_reverse(tuple, [](auto&& element) {
-        OOLUA::pull(*_mainState, element);
+        element = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(element)>>>(_mainState);
     });
 
     QVERIFY(std::get<0>(tuple) == true);

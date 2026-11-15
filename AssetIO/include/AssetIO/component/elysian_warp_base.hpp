@@ -9,7 +9,7 @@
 
 #include <cstring>
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
 #include <AssetIO/primitive/elysian_rect.hpp>
 
@@ -20,8 +20,10 @@ namespace elysian {
 	
     class WarpBase:
         public Component,
-        public LuaTableProxy<WarpBase, Warp>
+        public LuaObject<WarpBase, Warp>
     {
+    public: using LuaObjectType = LuaObject<WarpBase, Warp>;
+
         friend Entity;
         friend class EntityBase;
         friend class WarpSystem;
@@ -38,15 +40,7 @@ namespace elysian {
 
 		
 	public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(toPos,              getToPosVec,            setToPosVec)
-            ELYSIAN_LUA_PROXY_FIELD(changeArea,         getChangeArea,          setChangeArea)
-            ELYSIAN_LUA_PROXY_FIELD(changeLevel,        getChangeLevel,         setChangeLevel)
-            ELYSIAN_LUA_PROXY_FIELD(areaPath,           getAreaPath,            setAreaPath)
-            ELYSIAN_LUA_PROXY_FIELD(levelPath,          getLevelPath,           setLevelPath)
-            ELYSIAN_LUA_PROXY_FIELD(obliqueTran,        getObliqueTransition,   setObliqueTransition)
-            ELYSIAN_LUA_PROXY_FIELD(cameraBoundaryRect, getCameraBoundaryRect,  setCameraBoundaryRect)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                                 WarpBase(Entity &parent, const WarpBase*const prefab=nullptr);
                                 WarpBase(void) = default;

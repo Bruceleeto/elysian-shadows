@@ -13,18 +13,17 @@
 #include <libGyro/gyro_math_api.h>
 #include <libGyro/gyro_matrix_api.h>
 
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/utility/elysian_generic.hpp>
 
 namespace elysian {
 
     struct InstanceTransform;
 
-    struct Vector2: public GYVector2, public VirtualArray<Vector2, int, float>, public LuaTableProxy<Vector2> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(x, getX, setX)
-            ELYSIAN_LUA_PROXY_FIELD(y, getY, setY)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    struct Vector2: public GYVector2, public VirtualArray<Vector2, int, float>, public LuaObject<Vector2> {
+    public: using LuaObjectType = LuaObject<Vector2>;
+
+        public:
         GYVector2*  _ptr;
 
                     Vector2(void);
@@ -53,8 +52,8 @@ namespace elysian {
         Vector2&    operator*=(float scalar);
         Vector2&    operator/=(float scalar);
 
-        Vector2     operator/(LuaVariant variant) const;
-        Vector2     operator*(LuaVariant variant) const;
+        Vector2     operator/(sol::object variant) const;
+        Vector2     operator*(sol::object variant) const;
 
         void        setValueByIndex(int index, float val);
         float       getValueByIndex(int index) const;
@@ -88,12 +87,10 @@ namespace elysian {
         float       toAngle(void) const;
     };
 
-    struct Vector3: public GYVector3, public LuaTableProxy<Vector3>, public VirtualArray<Vector3, int, float> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(x, getX, setX)
-            ELYSIAN_LUA_PROXY_FIELD(y, getY, setY)
-            ELYSIAN_LUA_PROXY_FIELD(z, getZ, setZ)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    struct Vector3: public GYVector3, public LuaObject<Vector3>, public VirtualArray<Vector3, int, float> {
+    public: using LuaObjectType = LuaObject<Vector3>;
+
+        public:
 
         GYVector3*  _ptr;
 
@@ -151,13 +148,10 @@ namespace elysian {
         Vector3     crossProduct(const Vector3& rhs) const;
     };
 
-    struct Vector4: public GYVector4, public VirtualArray<Vector4, int, float>, public LuaTableProxy<Vector4> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(x, getX, setX)
-            ELYSIAN_LUA_PROXY_FIELD(y, getY, setY)
-            ELYSIAN_LUA_PROXY_FIELD(z, getZ, setZ)
-            ELYSIAN_LUA_PROXY_FIELD(w, getW, setW)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    struct Vector4: public GYVector4, public VirtualArray<Vector4, int, float>, public LuaObject<Vector4> {
+    public: using LuaObjectType = LuaObject<Vector4>;
+
+        public:
 
         GYVector4*  _ptr;
 
@@ -212,10 +206,11 @@ namespace elysian {
     class Quaternion:
             public GYQuaternion,
             public VirtualArray<Quaternion, int, float>,
-            public LuaTableProxy<Quaternion>
+            public LuaObject<Quaternion>
     {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    public: using LuaObjectType = LuaObject<Quaternion>;
+
+        public:
     public:
                             Quaternion(void);
                             Quaternion(const Quaternion& other) = default;
@@ -764,34 +759,14 @@ namespace elysian {
 */
     struct InstanceTransform:
             public GYInstMat,
-            public LuaTableProxy<InstanceTransform>
+            public LuaObject<InstanceTransform>
     {
+    public: using LuaObjectType = LuaObject<InstanceTransform>;
+
         //This is public for overhead reduction, but the accessors are safer.
         //Lua should treat this as a class
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(angle, getAngle, setAngle)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(pos)
-                ELYSIAN_LUA_PROXY_FIELD(x, getPosX, setPosX)
-                ELYSIAN_LUA_PROXY_FIELD(y, getPosY, setPosY)
-                ELYSIAN_LUA_PROXY_FIELD(z, getPosZ, setPosZ)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(orient)
-                ELYSIAN_LUA_PROXY_FIELD(x, getOrientX, setOrientX)
-                ELYSIAN_LUA_PROXY_FIELD(y, getOrientY, setOrientY)
-                ELYSIAN_LUA_PROXY_FIELD(z, getOrientZ, setOrientZ)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(size)
-                ELYSIAN_LUA_PROXY_FIELD(x, getSizeX, setSizeX)
-                ELYSIAN_LUA_PROXY_FIELD(y, getSizeY, setSizeY)
-                ELYSIAN_LUA_PROXY_FIELD(z, getSizeZ, setSizeZ)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(scale)
-                ELYSIAN_LUA_PROXY_FIELD(x, getScaleX, setScaleX)
-                ELYSIAN_LUA_PROXY_FIELD(y, getScaleY, setScaleY)
-                ELYSIAN_LUA_PROXY_FIELD(z, getScaleZ, setScaleZ)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         InstanceTransform(void):
             GYInstMat({
@@ -819,9 +794,9 @@ namespace elysian {
         Vector3    getScale(void) const;
         GYVector3& getOrient(void);
 
-        //void setPosVec(const OOLUA::Lua_table_ref valTable);
-        //void setSizeVec(const OOLUA::Lua_table_ref valTable);
-        //void setScaleVec(const OOLUA::Lua_table_ref valTable);
+        //void setPosVec(const sol::object valTable);
+        //void setSizeVec(const sol::object valTable);
+        //void setScaleVec(const sol::object valTable);
 
         void setPos(const float x, const float y, const float z) { _pos.x = x; _pos.y = y; _pos.z = z; }
         void setPos(const float x, const float y) { _pos.x = x; _pos.y = y; }
@@ -921,7 +896,7 @@ namespace elysian {
     inline Vector2::Vector2(const float val): Vector2(val, val) {}
     inline Vector2::Vector2(GYVector2 * const gyvec2): GYVector2(*gyvec2), _ptr(gyvec2) {}
     inline Vector2::Vector2(const GYVector2 &gyvec2): GYVector2(gyvec2), _ptr(this) {}
-    inline Vector2::Vector2(const Vector2 &other) : LuaTableProxy<Vector2>() {
+    inline Vector2::Vector2(const Vector2 &other) : LuaObject<Vector2>() {
         if(other._ptr != &other) {
             _ptr = other._ptr;
             *(GYVector2*)this = *(const GYVector2*)&other;
@@ -1096,23 +1071,23 @@ namespace elysian {
     }
 
 
-    inline Vector2 Vector2::operator/(LuaVariant variant) const {
-        switch(variant.getType()) {
-        case LUA_TNUMBER: return *this / Vector2(variant.getValue<float>());
+    inline Vector2 Vector2::operator/(sol::object variant) const {
+        switch(elysian::lua::type(variant)) {
+        case LUA_TNUMBER: return *this / Vector2(variant.as<float>());
         case LUA_TUSERDATA:
-            if(strcmp(variant.getTypeString(), "Vector2") == 0)
-                return *this/variant.getValue<Vector2>();
+            if(strcmp(elysian::lua::typeName(variant).c_str(), "Vector2") == 0)
+                return *this/variant.as<Vector2>();
         default: break; //you dun fucked up
         }
 
         return Vector2(0.0f);
     }
-    inline Vector2 Vector2::operator*(LuaVariant variant) const {
-        switch(variant.getType()) {
-        case LUA_TNUMBER: return *this * Vector2(variant.getValue<float>());
+    inline Vector2 Vector2::operator*(sol::object variant) const {
+        switch(elysian::lua::type(variant)) {
+        case LUA_TNUMBER: return *this * Vector2(variant.as<float>());
         case LUA_TUSERDATA:
-            if(strcmp(variant.getTypeString(), "Vector2") == 0)
-                return *this * variant.getValue<Vector2>();
+            if(strcmp(elysian::lua::typeName(variant).c_str(), "Vector2") == 0)
+                return *this * variant.as<Vector2>();
         default: break; //you dun fucked up
         }
 
@@ -1124,7 +1099,7 @@ namespace elysian {
     inline Vector3::Vector3(const float val): Vector3(val, val, val) {}
     inline Vector3::Vector3(const float x, const float y, const float z): GYVector3({x, y, z}), _ptr(this) {}
     inline Vector3::Vector3(const GYVector3& vec3): Vector3(vec3.x, vec3.y, vec3.z) {}
-    inline Vector3::Vector3(const Vector3 &other) : LuaTableProxy<Vector3>() {
+    inline Vector3::Vector3(const Vector3 &other) : LuaObject<Vector3>() {
         *this = other;
     }
     inline Vector3::Vector3(const Vector2& other, float z):
@@ -1305,7 +1280,7 @@ namespace elysian {
     inline Vector4::Vector4(void): Vector4(0.0f, 0.0f, 0.0f, 0.0f) {}
     inline Vector4::Vector4(const float x, const float y, const float z, const float w):
         GYVector4({x, y, z, w}), _ptr(this){}
-    inline Vector4::Vector4(const Vector4 &other): LuaTableProxy<Vector4>() {
+    inline Vector4::Vector4(const Vector4 &other): LuaObject<Vector4>() {
         *this = other;
     }
     inline Vector4::Vector4(const Vector3& vec3, float w):

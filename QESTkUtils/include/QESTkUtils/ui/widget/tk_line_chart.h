@@ -7,7 +7,7 @@
 #ifndef TK_LINE_CHART_H
 #define TK_LINE_CHART_H
 
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/utility/elysian_performance_monitor.hpp>
 #include <type_traits>
 #include <QtCharts>
@@ -23,11 +23,11 @@ class RecursiveSeriesAdapter {
 };
 
 template<>
-class RecursiveSeriesAdapter<LuaVariant> {
-    static const char* 			getName(const LuaVariant& t) const { return t["name"].getValue<const char*>(); }
-    static double 				getValue(const LuaVariant& t) const { return t["value"].getValue<double>(); }
-    static size_t				getChildCount(const LuaVariant& t) { const { return t["children"].getSize(); }
-    static const LuaVariant& 	getChild(const LuaVariant& t, unsigned idx) { return t["children"][idx].getVariant(); }
+class RecursiveSeriesAdapter<sol::object> {
+    static const char* 			getName(const sol::object& t) const { return elysian::lua::get(t, "name").as<const char*>(); }
+    static double 				getValue(const sol::object& t) const { return elysian::lua::get(t, "value").as<double>(); }
+    static size_t				getChildCount(const sol::object& t) { const { return elysian::lua::get(t, "children").getSize(); }
+    static const sol::object& 	getChild(const sol::object& t, unsigned idx) { return elysian::lua::get(elysian::lua::get(t, "children"), idx); }
 };
 
 
@@ -98,19 +98,19 @@ public:
 };
 
 template<typename T>
-struct FrameUpdatedValueAdapter<T, LuaVariant> {
+struct FrameUpdatedValueAdapter<T, sol::object> {
 private:
-    LuaVariant _v;
+    sol::object _v;
 public:
-    FrameUpdatedValueAdapter(LuaVariant v):
+    FrameUpdatedValueAdapter(sol::object v):
         _v(std::move(v)) {}
 
     inline T operator()(void) {
-        switch(_v.getType()) {
+        switch(elysian::lua::type(_v)) {
         case LUA_TFUNCTION:
-            return _v().template getValue<T>();
+            return elysian::lua::call(_v).template as<T>();
         default:
-            return _v.getValue<T>();
+            return _v.as<T>();
         }
     }
 };

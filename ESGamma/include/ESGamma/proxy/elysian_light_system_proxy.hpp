@@ -7,23 +7,17 @@
 #ifndef ELYSIAN_LIGHT_SYSTEM_PROXY_HPP
 #define ELYSIAN_LIGHT_SYSTEM_PROXY_HPP
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_binding.hpp>
 #include <ESGamma/system/elysian_light_system.hpp>
 
-namespace OOLUA {
-    typedef elysian::LightSystem    LightSystem;
-    typedef elysian::LightAttrib    LightAttrib;
-    typedef elysian::EventMonitor   EventMonitor;
 
+
+
+
+
+namespace elysian::lua {
+void registerLightSystem(sol::state_view state);
 }
-
-OOLUA_PROXY(LightSystem)
-    OOLUA_TAGS (
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MEM_FUNC(void, interpLightAttrib, float, const LightAttrib&, LightAttrib*, cpp_in_p<EventMonitor*>)
-OOLUA_PROXY_END
 
 #endif // ELYSIAN_LIGHT_SYSTEM_PROXY_HPP
 

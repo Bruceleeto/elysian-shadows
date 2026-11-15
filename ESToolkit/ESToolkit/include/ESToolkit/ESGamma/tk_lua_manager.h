@@ -25,7 +25,7 @@ private:
 
 protected:
     static QStringList              _udTypeNames;
-    static elysian::LuaVariant      _serializeFunc;
+    static sol::object      _serializeFunc;
     static unsigned                 _serializeDepth;
 
 public:
@@ -33,8 +33,8 @@ public:
     static bool         initialize(void);
     static bool         uninitialize(void);
     static bool         getMetatable(const int index);
-    static auto         getParent(const elysian::LuaVariant& t) -> elysian::LuaVariant;
-    static void         setParent(const elysian::LuaVariant& t, const elysian::LuaVariant& p);
+    static auto         getParent(const sol::object& t) -> sol::object;
+    static void         setParent(const sol::object& t, const sol::object& p);
 
     static QStringList  getUdTypeNames(void);
 
@@ -53,10 +53,10 @@ inline QStringList TkLuaManager::getUdTypeNames(void) { return _udTypeNames; }
 
 /*
 inline void TkLuaManager::getGlobal(const char * const key) {
-    lua_pushglobaltable(*_mainState);
-    lua_pushstring(*_mainState, key);
-    lua_gettable(*_mainState, -2);
-    lua_remove(*_mainState, -2);
+    lua_pushglobaltable(_mainState);
+    lua_pushstring(_mainState, key);
+    lua_gettable(_mainState, -2);
+    lua_remove(_mainState, -2);
 }*/
 
 
@@ -64,11 +64,11 @@ inline void TkLuaManager::getGlobal(const char * const key) {
  * it has been overridden to respect Tk proxy metatables. */
 inline bool TkLuaManager::getMetatable(const int index) {
     pushGlobalField("getmetatable");
-    lua_pushvalue(*_mainState, index < 0? index-1 : index);
+    lua_pushvalue(_mainState, index < 0? index-1 : index);
     ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 1);
 
-    if(lua_isnil(*_mainState, -1)) {
-        lua_pop(*_mainState, 1);
+    if(lua_isnil(_mainState, -1)) {
+        lua_pop(_mainState, 1);
         return false;
     }
 

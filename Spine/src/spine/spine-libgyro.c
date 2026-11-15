@@ -50,25 +50,31 @@
 void _spAtlasPage_createTexture (spAtlasPage* self, const char* path) {
     char buffer[GYRO_PATH_MAX_SIZE];
 
-    GYSpineRenderObject* obj    = malloc(sizeof(GYSpineRenderObject));
-    obj->textureMap             = gyVidTexCreate(path);
+    GYSpineRenderObject* obj = calloc(1, sizeof(GYSpineRenderObject));
+    const char* extension;
+    const char* slash;
+    size_t stemLength;
+    if (!obj) return;
+    obj->textureMap = gyVidTexCreate(path);
+    if (!obj->textureMap) {
+        free(obj);
+        return;
+    }
 
-    if(!obj->textureMap) return;
-
-    char* filename = strtok(path, ".");
-    if(path) {
-
-        strcpy(buffer, filename);
-        strcat(buffer, GYRO_SPINE_ATLAS_TEXTURE_NORMAL_SUFFIX);
+    /* Build companion paths without modifying the caller's filename. */
+    extension = strrchr(path, '.');
+    slash = strrchr(path, '/');
+    if (extension && (!slash || extension > slash)) stemLength = (size_t)(extension - path);
+    else stemLength = strlen(path);
+    if (stemLength + sizeof(GYRO_SPINE_ATLAS_TEXTURE_NORMAL_SUFFIX) <= sizeof(buffer)) {
+        memcpy(buffer, path, stemLength);
+        strcpy(buffer + stemLength, GYRO_SPINE_ATLAS_TEXTURE_NORMAL_SUFFIX);
         obj->normalMap = gyVidTexCreate(buffer);
-
-        strcpy(buffer, filename);
-        strcat(buffer, GYRO_SPINE_ATLAS_TEXTURE_SPECULAR_SUFFIX);
+    }
+    if (stemLength + sizeof(GYRO_SPINE_ATLAS_TEXTURE_SPECULAR_SUFFIX) <= sizeof(buffer)) {
+        memcpy(buffer, path, stemLength);
+        strcpy(buffer + stemLength, GYRO_SPINE_ATLAS_TEXTURE_SPECULAR_SUFFIX);
         obj->specularMap = gyVidTexCreate(buffer);
-
-    } else {
-        obj->normalMap      = NULL;
-        obj->specularMap    = NULL;
     }
 
     self->rendererObject    = obj;
@@ -78,6 +84,7 @@ void _spAtlasPage_createTexture (spAtlasPage* self, const char* path) {
 
 void _spAtlasPage_disposeTexture (spAtlasPage* self) {
     GYSpineRenderObject* obj = self->rendererObject;
+    if (!obj) return;
 
     gyVidTexDestroy(obj->textureMap);
     gyVidTexDestroy(obj->normalMap);

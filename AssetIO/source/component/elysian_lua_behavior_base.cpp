@@ -23,13 +23,11 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(LuaBehaviorBase)
-
 LuaBehaviorBase::LuaBehaviorBase(Entity &entity): Behavior(entity) {}
 
 LuaBehaviorBase::LuaBehaviorBase(Entity &entity,
                          const char *script,
-						 const OOLUA::Lua_table_ref paramTable):
+						 const sol::object paramTable):
                          Behavior(entity)
 {
     setParamTable(paramTable);
@@ -45,12 +43,12 @@ void LuaBehaviorBase::setBehavName(const char * const path) {
     _script = LuaManager::loadBehaviorScript(path);
 }
 
-void LuaBehaviorBase::setParamTable(OOLUA::Lua_table_ref ref) {
+void LuaBehaviorBase::setParamTable(sol::object ref) {
     if(ref.valid()) {
         _paramTableRef = ref;
     } else {
-        lua_newtable(*LuaManager::_mainState);
-        _paramTableRef.pull(*LuaManager::_mainState);
+        lua_newtable(LuaManager::_mainState);
+        _paramTableRef = elysian::lua::fromStack();
     }
 }
 
@@ -58,7 +56,7 @@ void LuaBehaviorBase::setParamTable(OOLUA::Lua_table_ref ref) {
 LuaBehaviorBase::~LuaBehaviorBase(void) {
 	//Traverse hierarchy from BOTTOM TO TOP cleaning shit up
 	//    - Call onDestroy if script implements it (NOT if behavior uses it)
-	//    - OOLUA will delete selfTables automatically
+	//    - Lua collects self tables when their references are released
 
     if(_script) {
         for(unsigned i = 0; i < _hierarchyDepth; ++i) {
@@ -96,27 +94,29 @@ bool LuaBehaviorBase::loadScript(void) {
 	int parentSelfTableRef = LUA_NOREF;
 	for(int curIndex = _hierarchyDepth-1; curIndex >= 0; --curIndex) {
 
-		lua_newtable(*_mainState);											//create new selfTable
-		lua_pushvalue(*_mainState, -1);										//duplicate on stack
-		int selfTableRef = luaL_ref(*_mainState, LUA_REGISTRYINDEX);			//store in registry
+		lua_newtable(_mainState);											//create new selfTable
+		lua_pushvalue(_mainState, -1);										//duplicate on stack
+		int selfTableRef = luaL_ref(_mainState, LUA_REGISTRYINDEX);			//store in registry
 		//_selfTableRefHierarchy[curIndex] = _selfTableRef;
-		_ooSelfTableRefHierarchy[curIndex].set_ref(*_mainState, selfTableRef);
+		_ooSelfTableRefHierarchy[curIndex] = elysian::lua::fromStack(-1, false);
+        luaL_unref(_mainState, LUA_REGISTRYINDEX, selfTableRef);
+        selfTableRef = _ooSelfTableRefHierarchy[curIndex].registry_index();
 		_ooSelfTableRef = &_ooSelfTableRefHierarchy[curIndex];
 
 
         if(parentSelfTableRef != LUA_NOREF) { 	//inherit parent's self table if child
 
-			lua_newtable(*_mainState);										//metatable
-			lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, parentSelfTableRef);	//parentSelfTable
-			lua_setfield(*_mainState, -2, "__index");						//metatable[__index] = parentSelfTable;
-			lua_setmetatable(*_mainState, -2);								//setmetatable(selfTable, metatable);
+			lua_newtable(_mainState);										//metatable
+			lua_rawgeti(_mainState, LUA_REGISTRYINDEX, parentSelfTableRef);	//parentSelfTable
+			lua_setfield(_mainState, -2, "__index");						//metatable[__index] = parentSelfTable;
+			lua_setmetatable(_mainState, -2);								//setmetatable(selfTable, metatable);
 
         } else { //initialize self.selfEntity and self.selfBehav if parent
 
-            OOLUA::push(*_mainState, getEntity(), OOLUA::Cpp);							//push parent entity
-            lua_setfield(*_mainState, -2, "selfEntity");					//selfTable.selfBehav = entity
-            OOLUA::push(*_mainState, static_cast<LuaBehavior*>(this), OOLUA::Cpp);                                 //push parent entity
-            lua_setfield(*_mainState, -2, "selfBehav");                     //selfTable.selfBeahv
+            sol::stack::push(_mainState, getEntity());							//push parent entity
+            lua_setfield(_mainState, -2, "selfEntity");					//selfTable.selfBehav = entity
+            sol::stack::push(_mainState, static_cast<LuaBehavior*>(this));                                 //push parent entity
+            lua_setfield(_mainState, -2, "selfBehav");                     //selfTable.selfBeahv
 		}
 
 		_script = _scriptHierarchy[curIndex];
@@ -126,7 +126,7 @@ bool LuaBehaviorBase::loadScript(void) {
 
 		if(_triggerBits & ON_CREATE) {
             DbgEvent event("LuaBehavior::onCreate(%s)", _script->getPath());
-            if(_paramTableRef.ref() != LUA_REFNIL) //Call trigger with custom parameter table
+            if(_paramTableRef.registry_index() != LUA_REFNIL) //Call trigger with custom parameter table
                 _PROTECTED(_callTriggerByIndex<void>(Behavior::ON_CREATE_INDEX, *_ooSelfTableRef, _paramTableRef));
 			//call basic trigger
 			else onCreate();
@@ -144,7 +144,7 @@ void LuaBehaviorBase::_selfTableDump(void) {
 
 	for(int i = _hierarchyDepth-1; i >= 0; --i) {
 		sprintf(selfDisplay, "self[%d]", _hierarchyDepth-1-i);
-        LuaManager::rPrintByRef(_ooSelfTableRefHierarchy[i].ref(), 1, selfDisplay);
+        LuaManager::rPrintByRef(_ooSelfTableRefHierarchy[i].registry_index(), 1, selfDisplay);
 	}
 }
 
@@ -250,7 +250,7 @@ void LuaBehaviorBase::onReceiveEvent(Event* event) {
 void LuaBehaviorBase::onObserveEvent(Event *event, EventTarget* target) {
     Behavior::onObserveEvent(event, target);
     if(event->getEventState() != EVENT_STATE_PENDING) return;
-    _PROTECTED(_callTriggerByIndex<void>(Behavior::ON_OBSERVE_EVENT_INDEX, *_ooSelfTableRef, event, LuaVariant(target)));
+    _PROTECTED(_callTriggerByIndex<void>(Behavior::ON_OBSERVE_EVENT_INDEX, *_ooSelfTableRef, event, elysian::lua::make(target)));
 }
 
 void LuaBehaviorBase::onKeyPressEvent(KeyEvent* keyEvent) {

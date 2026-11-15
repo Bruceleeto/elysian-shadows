@@ -8,8 +8,6 @@
 
 namespace elysian {
 
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(Color4Base)
-
     const Color4 Color4Base::white  (255,255,255,255);
     const Color4 Color4Base::black  (0,  0,  0,  255);
     const Color4 Color4Base::blue   (0,  0,  255,255);

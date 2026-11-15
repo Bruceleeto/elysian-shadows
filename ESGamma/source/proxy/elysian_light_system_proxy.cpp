@@ -45,6 +45,15 @@
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(LightSystem,
-                       interpLightAttrib)
-OOLUA_EXPORT_FUNCTIONS_CONST(LightSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using LightSystem = elysian::LightSystem;
+
+void registerLightSystem(sol::state_view state) {
+    if (state["LightSystem"].valid()) return;
+    using T = elysian::LightSystem;
+    auto type = registerType<T>(state, "LightSystem");
+    type["interpLightAttrib"] = [](T& self, float arg0, const LightAttrib& arg1, LightAttrib* arg2, sol::object arg3) { return std::invoke(method<T, void(float, const LightAttrib&, LightAttrib*, EventMonitor*)>(&T::interpLightAttrib), self, arg0, arg1, arg2, take<EventMonitor>(arg3)); };
+}
+}

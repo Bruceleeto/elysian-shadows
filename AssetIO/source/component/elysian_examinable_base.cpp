@@ -13,8 +13,6 @@
 
 namespace elysian {
 
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(ExaminableBase)
-
     void ExaminableBase::setDialog(std::shared_ptr<Dialog> dialog) {
         _dialog = dialog? std::make_shared<Dialog>(*dialog.get()) : nullptr;
         if(_dialog) {

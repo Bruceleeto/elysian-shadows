@@ -42,10 +42,10 @@ namespace elysian {
         void    broadcastEvent(Event&& event);         //R-value overload for supporting stack-allocated Events
 
         void    addEventObserver(EventObserver* monitor, EventType type, EventTarget* target=nullptr);
-        void    addEventObserverLua(EventObserver* monitor, EventType type, LuaVariant target);     //Overload so Lua can pass nil as target
+        void    addEventObserverLua(EventObserver* monitor, EventType type, sol::object target);     //Overload so Lua can pass nil as target
 
         void    removeEventObserver(EventObserver* monitor, EventType type, EventTarget* target=nullptr);
-        void    removeEventObserverLua(EventObserver* monitor, EventType type, LuaVariant target);  //Overload so Lua can pass nil as target
+        void    removeEventObserverLua(EventObserver* monitor, EventType type, sol::object target);  //Overload so Lua can pass nil as target
 
         void    clearEventObservers(void);
 
@@ -155,11 +155,11 @@ namespace elysian {
 #if 0
 
     class LuaEvent: public Event {
-        LuaVariant  _luaVariant;
+        sol::object  _luaVariant;
         //BitMask32 _subType?
     public:
-                    LuaEvent(LuaVariant v);
-        LuaVariant  getVariant(void) const;
+                    LuaEvent(sol::object v);
+        sol::object  getVariant(void) const;
     };
 
 

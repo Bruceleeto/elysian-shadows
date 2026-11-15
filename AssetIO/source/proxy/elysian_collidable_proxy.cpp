@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_collidable_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -78,14 +79,6 @@
  * Sets the Collider's typeAgainst bitmask to \a{type}.
  * \sa getTypeAgainst()
  */
-
-OOLUA_EXPORT_FUNCTIONS(CollisionFlags,
-                                    setType,
-                                    setTypeAgainst,
-                                    getType,
-                                    getTypeAgainst)
-OOLUA_EXPORT_FUNCTIONS_CONST(CollisionFlags)
-
 
 /*!
     \qmltype CollidableStaticAttrib
@@ -222,25 +215,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(CollisionFlags)
  * \sa damping, getDampingVec()
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(CollidableStaticAttrib,
-                             getInverseMass,
-                             getCoeffOfRest,
-                             getInvMomOfInertia,
-                             getAngDamping,
-                             getZCoeffOfRest)
-OOLUA_EXPORT_FUNCTIONS(CollidableStaticAttrib,
-                       setDampingVec,
-                       setZDamping,
-                       setDamping3f,
-                       getDampingVec,
-                       setDamping,
-                       setInverseMass,
-                       setCoeffOfRest,
-                       setInvMomOfInertia,
-                       setAngDamping,
-                       setZCoeffOfRest)
-
-
 /*!
     \qmltype CollidableAttrib
     \since 1.6.0
@@ -367,22 +341,6 @@ OOLUA_EXPORT_FUNCTIONS(CollidableStaticAttrib,
  * \sa relSize, setRelSizeVec, getRelSizeVec
  */
 
-OOLUA_EXPORT_FUNCTIONS(CollidableAttrib,
-                                   setColliderType,
-                                   setRelPos,
-                                   setRelSize,
-                                   getFlags,
-                                   setFlags,
-                                    getStaticAttrib,
-                                    setStaticAttrib,
-                                    getRelPosVec,
-                                    getRelSizeVec,
-                                    setRelPosVec,
-                                    setRelSizeVec)
-OOLUA_EXPORT_FUNCTIONS_CONST(CollidableAttrib,
-                               getColliderType)
-
-
 /*!
     \qmltype CollisionContact
     \since 1.6.0
@@ -439,18 +397,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(CollidableAttrib,
  * Returns the depth of penetration of the collision in the direction of the collision normal.
  * \sa getNormal()
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(CollisionContact,
-                             getCollidable,
-                             getWorldPos,
-                             getNormal,
-                             getObjPos,
-                             getSeparatingVel,
-                             getClosingVel,
-                             getDeltaVel,
-                             getDepth)
-OOLUA_EXPORT_FUNCTIONS(CollisionContact)
-
 
 /*!
     \qmltype Collidable
@@ -573,16 +519,127 @@ OOLUA_EXPORT_FUNCTIONS(CollisionContact)
  * \sa restingOnBody
  */
 
-OOLUA_EXPORT_FUNCTIONS(Collidable,
-                        setAttrib,
-                        setResolvePenetration,
-                        setWorldSpace,
-                        setActive)
-OOLUA_EXPORT_FUNCTIONS_CONST(Collidable,
-                            getAttrib,
-                            getContactCount,
-                            getResolvePenetration,
-                            getWorldSpace,
-                            getStackedOnGround,
-                            getRestingOnBody,
-                            isActive)
+
+namespace elysian::lua {
+using namespace elysian;
+using CollisionFlags = elysian::CollisionFlags;
+using CollidableStaticAttrib = elysian::CollidableStaticAttrib;
+using CollidableAttrib = elysian::CollidableAttrib;
+using CollisionContact = elysian::CollisionContact;
+using Collidable = elysian::Collidable;
+
+void registerCollisionFlags(sol::state_view state) {
+    if (state["CollisionFlags"].valid()) return;
+    using T = elysian::CollisionFlags;
+    auto type = registerType<T>(state, "CollisionFlags");
+    type["getType"] = method<T, BitMask32&()>(&T::getType);
+    type["getTypeAgainst"] = method<T, BitMask32&()>(&T::getTypeAgainst);
+    type["setType"] = method<T, void(const BitMask32)>(&T::setType);
+    type["setTypeAgainst"] = method<T, void(const BitMask32)>(&T::setTypeAgainst);
+    property(type, "type", method<T, BitMask32&()>(&T::getType), method<T, void(const BitMask32)>(&T::setType));
+    property(type, "typeAgainst", method<T, BitMask32&()>(&T::getTypeAgainst), method<T, void(const BitMask32)>(&T::setTypeAgainst));
+    inheritProperties<T>();
+    finish<T>(type, "CollisionFlags", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+
+void registerCollidableStaticAttrib(sol::state_view state) {
+    if (state["CollidableStaticAttrib"].valid()) return;
+    using T = elysian::CollidableStaticAttrib;
+    auto type = registerType<T>(state, "CollidableStaticAttrib");
+    type["setDamping"] = method<T, void(float)>(&T::setDamping);
+    type["setZDamping"] = method<T, void(float)>(&T::setZDamping);
+    type["setDamping3f"] = method<T, void(float, float, float)>(&T::setDamping3f);
+    type["getDampingVec"] = method<T, Vector3()>(&T::getDampingVec);
+    type["setDampingVec"] = method<T, void(const Vector3&)>(&T::setDampingVec);
+    type["setInverseMass"] = method<T, void(const float)>(&T::setInverseMass);
+    type["setCoeffOfRest"] = method<T, void(const float)>(&T::setCoeffOfRest);
+    type["setInvMomOfInertia"] = method<T, void(const float)>(&T::setInvMomOfInertia);
+    type["setAngDamping"] = method<T, void(const float)>(&T::setAngDamping);
+    type["setZCoeffOfRest"] = method<T, void(const float)>(&T::setZCoeffOfRest);
+    type["getInverseMass"] = method<T, float() const>(&T::getInverseMass);
+    type["getCoeffOfRest"] = method<T, float() const>(&T::getCoeffOfRest);
+    type["getInvMomOfInertia"] = method<T, float() const>(&T::getInvMomOfInertia);
+    type["getAngDamping"] = method<T, float() const>(&T::getAngDamping);
+    type["getZCoeffOfRest"] = method<T, float() const>(&T::getZCoeffOfRest);
+    property(type, "invMass", method<T, float() const>(&T::getInverseMass), method<T, void(const float)>(&T::setInverseMass));
+    property(type, "coeffOfRest", method<T, float() const>(&T::getCoeffOfRest), method<T, void(const float)>(&T::setCoeffOfRest));
+    property(type, "invMomOfInertia", method<T, float() const>(&T::getInvMomOfInertia), method<T, void(const float)>(&T::setInvMomOfInertia));
+    property(type, "angDamping", method<T, float() const>(&T::getAngDamping), method<T, void(const float)>(&T::setAngDamping));
+    property(type, "zCoeffOfRest", method<T, float() const>(&T::getZCoeffOfRest), method<T, void(const float)>(&T::setZCoeffOfRest));
+    property(type, "damping", method<T, Vector3()>(&T::getDampingVec), method<T, void(const Vector3&)>(&T::setDampingVec));
+    inheritProperties<T>();
+    finish<T>(type, "CollidableStaticAttrib", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+
+void registerCollidableAttrib(sol::state_view state) {
+    if (state["CollidableAttrib"].valid()) return;
+    using T = elysian::CollidableAttrib;
+    auto type = registerType<T>(state, "CollidableAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["getColliderType"] = method<T, GY_COLLIDER_TYPE() const>(&T::getColliderType);
+    type["setColliderType"] = method<T, void(GY_COLLIDER_TYPE)>(&T::setColliderType);
+    type["setRelPos"] = method<T, void(float, float, float)>(&T::setRelPos);
+    type["setRelSize"] = method<T, void(float, float, float)>(&T::setRelSize);
+    type["getRelPosVec"] = method<T, Vector3()>(&T::getRelPosVec);
+    type["getRelSizeVec"] = method<T, Vector3()>(&T::getRelSizeVec);
+    type["setRelPosVec"] = method<T, void(const Vector3&)>(&T::setRelPosVec);
+    type["setRelSizeVec"] = method<T, void(const Vector3&)>(&T::setRelSizeVec);
+    type["getFlags"] = method<T, CollisionFlags*()>(&T::getFlags);
+    type["setFlags"] = method<T, void(const sol::object)>(&T::setFlags);
+    type["getStaticAttrib"] = method<T, CollidableStaticAttrib*()>(&T::getStaticAttrib);
+    type["setStaticAttrib"] = method<T, void(const sol::object)>(&T::setStaticAttrib);
+    property(type, "colliderType", method<T, GY_COLLIDER_TYPE() const>(&T::getColliderType), method<T, void(GY_COLLIDER_TYPE)>(&T::setColliderType));
+    property(type, "relPos", method<T, Vector3()>(&T::getRelPosVec), method<T, void(const Vector3&)>(&T::setRelPosVec));
+    property(type, "relSize", method<T, Vector3()>(&T::getRelSizeVec), method<T, void(const Vector3&)>(&T::setRelSizeVec));
+    property(type, "staticAttrib", method<T, CollidableStaticAttrib*()>(&T::getStaticAttrib), method<T, void(const sol::object)>(&T::setStaticAttrib));
+    property(type, "flags", method<T, CollisionFlags*()>(&T::getFlags), method<T, void(const sol::object)>(&T::setFlags));
+    inheritProperties<T>();
+    finish<T>(type, "CollidableAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerCollisionContact(sol::state_view state) {
+    if (state["CollisionContact"].valid()) return;
+    using T = elysian::CollisionContact;
+    auto type = registerType<T>(state, "CollisionContact");
+    type["getCollidable"] = method<T, Collidable*(unsigned) const>(&T::getCollidable);
+    type["getWorldPos"] = method<T, void(GYVector2&) const>(&T::getWorldPos);
+    type["getNormal"] = method<T, void(GYVector2&) const>(&T::getNormal);
+    type["getObjPos"] = method<T, void(unsigned, GYVector2&) const>(&T::getObjPos);
+    type["getSeparatingVel"] = method<T, float() const>(&T::getSeparatingVel);
+    type["getClosingVel"] = method<T, float() const>(&T::getClosingVel);
+    type["getDeltaVel"] = method<T, float() const>(&T::getDeltaVel);
+    type["getDepth"] = method<T, float() const>(&T::getDepth);
+}
+
+void registerCollidable(sol::state_view state) {
+    if (state["Collidable"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Collidable;
+    auto type = registerType<T, elysian::Component>(state, "Collidable");
+    type["getAttrib"] = method<T, std::shared_ptr<CollidableAttrib>() const>(&T::getAttrib);
+    type["setAttrib"] = method<T, void(std::shared_ptr<CollidableAttrib>)>(&T::setAttrib);
+    type["getContactCount"] = method<T, unsigned() const>(&T::getContactCount);
+    type["isActive"] = method<T, bool() const>(&T::isActive);
+    type["setActive"] = method<T, void(bool)>(&T::setActive);
+    type["setResolvePenetration"] = method<T, void(bool)>(&T::setResolvePenetration);
+    type["getResolvePenetration"] = method<T, bool() const>(&T::getResolvePenetration);
+    type["getWorldSpace"] = method<T, bool() const>(&T::getWorldSpace);
+    type["setWorldSpace"] = method<T, void(const bool)>(&T::setWorldSpace);
+    type["getStackedOnGround"] = method<T, bool() const>(&T::getStackedOnGround);
+    type["getRestingOnBody"] = method<T, bool() const>(&T::getRestingOnBody);
+    property(type, "active", method<T, bool() const>(&T::isActive), method<T, void(bool)>(&T::setActive));
+    property(type, "contactCount", method<T, unsigned() const>(&T::getContactCount));
+    property(type, "stackedOnGround", method<T, bool() const>(&T::getStackedOnGround));
+    property(type, "restingOnBody", method<T, bool() const>(&T::getRestingOnBody));
+    property(type, "worldSpace", method<T, bool() const>(&T::getWorldSpace), method<T, void(const bool)>(&T::setWorldSpace));
+    property(type, "resolvePen", method<T, bool() const>(&T::getResolvePenetration), method<T, void(bool)>(&T::setResolvePenetration));
+    property(type, "attrib", method<T, std::shared_ptr<CollidableAttrib>() const>(&T::getAttrib), method<T, void(std::shared_ptr<CollidableAttrib>)>(&T::setAttrib));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Collidable", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

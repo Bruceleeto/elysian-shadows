@@ -9,7 +9,6 @@ isEmpty(ESDEV_ROOT) {
     DEFINES += GYRO_NO_SPINE
 }
 
-QMAKE_CXXFLAGS += -Wno-c++11-extensions -Wno-c++11-long-long
 
 INCLUDEPATH += ../../include \
                 ../../../Spine/include \

@@ -559,90 +559,119 @@
 
 
 
-//OOLUA_EXPORT_FUNCTIONS(LuaVariant)
-//OOLUA_EXPORT_FUNCTIONS_CONST(LuaVariant)
+////
+namespace elysian::lua {
+using namespace elysian;
+using RenderableObject = elysian::RenderableObject;
+using Entity = elysian::Entity;
 
+void registerRenderableObject(sol::state_view state) {
+    if (state["RenderableObject"].valid()) return;
+    using T = elysian::RenderableObject;
+    auto type = registerType<T>(state, "RenderableObject");
+    type["getTransform"] = method<T, InstanceTransform&()>(&T::getTransform);
+}
 
-
-
-OOLUA_EXPORT_FUNCTIONS(RenderableObject,
-                                    getTransform)
-OOLUA_EXPORT_FUNCTIONS_CONST(RenderableObject)
-
-
-OOLUA_EXPORT_FUNCTIONS(Entity,
-                        move,
-                        setName,
-                        setElev,
-                        addRenderable,
-                        addCollidable,
-                        addCharacter,
-                        addWarp,
-                        addAudioSource,
-                        addLightSource,
-                        addExaminable,
-                        addRigidBody,
-                        addCombat,
-                        addParticleEmitter,
-                        addSkeleton,
-                        addBehavior,
-                        addLuaBehavior,
-                        removeRenderable,
-                        removeCollidable,
-                        removeCharacter,
-                        removeWarp,
-                        removeAudioSource,
-                        removeLightSource,
-                        removeExaminable,
-                        removeRigidBody,
-                        removeCombat,
-                        removeParticleEmitter,
-                        removeSkeleton,
-                        removeBehavior,
-                        removeLuaBehavior,
-                        setSelfTable,
-                        getSelfTable,
-                        setShadowDepth,
-                        setShadowVolume,
-                       setPlaneType,
-                       setTransform,
-                       setRenderable,
-                       setCollidable,
-                       setRigidBody,
-                       setCharacter,
-                       setWarp,
-                       setAudioSource,
-                       setLightSource,
-                       setParticleEmitter,
-                       setCombat,
-                       setExaminable,
-                       setSkeleton,
-                       setPersistent,
-                       setDispName,
-                       setBehaviorByIndex)
-
-
-OOLUA_EXPORT_FUNCTIONS_CONST(Entity,
-                                getName,
-                                getElev,
-                                getRenderable,
-                                getCollidable,
-                                getCharacter,
-                                getWarp,
-                                getAudioSource,
-                                getLightSource,
-                                getExaminable,
-                                getRigidBody,
-                                getCombat,
-                                getParticleEmitter,
-                                getSkeleton,
-                                getBehavior,
-                                getLuaBehavior,
-                                isShadowVolume,
-                                getPlaneType,
-                                getShadowDepth,
-                                isPersistent,
-                                getDispName,
-                                getBehaviorByIndex,
-                                getBehaviorCount,
-                                isActive)
+void registerEntity(sol::state_view state) {
+    if (state["Entity"].valid()) return;
+    registerRenderableObject(state);
+    using T = elysian::Entity;
+    auto type = registerType<T, elysian::RenderableObject>(state, "Entity");
+    type["new"] = sol::factories(factory<T>(), factory<T, Entity*>());
+    type["move"] = method<T, void(const GYVector2&)>(&T::move);
+    type["setName"] = method<T, void(const char*)>(&T::setName);
+    type["getName"] = method<T, const char *() const>(&T::getName);
+    type["setElev"] = method<T, void(const unsigned char)>(&T::setElev);
+    type["getElev"] = method<T, unsigned char() const>(&T::getElev);
+    type["addRenderable"] = method<T, Renderable*()>(&T::addRenderable);
+    type["addCollidable"] = method<T, Collidable*()>(&T::addCollidable);
+    type["addRigidBody"] = method<T, RigidBody*()>(&T::addRigidBody);
+    type["addCharacter"] = method<T, Character*()>(&T::addCharacter);
+    type["addWarp"] = method<T, Warp*()>(&T::addWarp);
+    type["addAudioSource"] = method<T, AudioSource*()>(&T::addAudioSource);
+    type["addLightSource"] = method<T, LightSource*()>(&T::addLightSource);
+    type["addExaminable"] = method<T, Examinable*()>(&T::addExaminable);
+    type["addCombat"] = method<T, Combat*()>(&T::addCombat);
+    type["addParticleEmitter"] = method<T, ParticleEmitter*()>(&T::addParticleEmitter);
+    type["addSkeleton"] = method<T, Skeleton*()>(&T::addSkeleton);
+    type["addBehavior"] = [](T& self, sol::object behavior) { return self.addBehavior(take<Behavior>(behavior)); };
+    type["addLuaBehavior"] = method<T, LuaBehavior*(const char*, sol::object)>(&T::addLuaBehavior);
+    type["getRenderable"] = method<T, Renderable*() const>(&T::getRenderable);
+    type["getCollidable"] = method<T, Collidable*() const>(&T::getCollidable);
+    type["getRigidBody"] = method<T, RigidBody*() const>(&T::getRigidBody);
+    type["getCharacter"] = method<T, Character*() const>(&T::getCharacter);
+    type["getWarp"] = method<T, Warp*() const>(&T::getWarp);
+    type["getAudioSource"] = method<T, AudioSource*() const>(&T::getAudioSource);
+    type["getLightSource"] = method<T, LightSource*() const>(&T::getLightSource);
+    type["getExaminable"] = method<T, Examinable*() const>(&T::getExaminable);
+    type["getCombat"] = method<T, Combat*() const>(&T::getCombat);
+    type["getParticleEmitter"] = method<T, ParticleEmitter*() const>(&T::getParticleEmitter);
+    type["getSkeleton"] = method<T, Skeleton*() const>(&T::getSkeleton);
+    type["getBehavior"] = method<T, Behavior*(const char*) const>(&T::getBehavior);
+    type["getLuaBehavior"] = method<T, LuaBehavior*(const char*) const>(&T::getLuaBehavior);
+    type["removeRenderable"] = method<T, void()>(&T::removeRenderable);
+    type["removeCollidable"] = method<T, void()>(&T::removeCollidable);
+    type["removeRigidBody"] = method<T, void()>(&T::removeRigidBody);
+    type["removeCharacter"] = method<T, void()>(&T::removeCharacter);
+    type["removeWarp"] = method<T, void()>(&T::removeWarp);
+    type["removeAudioSource"] = method<T, void()>(&T::removeAudioSource);
+    type["removeLightSource"] = method<T, void()>(&T::removeLightSource);
+    type["removeExaminable"] = method<T, void()>(&T::removeExaminable);
+    type["removeCombat"] = method<T, void()>(&T::removeCombat);
+    type["removeParticleEmitter"] = method<T, void()>(&T::removeParticleEmitter);
+    type["removeSkeleton"] = method<T, void()>(&T::removeSkeleton);
+    type["removeBehavior"] = method<T, void(const char*)>(&T::removeBehavior);
+    type["removeLuaBehavior"] = method<T, void(const char*)>(&T::removeLuaBehavior);
+    type["getSelfTable"] = method<T, sol::object&()>(&T::getSelfTable);
+    type["setSelfTable"] = method<T, void(sol::object)>(&T::setSelfTable);
+    type["setShadowDepth"] = method<T, void(float)>(&T::setShadowDepth);
+    type["setShadowVolume"] = method<T, void(bool)>(&T::setShadowVolume);
+    type["setPlaneType"] = method<T, void(GY_RECT_PLANE_TYPE)>(&T::setPlaneType);
+    type["getPlaneType"] = method<T, GY_RECT_PLANE_TYPE() const>(&T::getPlaneType);
+    type["getShadowDepth"] = method<T, float() const>(&T::getShadowDepth);
+    type["isShadowVolume"] = method<T, bool() const>(&T::isShadowVolume);
+    type["setTransform"] = method<T, void(sol::object)>(&T::setTransform);
+    type["setRenderable"] = method<T, void(sol::object)>(&T::setRenderable);
+    type["setCollidable"] = method<T, void(sol::object)>(&T::setCollidable);
+    type["setRigidBody"] = method<T, void(sol::object)>(&T::setRigidBody);
+    type["setWarp"] = method<T, void(sol::object)>(&T::setWarp);
+    type["setCharacter"] = method<T, void(sol::object)>(&T::setCharacter);
+    type["setAudioSource"] = method<T, void(sol::object)>(&T::setAudioSource);
+    type["setLightSource"] = method<T, void(sol::object)>(&T::setLightSource);
+    type["setExaminable"] = method<T, void(sol::object)>(&T::setExaminable);
+    type["setCombat"] = method<T, void(sol::object)>(&T::setCombat);
+    type["setParticleEmitter"] = method<T, void(sol::object)>(&T::setParticleEmitter);
+    type["setSkeleton"] = method<T, void(sol::object)>(&T::setSkeleton);
+    type["setPersistent"] = method<T, void(const bool)>(&T::setPersistent);
+    type["isPersistent"] = method<T, bool() const>(&T::isPersistent);
+    type["isActive"] = method<T, bool() const>(&T::isActive);
+    type["getDispName"] = method<T, const char*() const>(&T::getDispName);
+    type["setDispName"] = method<T, void(const char*)>(&T::setDispName);
+    type["getBehaviorByIndex"] = method<T, Behavior*(unsigned) const>(&T::getBehaviorByIndex);
+    type["getBehaviorCount"] = method<T, unsigned() const>(&T::getBehaviorCount);
+    type["setBehaviorByIndex"] = method<T, void(unsigned, sol::object)>(&T::setBehaviorByIndex);
+    property(type, "name", method<T, const char *() const>(&T::getName), method<T, void(const char*)>(&T::setName));
+    property(type, "dispName", method<T, const char*() const>(&T::getDispName), method<T, void(const char*)>(&T::setDispName));
+    property(type, "elev", method<T, unsigned char() const>(&T::getElev), method<T, void(const unsigned char)>(&T::setElev));
+    property(type, "planeType", method<T, GY_RECT_PLANE_TYPE() const>(&T::getPlaneType), method<T, void(GY_RECT_PLANE_TYPE)>(&T::setPlaneType));
+    property(type, "shadowVolume", method<T, bool() const>(&T::isShadowVolume), method<T, void(bool)>(&T::setShadowVolume));
+    property(type, "persistent", method<T, bool() const>(&T::isPersistent), method<T, void(const bool)>(&T::setPersistent));
+    property(type, "transform", method<T, InstanceTransform&()>(&T::getTransform), method<T, void(sol::object)>(&T::setTransform));
+    property(type, "renderable", method<T, Renderable*() const>(&T::getRenderable), method<T, void(sol::object)>(&T::setRenderable));
+    property(type, "skeleton", method<T, Skeleton*() const>(&T::getSkeleton), method<T, void(sol::object)>(&T::setSkeleton));
+    property(type, "collidable", method<T, Collidable*() const>(&T::getCollidable), method<T, void(sol::object)>(&T::setCollidable));
+    property(type, "rigidBody", method<T, RigidBody*() const>(&T::getRigidBody), method<T, void(sol::object)>(&T::setRigidBody));
+    property(type, "examinable", method<T, Examinable*() const>(&T::getExaminable), method<T, void(sol::object)>(&T::setExaminable));
+    property(type, "warp", method<T, Warp*() const>(&T::getWarp), method<T, void(sol::object)>(&T::setWarp));
+    property(type, "character", method<T, Character*() const>(&T::getCharacter), method<T, void(sol::object)>(&T::setCharacter));
+    property(type, "lightSource", method<T, LightSource*() const>(&T::getLightSource), method<T, void(sol::object)>(&T::setLightSource));
+    property(type, "audioSource", method<T, AudioSource*() const>(&T::getAudioSource), method<T, void(sol::object)>(&T::setAudioSource));
+    property(type, "particleEmitter", method<T, ParticleEmitter*() const>(&T::getParticleEmitter), method<T, void(sol::object)>(&T::setParticleEmitter));
+    property(type, "combat", method<T, Combat*() const>(&T::getCombat), method<T, void(sol::object)>(&T::setCombat));
+    viewProperty(type, array<T>("behaviors", method<T, Behavior*(unsigned) const>(&T::getBehaviorByIndex), method<T, void(unsigned, sol::object)>(&T::setBehaviorByIndex), method<T, unsigned() const>(&T::getBehaviorCount)));
+    inheritProperties<T, elysian::RenderableObject>();
+    finish<T>(type, "Entity", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+}

@@ -365,35 +365,6 @@
  * \sa rotateAboutPoint(), rotate(), getRotatedVector(), toAngle()
  */
 
-OOLUA_EXPORT_FUNCTIONS(GYVector2, setX, setY)
-OOLUA_EXPORT_FUNCTIONS_CONST(GYVector2, getX, getY)
-
-OOLUA_EXPORT_FUNCTIONS(Vector2,
-                       normalize,
-                       rotate,
-                       rotateAboutPoint,
-                       addVec,
-                       subVec,
-                       multVec,
-                       divVec,
-                       multScalar,
-                       divScalar)
-OOLUA_EXPORT_FUNCTIONS_CONST(Vector2,
-                             getX,
-                             getY,
-                             setX,
-                             setY,
-                             getMagnitude,
-                             squaredDistance,
-                             distance,
-                             dotProduct,
-                             scalarCrossProduct,
-                             vectorCrossProduct,
-                             toAngle,
-                             getUnitVector,
-                             getRotatedVector,
-                             getRotatedVectorAboutPoint)
-
 /*!
     \qmltype Vector3
     \since 1.5.8
@@ -664,31 +635,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Vector2,
 
 
 
-OOLUA_EXPORT_FUNCTIONS(GYVector3, setX, setY, setZ)
-OOLUA_EXPORT_FUNCTIONS_CONST(GYVector3, getX, getY, getZ)
-
-OOLUA_EXPORT_FUNCTIONS(Vector3,
-                       addVec,
-                       subVec,
-                       multVec,
-                       divVec,
-                       multScalar,
-                       divScalar,
-                       normalize)
-OOLUA_EXPORT_FUNCTIONS_CONST(Vector3,
-                             getX,
-                             getY,
-                             getZ,
-                             setX,
-                             setY,
-                             setZ,
-                             getMagnitude,
-                             squaredDistance,
-                             distance,
-                             dotProduct,
-                             crossProduct,
-                             getUnitVector)
-
 /*!
     \qmltype Vector4
     \since 1.5.8
@@ -797,11 +743,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Vector3,
             \li \l{Vector3::_div()}
     \endtable
 */
-OOLUA_EXPORT_FUNCTIONS(Quaternion)
-OOLUA_EXPORT_FUNCTIONS_CONST(Quaternion)
-
-
-
 /*!
     \qmltype InstanceTransform
     \since 1.5.8
@@ -1071,59 +1012,238 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Quaternion)
  */
 
 
-//OOLUA_EXPORT_FUNCTIONS(GYVector3)
-//OOLUA_EXPORT_FUNCTIONS_CONST(GYVector3)
+////////
+namespace elysian::lua {
+using namespace elysian;
+using GYVector2 = ::GYVector2;
+using Vector2 = elysian::Vector2;
+using Vector3 = elysian::Vector3;
+using Vector4 = elysian::Vector4;
+using Quaternion = elysian::Quaternion;
+using InstanceTransform = elysian::InstanceTransform;
 
+void registerGYVector2(sol::state_view state) {
+    if (state["GYVector2"].valid()) return;
+    using T = ::GYVector2;
+    auto type = registerType<T>(state, "GYVector2");
+    type["new"] = sol::factories(factory<T>());
+    type["getX"] = [](const T& self) { return self.x; };
+    type["setX"] = [](T& self, decltype(T::x) value) { self.x = value; };
+    type["getY"] = [](const T& self) { return self.y; };
+    type["setY"] = [](T& self, decltype(T::y) value) { self.y = value; };
+}
 
-//OOLUA_EXPORT_FUNCTIONS(GYVector4)
-//OOLUA_EXPORT_FUNCTIONS_CONST(GYVector4)
-OOLUA_EXPORT_FUNCTIONS(GYVector4, setX, setY, setZ, setW)
-OOLUA_EXPORT_FUNCTIONS_CONST(GYVector4, getX, getY, getZ, getW)
+void registerVector2(sol::state_view state) {
+    if (state["Vector2"].valid()) return;
+    using T = elysian::Vector2;
+    auto type = registerType<T>(state, "Vector2");
+    type["new"] = sol::factories(factory<T>(), factory<T, const Vector2&>(), factory<T, const GYVector2&>(), factory<T, float, float>(), factory<T, float>());
+    type["getX"] = method<T, float() const>(&T::getX);
+    type["getY"] = method<T, float() const>(&T::getY);
+    type["setX"] = method<T, void(float) const>(&T::setX);
+    type["setY"] = method<T, void(float) const>(&T::setY);
+    type["addVec"] = method<T>(&T::addVec);
+    type["subVec"] = method<T>(&T::subVec);
+    type["multVec"] = method<T>(&T::multVec);
+    type["divVec"] = method<T>(&T::divVec);
+    type["multScalar"] = method<T>(&T::multScalar);
+    type["divScalar"] = method<T>(&T::divScalar);
+    type["normalize"] = method<T>(&T::normalize);
+    type["getMagnitude"] = method<T>(&T::getMagnitude);
+    type["squaredDistance"] = method<T>(&T::squaredDistance);
+    type["distance"] = method<T>(&T::distance);
+    type["dotProduct"] = method<T>(&T::dotProduct);
+    type["scalarCrossProduct"] = method<T>(&T::scalarCrossProduct);
+    type["vectorCrossProduct"] = method<T>(&T::vectorCrossProduct);
+    type["getUnitVector"] = method<T>(&T::getUnitVector);
+    type["rotate"] = method<T>(&T::rotate);
+    type["toAngle"] = method<T>(&T::toAngle);
+    type["getRotatedVector"] = method<T>(&T::getRotatedVector);
+    type["rotateAboutPoint"] = method<T>(&T::rotateAboutPoint);
+    type["getRotatedVectorAboutPoint"] = method<T>(&T::getRotatedVectorAboutPoint);
+    type[sol::meta_function::equal_to] = [](const T& a, const T& b) { return a == b; };
+    type[sol::meta_function::addition] = [](const T& a, const T& b) { return a + b; };
+    type[sol::meta_function::subtraction] = [](const T& a, const T& b) { return a - b; };
+    type[sol::meta_function::multiplication] = [](const T& a, const T& b) { return a * b; };
+    type[sol::meta_function::division] = [](const T& a, const T& b) { return a / b; };
+    property(type, "x", method<T, float() const>(&T::getX), method<T, void(float) const>(&T::setX));
+    property(type, "y", method<T, float() const>(&T::getY), method<T, void(float) const>(&T::setY));
+    inheritProperties<T>();
+    finish<T>(type, "Vector2", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
 
-OOLUA_EXPORT_FUNCTIONS(Vector4)
-OOLUA_EXPORT_FUNCTIONS_CONST(Vector4, getX, getY, getZ, getW, setX, setY, setZ, setW)
+void registerGYVector3(sol::state_view state) {
+    if (state["GYVector3"].valid()) return;
+    using T = GYVector3;
+    auto type = registerType<T>(state, "GYVector3");
+    type["new"] = sol::factories(factory<T>());
+    type["getX"] = [](const T& self) { return self.x; };
+    type["setX"] = [](T& self, decltype(T::x) value) { self.x = value; };
+    type["getY"] = [](const T& self) { return self.y; };
+    type["setY"] = [](T& self, decltype(T::y) value) { self.y = value; };
+    type["getZ"] = [](const T& self) { return self.z; };
+    type["setZ"] = [](T& self, decltype(T::z) value) { self.z = value; };
+}
 
-OOLUA_EXPORT_FUNCTIONS(InstanceTransform,
-                                    setPos2f,
-                                    setPos3f,
-                                    translate2f,
-                                    translate3f,
-                                    setSize2f,
-                                    setScale2f,
-                                    setSize3f,
-                                    setScale3f,
-                                    rotate,
-                                    scale2f,
-                                    scale3f,
-                                    getPos,
-                                    getOrient,
-                                    getSize,
-                                    getScale,
-                                    setPosZ,
-                                    setPosY,
-                                    setPosX,
-                                    setSizeX,
-                                    setSizeY,
-                                    setSizeZ,
-                                    setScaleX,
-                                    setScaleY,
-                                    setScaleZ,
-                                    setAngle,
-                                    setOrientX,
-                                    setOrientY,
-                                    setOrientZ)
-OOLUA_EXPORT_FUNCTIONS_CONST(InstanceTransform,
-                                apply,
-                                getPosZ,
-                                getPosY,
-                                getPosX,
-                                getSizeX,
-                                getSizeY,
-                                getSizeZ,
-                                getScaleX,
-                                getScaleY,
-                                getScaleZ,
-                                getAngle,
-                                getOrientX,
-                                getOrientY,
-                                getOrientZ)
+void registerVector3(sol::state_view state) {
+    if (state["Vector3"].valid()) return;
+    using T = elysian::Vector3;
+    auto type = registerType<T>(state, "Vector3");
+    type["new"] = sol::factories(factory<T>(), factory<T, const Vector2&>(), factory<T, const Vector3&>(), factory<T, const Vector2&, float>(), factory<T, float, float, float>(), factory<T, float>());
+    type["getX"] = method<T, float() const>(&T::getX);
+    type["getY"] = method<T, float() const>(&T::getY);
+    type["getZ"] = method<T, float() const>(&T::getZ);
+    type["setX"] = method<T, void(float) const>(&T::setX);
+    type["setY"] = method<T, void(float) const>(&T::setY);
+    type["setZ"] = method<T, void(float) const>(&T::setZ);
+    type["addVec"] = method<T>(&T::addVec);
+    type["subVec"] = method<T>(&T::subVec);
+    type["multVec"] = method<T>(&T::multVec);
+    type["divVec"] = method<T>(&T::divVec);
+    type["multScalar"] = method<T>(&T::multScalar);
+    type["divScalar"] = method<T>(&T::divScalar);
+    type["normalize"] = method<T>(&T::normalize);
+    type["getMagnitude"] = method<T>(&T::getMagnitude);
+    type["squaredDistance"] = method<T>(&T::squaredDistance);
+    type["distance"] = method<T>(&T::distance);
+    type["dotProduct"] = method<T>(&T::dotProduct);
+    type["crossProduct"] = method<T>(&T::crossProduct);
+    type["getUnitVector"] = method<T>(&T::getUnitVector);
+    type[sol::meta_function::equal_to] = [](const T& a, const T& b) { return a == b; };
+    type[sol::meta_function::addition] = [](const T& a, const T& b) { return a + b; };
+    type[sol::meta_function::subtraction] = [](const T& a, const T& b) { return a - b; };
+    type[sol::meta_function::multiplication] = [](const T& a, const T& b) { return a * b; };
+    type[sol::meta_function::division] = [](const T& a, const T& b) { return a / b; };
+    property(type, "x", method<T, float() const>(&T::getX), method<T, void(float) const>(&T::setX));
+    property(type, "y", method<T, float() const>(&T::getY), method<T, void(float) const>(&T::setY));
+    property(type, "z", method<T, float() const>(&T::getZ), method<T, void(float) const>(&T::setZ));
+    inheritProperties<T>();
+    finish<T>(type, "Vector3", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerGYVector4(sol::state_view state) {
+    if (state["GYVector4"].valid()) return;
+    using T = GYVector4;
+    auto type = registerType<T>(state, "GYVector4");
+    type["new"] = sol::factories(factory<T>());
+    type["getX"] = [](const T& self) { return self.x; };
+    type["setX"] = [](T& self, decltype(T::x) value) { self.x = value; };
+    type["getY"] = [](const T& self) { return self.y; };
+    type["setY"] = [](T& self, decltype(T::y) value) { self.y = value; };
+    type["getZ"] = [](const T& self) { return self.z; };
+    type["setZ"] = [](T& self, decltype(T::z) value) { self.z = value; };
+    type["getW"] = [](const T& self) { return self.w; };
+    type["setW"] = [](T& self, decltype(T::w) value) { self.w = value; };
+}
+
+void registerVector4(sol::state_view state) {
+    if (state["Vector4"].valid()) return;
+    using T = elysian::Vector4;
+    auto type = registerType<T>(state, "Vector4");
+    type["new"] = sol::factories(factory<T>());
+    type["getX"] = method<T, float() const>(&T::getX);
+    type["getY"] = method<T, float() const>(&T::getY);
+    type["getZ"] = method<T, float() const>(&T::getZ);
+    type["getW"] = method<T, float() const>(&T::getW);
+    type["setX"] = method<T, void(float) const>(&T::setX);
+    type["setY"] = method<T, void(float) const>(&T::setY);
+    type["setZ"] = method<T, void(float) const>(&T::setZ);
+    type["setW"] = method<T, void(float) const>(&T::setW);
+    property(type, "x", method<T, float() const>(&T::getX), method<T, void(float) const>(&T::setX));
+    property(type, "y", method<T, float() const>(&T::getY), method<T, void(float) const>(&T::setY));
+    property(type, "z", method<T, float() const>(&T::getZ), method<T, void(float) const>(&T::setZ));
+    property(type, "w", method<T, float() const>(&T::getW), method<T, void(float) const>(&T::setW));
+    inheritProperties<T>();
+    finish<T>(type, "Vector4", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerQuaternion(sol::state_view state) {
+    if (state["Quaternion"].valid()) return;
+    using T = elysian::Quaternion;
+    auto type = registerType<T>(state, "Quaternion");
+    type["new"] = sol::factories(factory<T>());
+    inheritProperties<T>();
+    finish<T>(type, "Quaternion", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerInstanceTransform(sol::state_view state) {
+    if (state["InstanceTransform"].valid()) return;
+    using T = elysian::InstanceTransform;
+    auto type = registerType<T>(state, "InstanceTransform");
+    type["apply"] = method<T, void() const>(&T::apply);
+    type["setPos2f"] = method<T, void(float, float)>(&T::setPos);
+    type["setPos3f"] = method<T, void(float, float, float)>(&T::setPos);
+    type["translate2f"] = method<T, void(float, float)>(&T::translate);
+    type["translate3f"] = method<T, void(float, float, float)>(&T::translate);
+    type["setSize2f"] = method<T, void(float, float)>(&T::setSize);
+    type["setSize3f"] = method<T, void(float, float, float)>(&T::setSize);
+    type["setScale2f"] = method<T, void(float, float)>(&T::setScale);
+    type["setScale3f"] = method<T, void(float, float, float)>(&T::setScale);
+    type["scale2f"] = method<T, void(float, float)>(&T::scale);
+    type["scale3f"] = method<T, void(float, float, float)>(&T::scale);
+    type["setOrient3f"] = method<T, void(float, float, float)>(&T::setOrient);
+    type["rotate"] = method<T, void(float)>(&T::rotate);
+    type["getPos"] = method<T, GYVector3&()>(&T::getPos);
+    type["getSize"] = method<T, GYVector3&()>(&T::getSize);
+    type["getScale"] = method<T, GYVector3&()>(&T::getScale);
+    type["getOrient"] = method<T, GYVector3&()>(&T::getOrient);
+    type["getPosZ"] = method<T, float() const>(&T::getPosZ);
+    type["setPosZ"] = method<T, void(const float)>(&T::setPosZ);
+    type["getPosX"] = method<T, float() const>(&T::getPosX);
+    type["setPosX"] = method<T, void(const float)>(&T::setPosX);
+    type["getPosY"] = method<T, float() const>(&T::getPosY);
+    type["setPosY"] = method<T, void(const float)>(&T::setPosY);
+    type["getSizeZ"] = method<T, float() const>(&T::getSizeZ);
+    type["setSizeZ"] = method<T, void(const float)>(&T::setSizeZ);
+    type["getSizeX"] = method<T, float() const>(&T::getSizeX);
+    type["setSizeX"] = method<T, void(const float)>(&T::setSizeX);
+    type["getSizeY"] = method<T, float() const>(&T::getSizeY);
+    type["setSizeY"] = method<T, void(const float)>(&T::setSizeY);
+    type["getScaleZ"] = method<T, float() const>(&T::getScaleZ);
+    type["setScaleZ"] = method<T, void(const float)>(&T::setScaleZ);
+    type["getScaleX"] = method<T, float() const>(&T::getScaleX);
+    type["setScaleX"] = method<T, void(const float)>(&T::setScaleX);
+    type["getScaleY"] = method<T, float() const>(&T::getScaleY);
+    type["setScaleY"] = method<T, void(const float)>(&T::setScaleY);
+    type["setAngle"] = method<T, void(const float)>(&T::setAngle);
+    type["getAngle"] = method<T, float() const>(&T::getAngle);
+    type["setOrientX"] = method<T, void(const float)>(&T::setOrientX);
+    type["getOrientX"] = method<T, float() const>(&T::getOrientX);
+    type["setOrientY"] = method<T, void(const float)>(&T::setOrientY);
+    type["getOrientY"] = method<T, float() const>(&T::getOrientY);
+    type["setOrientZ"] = method<T, void(const float)>(&T::setOrientZ);
+    type["getOrientZ"] = method<T, float() const>(&T::getOrientZ);
+    property(type, "angle", method<T, float() const>(&T::getAngle), method<T, void(const float)>(&T::setAngle));
+    viewProperty(type, group("pos", {
+            field<T>("x", method<T, float() const>(&T::getPosX), method<T, void(const float)>(&T::setPosX)),
+            field<T>("y", method<T, float() const>(&T::getPosY), method<T, void(const float)>(&T::setPosY)),
+            field<T>("z", method<T, float() const>(&T::getPosZ), method<T, void(const float)>(&T::setPosZ))
+        }, [] { return LuaManager::isSerializing(); }));
+    viewProperty(type, group("orient", {
+            field<T>("x", method<T, float() const>(&T::getOrientX), method<T, void(const float)>(&T::setOrientX)),
+            field<T>("y", method<T, float() const>(&T::getOrientY), method<T, void(const float)>(&T::setOrientY)),
+            field<T>("z", method<T, float() const>(&T::getOrientZ), method<T, void(const float)>(&T::setOrientZ))
+        }, [] { return LuaManager::isSerializing(); }));
+    viewProperty(type, group("size", {
+            field<T>("x", method<T, float() const>(&T::getSizeX), method<T, void(const float)>(&T::setSizeX)),
+            field<T>("y", method<T, float() const>(&T::getSizeY), method<T, void(const float)>(&T::setSizeY)),
+            field<T>("z", method<T, float() const>(&T::getSizeZ), method<T, void(const float)>(&T::setSizeZ))
+        }, [] { return LuaManager::isSerializing(); }));
+    viewProperty(type, group("scale", {
+            field<T>("x", method<T, float() const>(&T::getScaleX), method<T, void(const float)>(&T::setScaleX)),
+            field<T>("y", method<T, float() const>(&T::getScaleY), method<T, void(const float)>(&T::setScaleY)),
+            field<T>("z", method<T, float() const>(&T::getScaleZ), method<T, void(const float)>(&T::setScaleZ))
+        }, [] { return LuaManager::isSerializing(); }));
+    inheritProperties<T>();
+    finish<T>(type, "InstanceTransform", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

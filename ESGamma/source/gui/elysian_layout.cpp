@@ -365,18 +365,18 @@ namespace elysian {
         return widgets;
     }
 
-    void SingleAxisLayout::setWidgetsLua(LuaVariant array) {
+    void SingleAxisLayout::setWidgetsLua(sol::object array) {
         _widgets.clear();
-        for(int i = 1; i <= array.getLength(); ++i) {
+        for(std::size_t i = 1; i <= elysian::lua::length(array); ++i) {
             auto pair = _indexToRowColPair(i);
-            TableLayout::insertWidget(pair.first, pair.second, array[i]->getValue<Widget*>());
+            TableLayout::insertWidget(pair.first, pair.second, elysian::lua::get(array, i).as<Widget*>());
         }
     }
 
-    LuaVariant SingleAxisLayout::getWidgetsLua(void) const {
-        LuaVariant array = {};
+    sol::object SingleAxisLayout::getWidgetsLua(void) const {
+        sol::object array = {};
         for(size_t i = 0; i < _dimSize[getGroupingAxis()]; ++i) {
-            array[(int)i+1].setVariant(getWidget(i));
+            elysian::lua::set(array, (int)i+1, getWidget(i));
         }
         return array;
     }

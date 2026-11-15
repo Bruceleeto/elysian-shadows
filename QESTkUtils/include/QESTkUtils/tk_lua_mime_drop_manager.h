@@ -8,14 +8,14 @@
 #define TK_LUA_MIME_DROP_MANAGER_H
 
 #include <QESTkUtils/tk_mime_drop_manager.h>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <QMap>
 
 //Pretty sure this whole fucking thing is pointless and should've been implemented the same way LocalFileSubHandlers were as part of the main MimeDropManager... goddamnit.
 class LuaMimeDropManager: public MimeDropManager {
 public:
-    using   LuaDropCbType            = std::function<bool(LuaVariant, Qt::DropAction, QDropEvent*, int, int, const QModelIndex&)>;
-    using   LuaCanDropCbType         = std::function<bool(LuaVariant, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&)>;
+    using   LuaDropCbType            = std::function<bool(sol::object, Qt::DropAction, QDropEvent*, int, int, const QModelIndex&)>;
+    using   LuaCanDropCbType         = std::function<bool(sol::object, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&)>;
 
     struct LuaHandler {
         LuaDropCbType       dropCallback;

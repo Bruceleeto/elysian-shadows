@@ -21,7 +21,7 @@ LuaMimeDropManager::LuaMimeDropManager(QMap<QString, LuaHandler>&& handlers):
 
 bool LuaMimeDropManager::_canDropCallback(const QMimeData *data, Qt::DropAction action, QDragEnterEvent *event, int row, int col, const QModelIndex &parent) {
     auto* tkData = qobject_cast<const TkMimeData*>(data);
-    auto it = _luaHandlers.find(tkData->getVariant().getTypeString());
+    auto it = _luaHandlers.find(elysian::lua::typeName(tkData->getVariant()).c_str());
     if(it != _luaHandlers.end()) {
         //if(it->actions & action) {
             return it->canDropCallback?
@@ -34,7 +34,7 @@ bool LuaMimeDropManager::_canDropCallback(const QMimeData *data, Qt::DropAction 
 
 bool LuaMimeDropManager::_dropCallback(const QMimeData *data, Qt::DropAction action, QDropEvent *event, int row, int col, const QModelIndex &parent) {
     auto* tkData = qobject_cast<const TkMimeData*>(data);
-    auto it = _luaHandlers.find(tkData->getVariant().getTypeString());
+    auto it = _luaHandlers.find(elysian::lua::typeName(tkData->getVariant()).c_str());
     if(it != _luaHandlers.end()) {
        // if(it->actions & action) {
             return it->dropCallback(tkData->getVariant(), action, event, row, col, parent);

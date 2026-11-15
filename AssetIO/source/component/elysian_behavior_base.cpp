@@ -14,9 +14,7 @@ namespace elysian {
 
 constexpr const char* BehaviorBase::triggerStrings[];
 
-//ELYSIAN_LUA_PROXY_FIELDS_EXPORT(Behavior)
-
-//----STATIC----
+////----STATIC----
 
 std::map<const char *, Behavior* (*)(Entity&), ltstr> BehaviorBase::_creators;
 

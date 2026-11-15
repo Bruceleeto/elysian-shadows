@@ -39,7 +39,7 @@ void TkWarp::initializeDelegates(void) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
 
-            TkWarp* warp = luaFieldItem->getVariant().getValue<TkWarp*>();
+            TkWarp* warp = luaFieldItem->getVariant().as<TkWarp*>();
             if(warp) {
                 QString str = "[";
                 if(warp->getChangeLevel()) {
@@ -69,7 +69,7 @@ void TkWarp::initializeDelegates(void) {
 
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkWarp* warp = luaFieldItem->getVariant().getValue<TkWarp*>();
+            TkWarp* warp = luaFieldItem->getVariant().as<TkWarp*>();
             if(warp && warp->getEntity()) {
                 TkCollidable* collidable = warp->getEntity()->getCollidable();
                 TkEntity* leader = elysian::System::getPartySys()->getPartyLeader();
@@ -83,28 +83,28 @@ void TkWarp::initializeDelegates(void) {
         }
     }, "Take Warp");
 
-    OOLUA::push(*_mainState, previewWarpDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, previewWarpDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     auto* areaDelegate = new FileBrowserPropertyItemDelegate;
     areaDelegate->setDir(true);
-    OOLUA::push(*_mainState, areaDelegate);
-    lua_setfield(*_mainState, -2, "areaPath");
+    sol::stack::push(_mainState, areaDelegate);
+    lua_setfield(_mainState, -2, "areaPath");
 
     auto* levelDelegate = new FileBrowserPropertyItemDelegate;
     levelDelegate->setDir(true);
-    OOLUA::push(*_mainState, levelDelegate);
-    lua_setfield(*_mainState, -2, "levelPath");
+    sol::stack::push(_mainState, levelDelegate);
+    lua_setfield(_mainState, -2, "levelPath");
 
     DynamicContentPropertyItemDelegate* toPosDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
 
-            TkWarp* warp = luaFieldItem->getTableRef().getValue<TkWarp*>();
+            TkWarp* warp = luaFieldItem->getTableRef().as<TkWarp*>();
             if(warp) {
                 QString str = QString("<%1, %2, %3>").arg(warp->getToPosVec().getX())
                                               .arg(warp->getToPosVec().getY())
@@ -119,7 +119,7 @@ void TkWarp::initializeDelegates(void) {
     toPosDelegate->addButton(QIcon(DYNAMIC_CONTENT_PROPERTY_ITEM_DELEGATE_ICON_POSITION_PATH), [](ESTkStandardItem* item) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkWarp* warp = luaFieldItem->getTableRef().getValue<TkWarp*>();
+            TkWarp* warp = luaFieldItem->getTableRef().as<TkWarp*>();
             if(warp) {
                 TkEntity* leader = elysian::System::getPartySys()->getPartyLeader();
 
@@ -130,8 +130,8 @@ void TkWarp::initializeDelegates(void) {
         }
     }, "Use party leader's location.");
 
-    OOLUA::push(*_mainState, toPosDelegate);
-    lua_setfield(*_mainState, -2, "toPos");
+    sol::stack::push(_mainState, toPosDelegate);
+    lua_setfield(_mainState, -2, "toPos");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }

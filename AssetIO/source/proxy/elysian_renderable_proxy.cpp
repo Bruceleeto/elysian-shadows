@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_renderable_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -164,20 +165,36 @@ be used, because they aren't by default.
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(Renderable,
-                       setFrame,
-                       setOffsetVec,
-                       setSpriteAttrib,
-                       setTexCoord,
-                       setTexOrient,
-                       getOffsetVec,
-                       getUVCoords,
-                       setUVCoords)
-OOLUA_EXPORT_FUNCTIONS_CONST(Renderable,
-                            getFrame,
-                            getSpriteAttrib,
-                            getQuadSpriteAttrib,
-                            getTexOrient,
-                            getUVCoordsCount)
 
+namespace elysian::lua {
+using namespace elysian;
+using Renderable = elysian::Renderable;
 
+void registerRenderable(sol::state_view state) {
+    if (state["Renderable"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Renderable;
+    auto type = registerType<T, elysian::Component>(state, "Renderable");
+    type["getOffsetVec"] = method<T, Vector2()>(&T::getOffsetVec);
+    type["setOffsetVec"] = method<T, void(const Vector2&)>(&T::setOffsetVec);
+    type["getFrame"] = method<T, unsigned() const>(&T::getFrame);
+    type["setFrame"] = method<T, void(unsigned)>(&T::setFrame);
+    type["getTexOrient"] = method<T, int() const>(&T::getTexOrient);
+    type["setTexOrient"] = method<T, void(GY_RECT_TEX_ORIENT)>(&T::setTexOrient);
+    type["getSpriteAttrib"] = method<T, std::shared_ptr<SpriteAttrib>() const>(&T::getSpriteAttrib);
+    type["getQuadSpriteAttrib"] = method<T, std::shared_ptr<QuadSpriteAttrib>() const>(&T::getQuadSpriteAttrib);
+    type["setSpriteAttrib"] = method<T, void(std::shared_ptr<SpriteAttrib>)>(&T::setSpriteAttrib);
+    type["setTexCoord"] = method<T, void(const unsigned, const float, const float)>(&T::setTexCoord);
+    type["getUVCoordsCount"] = method<T, unsigned() const>(&T::getUVCoordsCount);
+    type["getUVCoords"] = method<T, Vector2(const unsigned)>(&T::getUVCoords);
+    type["setUVCoords"] = method<T, void(const unsigned, const Vector2&)>(&T::setUVCoords);
+    property(type, "frame", method<T, unsigned() const>(&T::getFrame), method<T, void(unsigned)>(&T::setFrame));
+    property(type, "texOrient", method<T, int() const>(&T::getTexOrient), method<T, void(GY_RECT_TEX_ORIENT)>(&T::setTexOrient));
+    property(type, "spriteAttrib", method<T, std::shared_ptr<SpriteAttrib>() const>(&T::getSpriteAttrib), method<T, void(std::shared_ptr<SpriteAttrib>)>(&T::setSpriteAttrib));
+    property(type, "offset", method<T, Vector2()>(&T::getOffsetVec), method<T, void(const Vector2&)>(&T::setOffsetVec));
+    viewProperty(type, array<T>("uvCoords", method<T, Vector2(const unsigned)>(&T::getUVCoords), method<T, void(const unsigned, const Vector2&)>(&T::setUVCoords), method<T, unsigned() const>(&T::getUVCoordsCount)));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Renderable", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

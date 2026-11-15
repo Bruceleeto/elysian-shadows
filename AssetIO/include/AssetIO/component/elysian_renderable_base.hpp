@@ -11,7 +11,7 @@
 #include <AssetIO/primitive/elysian_quad_sprite_attrib.hpp>
 #include <AssetIO/primitive/elysian_material.hpp>
 #include <AssetIO/crtp/elysian_entity.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <libGyro/gyro_video_api.h>
 #include <memory>
 
@@ -21,7 +21,9 @@ namespace elysian {
 
     class RenderableBase:
             public Component,
-            public LuaTableProxy<RenderableBase, Renderable> {
+            public LuaObject<RenderableBase, Renderable> {
+    public: using LuaObjectType = LuaObject<RenderableBase, Renderable>;
+
     friend class EntityBase;
     friend Entity;
 
@@ -36,13 +38,7 @@ namespace elysian {
 
   public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(frame,          getFrame,           setFrame)
-            ELYSIAN_LUA_PROXY_FIELD(texOrient,      getTexOrient,       setTexOrient)
-            ELYSIAN_LUA_PROXY_FIELD(spriteAttrib,   getSpriteAttrib,    setSpriteAttrib)
-            ELYSIAN_LUA_PROXY_FIELD(offset,         getOffsetVec,       setOffsetVec)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(uvCoords, getUVCoords,        setUVCoords,    getUVCoordsCount)
-    ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                             RenderableBase(void) = default;
                             RenderableBase(Entity &parent, RenderableBase* prefab=nullptr);

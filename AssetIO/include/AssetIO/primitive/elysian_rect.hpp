@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_RECT_HPP
 #define ELYSIAN_RECT_HPP
 
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 
 namespace elysian {
 
@@ -48,14 +48,11 @@ namespace elysian {
     template<class T>
     class Rect<T, true>:
             public Rect<T, false>,
-            public LuaTableProxy<Rect<T, true>>
+            public LuaObject<Rect<T, true>>
     {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(top,    getTop,     setTop)
-            ELYSIAN_LUA_PROXY_FIELD(bottom, getBottom,  setBottom)
-            ELYSIAN_LUA_PROXY_FIELD(left,   getLeft,    setLeft)
-            ELYSIAN_LUA_PROXY_FIELD(right,  getRight,   setRight)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    public: using LuaObjectType = LuaObject<Rect<T, true>>;
+
+        public:
 
             Rect(void) = default;
             Rect(T value);
@@ -153,11 +150,9 @@ namespace elysian {
         Rect<T, false>(top, bottom, left, right)
     {}
 
-    template<class T>
-    bool Rect<T, true>::_proxyRegistered = false;
 
-    template<class T>
-    constexpr elysian::LuaTableFieldProxy Rect<T, true>::_proxyFields[];
+
+
 
 
 }

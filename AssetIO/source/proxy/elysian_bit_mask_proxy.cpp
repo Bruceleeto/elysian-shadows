@@ -58,14 +58,6 @@
  * Returns the total number of bits in the internal unsiged 32-bit integer object... Better be 32.
  */
 
-OOLUA_EXPORT_FUNCTIONS(BitMask32,
-                       setValue,
-                       setBit)
-OOLUA_EXPORT_FUNCTIONS_CONST(BitMask32,
-                             getValue,
-                             getBit,
-                             getBitCount)
-
 /*!
     \qmltype BitMask64
     \since 1.6.0
@@ -118,11 +110,44 @@ OOLUA_EXPORT_FUNCTIONS_CONST(BitMask32,
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(BitMask64,
-                       setValue,
-                       setBit)
-OOLUA_EXPORT_FUNCTIONS_CONST(BitMask64,
-                             getValue,
-                             getBit,
-                             getBitCount)
 
+namespace elysian::lua {
+using namespace elysian;
+using BitMask32 = elysian::BitMask32;
+
+void registerBitMask32(sol::state_view state) {
+    if (state["BitMask32"].valid()) return;
+    using T = elysian::BitMask32;
+    auto type = registerType<T>(state, "BitMask32");
+    type["new"] = sol::factories(factory<T>());
+    type["setValue"] = method<T, void(uint32_t)>(&T::setValue);
+    type["getValue"] = method<T, uint32_t() const>(&T::getValue);
+    type["getBit"] = method<T, bool(unsigned) const>(&T::getBit);
+    type["setBit"] = method<T, void(unsigned, bool)>(&T::setBit);
+    type["getBitCount"] = method<T, unsigned() const>(&T::getBitCount);
+    property(type, "value", method<T, uint32_t() const>(&T::getValue));
+    viewProperty(type, array<T>("bitFields", method<T, bool(unsigned) const>(&T::getBit), method<T, void(unsigned, bool)>(&T::setBit), method<T, unsigned() const>(&T::getBitCount)));
+    inheritProperties<T>();
+    finish<T>(type, "BitMask32", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerBitMask64(sol::state_view state) {
+    if (state["BitMask64"].valid()) return;
+    using T = BitMask64;
+    auto type = registerType<T>(state, "BitMask64");
+    type["new"] = sol::factories(factory<T>());
+    type["setValue"] = method<T, void(uint64_t)>(&T::setValue);
+    type["getValue"] = method<T, uint64_t() const>(&T::getValue);
+    type["getBit"] = method<T, bool(unsigned) const>(&T::getBit);
+    type["setBit"] = method<T, void(unsigned, bool)>(&T::setBit);
+    type["getBitCount"] = method<T, unsigned() const>(&T::getBitCount);
+    property(type, "value", method<T, uint64_t() const>(&T::getValue));
+    viewProperty(type, array<T>("bitFields", method<T, bool(unsigned) const>(&T::getBit), method<T, void(unsigned, bool)>(&T::setBit), method<T, unsigned() const>(&T::getBitCount)));
+    inheritProperties<T>();
+    finish<T>(type, "BitMask64", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+}

@@ -46,6 +46,15 @@
  * \sa EventMonitor
  */
 
-OOLUA_EXPORT_FUNCTIONS(DialogSystem,
-                       startDialog)
-OOLUA_EXPORT_FUNCTIONS_CONST(DialogSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using DialogSystem = elysian::DialogSystem;
+
+void registerDialogSystem(sol::state_view state) {
+    if (state["DialogSystem"].valid()) return;
+    using T = elysian::DialogSystem;
+    auto type = registerType<T>(state, "DialogSystem");
+    type["startDialog"] = [](T& self, std::shared_ptr<Dialog> arg0, sol::object arg1) { return std::invoke(method<T, void(std::shared_ptr<Dialog>, EventMonitor*)>(&T::startDialog), self, arg0, take<EventMonitor>(arg1)); };
+}
+}

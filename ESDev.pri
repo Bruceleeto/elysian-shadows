@@ -22,16 +22,22 @@ dreamcast {
 
 CONFIG -= exceptions
 
-# Lua 5.2 comes from the system on Linux (Debian/Ubuntu: liblua5.2-dev).
+# Lua 5.5 comes from the system on Linux (Debian/Ubuntu: liblua5.5-dev).
 !dreamcast {
     CONFIG += link_pkgconfig
-    PKGCONFIG += lua5.2
+    PKGCONFIG += lua5.5
 }
-#CONFIG += warn_off
+
+# sol2 (header-only C++/Lua bindings), vendored in sol2/.
+INCLUDEPATH += $$PWD/sol2/include
+!dreamcast {
+    # Type-check every argument passed from Lua to C++ (scripts get an error, not a crash).
+    DEFINES += SOL_ALL_SAFETIES_ON=1 SOL_NO_CHECK_NUMBER_PRECISION=1
+}
 
 
 !dreamcast {
-    QMAKE_CXXFLAGS += -Wall -Wno-unused-local-typedef -Wno-unknown-pragmas -Wno-inconsistent-missing-override
+    QMAKE_CXXFLAGS += -Wall
 }
 
 #QMAKE_CFLAGS += -std=c99
@@ -62,11 +68,9 @@ dreamcast {
 #Qt 6 requires C++17.
 CONFIG += c++17
 
-!dreamcast {
-    QMAKE_CXXFLAGS += -Wno-unknown-warning-option
-}
 
 CONFIG -= exceptions rtti
+CONFIG += exceptions_off rtti_off
 
 tests {
     DEFINES += ESTK_UNIT_TESTS

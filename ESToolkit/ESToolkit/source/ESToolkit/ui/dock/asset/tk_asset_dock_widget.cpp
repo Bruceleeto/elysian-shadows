@@ -304,11 +304,11 @@ QMimeData* AssetFileSystemModel::mimeData(const QModelIndexList &indexes) const 
     if(mimeDataList.size() > 1) {
         //only use custom mime type if ALL indices are custom supported types!
         int arraySize = 0;
-        LuaVariant mimeDataArray = LuaVariant::newTable();
+        sol::object mimeDataArray = elysian::lua::table();
 
         //First pass is appending only custom MimeData objects separately
         for(auto&& mimeData: mimeDataList) {
-            mimeDataArray[++arraySize] = (void*)mimeData;
+            elysian::lua::set(mimeDataArray, ++arraySize, (void*)mimeData);
         }
 
         return new TkMimeData(TkMimeData::TYPE_MIME_DATA_ARRAY, std::move(mimeDataArray));
@@ -611,8 +611,8 @@ PrefabAssetFileType::PrefabAssetFileType(QString filePath):
 
     _prefabRef = LuaManager::getPrefab(Q_CSTR(_prefabName));
 
-    if(_prefabRef.getType() != LUA_TTABLE && _prefabRef.getType() != LUA_TUSERDATA) {
-        errprintf("Prefab[%s] is not USERDATA or TABLE type! (%s)", Q_CSTR(_prefabName), _prefabRef.getTypeString());
+    if(elysian::lua::type(_prefabRef) != LUA_TTABLE && elysian::lua::type(_prefabRef) != LUA_TUSERDATA) {
+        errprintf("Prefab[%s] is not USERDATA or TABLE type! (%s)", Q_CSTR(_prefabName), elysian::lua::typeName(_prefabRef).c_str());
         setFontState(CustomAssetFileType::FONT_INVALID);
     }
 }
@@ -646,7 +646,7 @@ QMenu* PrefabAssetFileType::contextMenu(const QModelIndex& /*index*/) {
 
     menuStack.insertAction("Create Child",
          [&](bool) {
-        LuaVariant v = _prefabRef["new"].getVariant()(_prefabRef);
+        sol::object v = elysian::lua::call(elysian::lua::get(_prefabRef, "new"), _prefabRef);
         getAssets()->setCurrentSelection(new LuaTableSelectable(std::move(v)));
 
     });

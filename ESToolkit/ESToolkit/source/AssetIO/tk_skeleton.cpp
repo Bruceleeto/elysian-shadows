@@ -78,13 +78,12 @@ QMenu* TkSkeleton::createContextMenu(void) {
 }
 
 void TkSkeleton::initializeDelegates(void) {
-    LuaVariant delegates = {
-        {
-            "curAnim", new ComboBoxPropertyItemDelegate([](ESTkStandardItem* item) {
+    sol::table delegates = elysian::lua::table();
+    delegates.set("curAnim", static_cast<PropertyItemDelegate*>(new ComboBoxPropertyItemDelegate([](ESTkStandardItem* item) {
                 QStringList options;
                 LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                 if(luaFieldItem) {
-                    TkSkeleton* skeleton = luaFieldItem->getTableRef().getValue<TkSkeleton*>();
+                    TkSkeleton* skeleton = luaFieldItem->getTableRef().as<TkSkeleton*>();
                     if(skeleton && skeleton->_attrib) {
                         for(auto&& it: skeleton->_attrib->_animations) {
                             options.push_back(it->getName());
@@ -92,14 +91,12 @@ void TkSkeleton::initializeDelegates(void) {
                     }
                 }
                 return options;
-            }, true)
-        },
-        {
-            "skin", new ComboBoxPropertyItemDelegate([](ESTkStandardItem* item) {
+            }, true)));
+    delegates.set("skin", static_cast<PropertyItemDelegate*>(new ComboBoxPropertyItemDelegate([](ESTkStandardItem* item) {
                 QStringList options;
                 LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                 if(luaFieldItem) {
-                    TkSkeleton* skeleton = luaFieldItem->getTableRef().getValue<TkSkeleton*>();
+                    TkSkeleton* skeleton = luaFieldItem->getTableRef().as<TkSkeleton*>();
 
                     if(skeleton && skeleton->_attrib) {
                         int i = 0;
@@ -111,25 +108,23 @@ void TkSkeleton::initializeDelegates(void) {
                     }
                 }
                 return options;
-            }, true)
-        }
-    };
+            }, true)));
 
     delegates.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 }
 
 //========== SKELETONATTRIB ==========
 
 void TkSkeletonAttrib::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     FileBrowserPropertyItemDelegate* atlasDelegate = new FileBrowserPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaItem) {
-        TkSkeletonAttrib* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
+        TkSkeletonAttrib* attrib = luaItem->getTableRef().as<TkSkeletonAttrib*>();
             if(attrib) {
                 option.text = attrib->getAtlasPath();
                 if(!attrib->isAtlasValid()) option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -139,19 +134,19 @@ void TkSkeletonAttrib::initializeDelegates(void) {
     atlasDelegate->addButton(QIcon(QApplication::style()->standardIcon(QStyle::SP_BrowserReload)), [](ESTkStandardItem* item) {
         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaItem) {
-            auto* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
+            auto* attrib = luaItem->getTableRef().as<TkSkeletonAttrib*>();
             if(attrib) {
                 attrib->reloadAtlas();
             }
         }
     });
-    OOLUA::push(*_mainState, atlasDelegate);
-    lua_setfield(*_mainState, -2, "atlasPath");
+    sol::stack::push(_mainState, atlasDelegate);
+    lua_setfield(_mainState, -2, "atlasPath");
 
     FileBrowserPropertyItemDelegate* jsonDelegate = new FileBrowserPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaItem) {
-            TkSkeletonAttrib* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
+            TkSkeletonAttrib* attrib = luaItem->getTableRef().as<TkSkeletonAttrib*>();
             if(attrib) {
                 option.text = attrib->getJsonPath();
                 if(!attrib->isJsonValid()) option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -161,14 +156,14 @@ void TkSkeletonAttrib::initializeDelegates(void) {
     jsonDelegate->addButton(QIcon(QApplication::style()->standardIcon(QStyle::SP_BrowserReload)), [](ESTkStandardItem* item) {
         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaItem) {
-            auto* attrib = luaItem->getTableRef().getValue<TkSkeletonAttrib*>();
+            auto* attrib = luaItem->getTableRef().as<TkSkeletonAttrib*>();
             if(attrib) {
                 attrib->reloadJson();
             }
         }
     });
-    OOLUA::push(*_mainState, jsonDelegate);
-    lua_setfield(*_mainState, -2, "jsonPath");
+    sol::stack::push(_mainState, jsonDelegate);
+    lua_setfield(_mainState, -2, "jsonPath");
 
     DynamicContentPropertyItemDelegate* animDelegate =
             new DynamicContentPropertyItemDelegate(DynamicContentPropertyItemDelegate::luaArraySizeTextCallback<false>);
@@ -177,16 +172,16 @@ void TkSkeletonAttrib::initializeDelegates(void) {
         {
             QString("Entity"),
             {
-                [](LuaVariant v, Qt::DropAction, QDropEvent*, int, int, const QModelIndex& parent) {
+                [](sol::object v, Qt::DropAction, QDropEvent*, int, int, const QModelIndex& parent) {
                     auto* model = qobject_cast<const QStandardItemModel*>(parent.model());
                     if(model) {
                         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(model->itemFromIndex(parent));
                         if(luaItem) {
-                            const LuaVariant& self = luaItem->getTableData()->getTableRef();
-                            LuaVariant srcTable = v["skeleton"]["attrib"]["animations"].getVariant();
+                            const sol::object& self = luaItem->getTableData()->getTableRef();
+                            sol::object srcTable = elysian::lua::get(elysian::lua::get(elysian::lua::get(v, "skeleton"), "attrib"), "animations");
 
-                            for(int i = 1; i <= srcTable.getLength(); ++i) {
-                                self[i].setVariant(srcTable[i].getVariant());
+                            for(std::size_t i = 1; i <= elysian::lua::length(srcTable); ++i) {
+                                elysian::lua::set(self, i, elysian::lua::get(srcTable, i));
                             }
 
                             return true;
@@ -194,35 +189,35 @@ void TkSkeletonAttrib::initializeDelegates(void) {
                     }
                     return false;
                 },
-                [](LuaVariant v, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&) {
-                    return !v["skeleton"]["attrib"]["animations"].getVariant().isNil();
+                [](sol::object v, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&) {
+                    return !!elysian::lua::get(elysian::lua::get(elysian::lua::get(v, "skeleton"), "attrib"), "animations").valid();
                 }
             }
         }
 
     }));
 
-    OOLUA::push(*_mainState, animDelegate);
-    lua_setfield(*_mainState, -2, "animations");
+    sol::stack::push(_mainState, animDelegate);
+    lua_setfield(_mainState, -2, "animations");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }
 
 void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
     if(key == "animations") {
 
-        LuaVariant delegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            TkSkeletonAttrib* self = t["__ud"]->getValue<TkSkeletonAttrib*>();
-            if(self && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            TkSkeletonAttrib* self = elysian::lua::get(t, "__ud").as<TkSkeletonAttrib*>();
+            if(self && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if(index <= self->getAnimationCount()) {
 
                     DynamicContentPropertyItemDelegate* delegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkSkeletonAttrib* attrib = luaFieldItem->getTableRef()["__ud"]->getValue<TkSkeletonAttrib*>();
+                            TkSkeletonAttrib* attrib = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkSkeletonAttrib*>();
                             if(attrib) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 elysian::Animation* anim = attrib->getAnimation(index);
                                 if(anim) {
                                     option.palette.setColor(QPalette::Text, QColor(Qt::gray));
@@ -237,7 +232,7 @@ void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
                         if(luaItem) {
                             auto* skeletonItem = luaItem->getAncestorSiblingLuaItem({"animations", "attrib", "skeleton"}, 1);
                             if(skeletonItem) {
-                                skeletonItem->getVariant()["curAnim"].setVariant(luaItem->getVariant()["name"].getVariant());
+                                elysian::lua::set(skeletonItem->getVariant(), "curAnim", elysian::lua::get(luaItem->getVariant(), "name"));
                             }
                         }
                     });
@@ -245,9 +240,9 @@ void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
                     delegate->setDeleteCallback([](ESTkStandardItem* item) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkSkeletonAttrib* attrib = luaFieldItem->getTableRef()["__ud"]->getValue<TkSkeletonAttrib*>();
+                            TkSkeletonAttrib* attrib = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkSkeletonAttrib*>();
                             if(attrib) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 attrib->setAnimation(index, nullptr);
 
                                 auto* attribItem = luaFieldItem->getAncestorSiblingLuaItem({"animations", "attrib"}, 1);
@@ -262,9 +257,9 @@ void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
                     delegate->setContextMenuCallback([](ESTkStandardItem* item) -> QMenu* {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkSkeletonAttrib* attrib = luaFieldItem->getTableRef()["__ud"]->getValue<TkSkeletonAttrib*>();
+                            TkSkeletonAttrib* attrib = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkSkeletonAttrib*>();
                             if(attrib) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
 
                                 QESTkUtils::MenuStack stack("Animation");
                                 stack.insertAction("Delete", [=](bool) {
@@ -289,8 +284,8 @@ void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
             return nullptr;
         };
 
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     }
 }
 
@@ -299,48 +294,48 @@ void TkSkeletonAttrib::initializeVirtualTableDelegates(QString key) {
 
 
 void TkAnimation::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     auto* nameDelegate = new PropertyItemDelegate();
     nameDelegate->setCompleterCallback([](ESTkStandardItem*) {
         QStringList list;
         list << "Idle";
-        LuaVariant nameTable = LuaManager::exec("return Character.animNameList");
-        for(int i = 1; i < nameTable.getLength(); ++i) {
-            QString name = nameTable[i].getVariant().getValue<const char*>();
+        sol::object nameTable = LuaManager::exec("return Character.animNameList");
+        for(std::size_t i = 1; i < elysian::lua::length(nameTable); ++i) {
+            QString name = elysian::lua::get(nameTable, i).as<const char*>();
             list << name+QString("Left") << name+QString("Right") << name+QString("Up") << name+QString("Down");
         }
         return list;
     }, QCompleter::UnfilteredPopupCompletion);
-    OOLUA::push(*_mainState, nameDelegate);
-    lua_setfield(*_mainState, -2, "name");
+    sol::stack::push(_mainState, nameDelegate);
+    lua_setfield(_mainState, -2, "name");
 
     DynamicContentPropertyItemDelegate* tracksDelegate =
             new DynamicContentPropertyItemDelegate(DynamicContentPropertyItemDelegate::luaArraySizeTextCallback<false>);
     tracksDelegate->addButton(QIcon(DYNAMIC_CONTENT_PROPERTY_ITEM_DELEGATE_ICON_PLUS_PATH), DynamicContentPropertyItemDelegate::luaAddItemButtonCallback<AnimationTrack>);
 
-    OOLUA::push(*_mainState, tracksDelegate);
-    lua_setfield(*_mainState, -2, "tracks");
+    sol::stack::push(_mainState, tracksDelegate);
+    lua_setfield(_mainState, -2, "tracks");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }
 
 void TkAnimation::initializeVirtualTableDelegates(QString key) {
     if(key == "tracks") {
 
-        LuaVariant delegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            TkAnimation* self = t["__ud"]->getValue<TkAnimation*>();
-            if(self && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            TkAnimation* self = elysian::lua::get(t, "__ud").as<TkAnimation*>();
+            if(self && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if(index <= self->getTrackCount()) {
                     DynamicContentPropertyItemDelegate* delegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkAnimation* anim = luaFieldItem->getTableRef()["__ud"]->getValue<TkAnimation*>();
+                            TkAnimation* anim = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkAnimation*>();
                             if(anim) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 elysian::AnimationTrack* track = anim->getTrack(index);
                                 option.palette.setColor(QPalette::Text, QColor(Qt::gray));
                                 option.text = QString(track->getName());
@@ -351,9 +346,9 @@ void TkAnimation::initializeVirtualTableDelegates(QString key) {
                     delegate->setContextMenuCallback([](ESTkStandardItem* item) -> QMenu* {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkAnimation* anim = luaFieldItem->getTableRef()["__ud"]->getValue<TkAnimation*>();
+                            TkAnimation* anim = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkAnimation*>();
                             if(anim) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
 
                                 QESTkUtils::MenuStack stack("AnimationTrack");
                                 stack.insertAction("Delete", [=](bool) {
@@ -374,9 +369,9 @@ void TkAnimation::initializeVirtualTableDelegates(QString key) {
                     delegate->setDeleteCallback([](ESTkStandardItem* item) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            TkAnimation* anim = luaFieldItem->getTableRef()["__ud"]->getValue<TkAnimation*>();
+                            TkAnimation* anim = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkAnimation*>();
                             if(anim) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 anim->setTrack(index, nullptr);
 
                                 auto* parentItem = luaFieldItem->getAncestorSiblingLuaItem({"tracks", "*"}, 1);
@@ -390,8 +385,8 @@ void TkAnimation::initializeVirtualTableDelegates(QString key) {
             }
             return nullptr;
         };
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     }
 }
 
@@ -404,7 +399,7 @@ void TkAnimationTrack::initializeDelegates(void) {
             LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
                 LuaTableFieldItem* attribItem = luaFieldItem->getAncestorSiblingLuaItem({"*", "tracks", "*", "animations", "attrib"}, 1);
-                TkSkeletonAttrib* attrib = attribItem->getVariant().getValue<TkSkeletonAttrib*>();
+                TkSkeletonAttrib* attrib = attribItem->getVariant().as<TkSkeletonAttrib*>();
                 if(attrib) {
                     int i = 0;
                     for(;;) {
@@ -422,7 +417,7 @@ void TkAnimationTrack::initializeDelegates(void) {
         if(luaFieldItem) {
             LuaTableFieldItem* attribItem = luaFieldItem->getAncestorSiblingLuaItem({"*", "tracks", "*", "animations", "attrib"}, 1);
             if(attribItem) {
-                TkSkeletonAttrib* attrib = attribItem->getVariant().getValue<TkSkeletonAttrib*>();
+                TkSkeletonAttrib* attrib = attribItem->getVariant().as<TkSkeletonAttrib*>();
                 if(attrib) {
                     option.text = item->data(Qt::EditRole).toString();
                     if(!attrib->findSpineAnimation(Q_CSTR(option.text))) option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -432,15 +427,11 @@ void TkAnimationTrack::initializeDelegates(void) {
     });
 
 
-    LuaVariant delegates = {
-        {
-            "name", nameDelegate
-        }
-
-    };
+    sol::table delegates = elysian::lua::table();
+    delegates.set("name", static_cast<PropertyItemDelegate*>(nameDelegate));
 
     delegates.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 }
 
 

@@ -84,12 +84,21 @@
  */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(TimerSystem,
-                                getTotalTicks,
-                                getCurrentFrameTicks,
-                                getDeltaTime,
-                                getTotalTime,
-                                getSpeedMultiplier)
-OOLUA_EXPORT_FUNCTIONS(TimerSystem,
-                       startTimerEvent,
-                       setSpeedMultiplier)
+
+namespace elysian::lua {
+using namespace elysian;
+using TimerSystem = elysian::TimerSystem;
+
+void registerTimerSystem(sol::state_view state) {
+    if (state["TimerSystem"].valid()) return;
+    using T = elysian::TimerSystem;
+    auto type = registerType<T>(state, "TimerSystem");
+    type["getTotalTicks"] = method<T>(&T::getTotalTicks);
+    type["getCurrentFrameTicks"] = method<T>(&T::getCurrentFrameTicks);
+    type["getDeltaTime"] = method<T>(&T::getDeltaTime);
+    type["getTotalTime"] = method<T>(&T::getTotalTime);
+    type["startTimerEvent"] = [](T& self, float arg0, sol::object arg1) { return std::invoke(method<T, void(float, EventMonitor*)>(&T::startTimerEvent), self, arg0, take<EventMonitor>(arg1)); };
+    type["setSpeedMultiplier"] = method<T, void(float)>(&T::setSpeedMultiplier);
+    type["getSpeedMultiplier"] = method<T, float() const>(&T::getSpeedMultiplier);
+}
+}

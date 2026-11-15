@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_audio_source_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -51,8 +52,8 @@
 */
 
 
-EXPORT_OOLUA_FUNCTIONS_0_CONST(GYWav)
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(GYWav)
+
+
 
 
 
@@ -145,26 +146,54 @@ EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(GYWav)
  * \sa setWav()
  */
 
-OOLUA_EXPORT_FUNCTIONS(AudioSource,
-                                    setWavFile,
-                                    setRolloffFactor,
-                                    setBasePath,
-                                    play,
-                                    stop,
-                                    setWav,
-                                    playWav,
-                                    setGain,
-                                    setPitch,
-                                    setLooping,
-                                    setStartLooping,
-                                    setStartWavFile)
-OOLUA_EXPORT_FUNCTIONS_CONST(AudioSource,
-                             getWavFile,
-                             getRolloffFactor,
-                             getBasePath,
-                            getLooping,
-                            getPitch,
-                            getGain,
-                             isPlaying,
-                             getStartLooping,
-                             getStartWavFile)
+
+namespace elysian::lua {
+using namespace elysian;
+using AudioSource = elysian::AudioSource;
+
+void registerGYWav(sol::state_view state) {
+    if (state["GYWav"].valid()) return;
+    using T = GYWav;
+    auto type = registerType<T>(state, "GYWav");
+}
+
+void registerAudioSource(sol::state_view state) {
+    if (state["AudioSource"].valid()) return;
+    registerComponent(state);
+    using T = elysian::AudioSource;
+    auto type = registerType<T, elysian::Component>(state, "AudioSource");
+    type["setWavFile"] = method<T>(&T::setWavFile);
+    type["getWavFile"] = method<T>(&T::getWavFile);
+    type["setBasePath"] = method<T>(&T::setBasePath);
+    type["getBasePath"] = method<T>(&T::getBasePath);
+    type["setRolloffFactor"] = method<T>(&T::setRolloffFactor);
+    type["getRolloffFactor"] = method<T>(&T::getRolloffFactor);
+    type["isPlaying"] = method<T>(&T::isPlaying);
+    type["setWav"] = method<T>(&T::setWav);
+    type["playWav"] = method<T>(&T::playWav);
+    type["playLua"] = method<T, void(sol::object)>(&T::playLua);
+    type["setStartLooping"] = method<T>(&T::setStartLooping);
+    type["getStartLooping"] = method<T>(&T::getStartLooping);
+    type["setStartWavFile"] = method<T>(&T::setStartWavFile);
+    type["getStartWavFile"] = method<T>(&T::getStartWavFile);
+    type["stop"] = method<T, void()>(&T::stop);
+    type["setGain"] = method<T, void(float)>(&T::setGain);
+    type["setPitch"] = method<T, void(float)>(&T::setPitch);
+    type["setLooping"] = method<T, void(bool)>(&T::setLooping);
+    type["getPitch"] = method<T, float() const>(&T::getPitch);
+    type["getGain"] = method<T, float() const>(&T::getGain);
+    type["getLooping"] = method<T, bool() const>(&T::getLooping);
+    type["play"] = method<T, void(sol::object)>(&T::playLua);
+    property(type, "wavFile", method<T>(&T::getWavFile), method<T>(&T::setWavFile));
+    property(type, "basePath", method<T>(&T::getBasePath), method<T>(&T::setBasePath));
+    property(type, "gain", method<T, float() const>(&T::getGain), method<T, void(float)>(&T::setGain));
+    property(type, "pitch", method<T, float() const>(&T::getPitch), method<T, void(float)>(&T::setPitch));
+    property(type, "looping", method<T, bool() const>(&T::getLooping), method<T, void(bool)>(&T::setLooping));
+    property(type, "rolloffFactor", method<T>(&T::getRolloffFactor), method<T>(&T::setRolloffFactor));
+    property(type, "startLooping", method<T>(&T::getStartLooping), method<T>(&T::setStartLooping));
+    property(type, "startWavFile", method<T>(&T::getStartWavFile), method<T>(&T::setStartWavFile));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "AudioSource", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

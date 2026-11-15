@@ -10,12 +10,12 @@
 #include <vector>
 #include <map>
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 #include <AssetIO/primitive/elysian_renderable_object.hpp>
 #include <AssetIO/utility/elysian_stl_algorithm.hpp>
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/level/elysian_scene_object.hpp>
 #include <libGyro/gyro_video_api.h>
 
@@ -32,32 +32,13 @@ namespace elysian {
 	class EntityBase:
 			public RenderableObject,
             public SceneObjectAdapter<Entity>,
-            public LuaTableProxy<EntityBase, Entity>
+            public LuaObject<EntityBase, Entity>
 	{
+    public: using LuaObjectType = LuaObject<EntityBase, Entity>;
+
 	public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(name,               getName,                setName)
-            ELYSIAN_LUA_PROXY_FIELD(dispName,           getDispName,            setDispName)
-            ELYSIAN_LUA_PROXY_FIELD(elev,               getElev,                setElev)
-            ELYSIAN_LUA_PROXY_FIELD(planeType,          getPlaneType,           setPlaneType)
-            ELYSIAN_LUA_PROXY_FIELD(shadowVolume,       isShadowVolume,         setShadowVolume)
-            ELYSIAN_LUA_PROXY_FIELD(persistent,         isPersistent,           setPersistent)
-            ELYSIAN_LUA_PROXY_FIELD(transform,          getTransform,           setTransform)
-            ELYSIAN_LUA_PROXY_FIELD(renderable,         getRenderable,          setRenderable)
-            ELYSIAN_LUA_PROXY_FIELD(skeleton,           getSkeleton,            setSkeleton)
-            //ELYSIAN_LUA_PROXY_FIELD(animation,          getAnimation,           setAnimation)
-            ELYSIAN_LUA_PROXY_FIELD(collidable,         getCollidable,          setCollidable)
-            ELYSIAN_LUA_PROXY_FIELD(rigidBody,          getRigidBody,           setRigidBody)
-            ELYSIAN_LUA_PROXY_FIELD(examinable,         getExaminable,          setExaminable)
-            ELYSIAN_LUA_PROXY_FIELD(warp,               getWarp,                setWarp)
-            ELYSIAN_LUA_PROXY_FIELD(character,          getCharacter,           setCharacter)
-            ELYSIAN_LUA_PROXY_FIELD(lightSource,        getLightSource,         setLightSource)
-            ELYSIAN_LUA_PROXY_FIELD(audioSource,        getAudioSource,         setAudioSource)
-            ELYSIAN_LUA_PROXY_FIELD(particleEmitter,    getParticleEmitter,     setParticleEmitter)
-            ELYSIAN_LUA_PROXY_FIELD(combat,             getCombat,              setCombat)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(behaviors,  getBehaviorByIndex,  setBehaviorByIndex, getBehaviorCount)
-		ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
 
 
@@ -80,7 +61,7 @@ namespace elysian {
         void                setDispName(const char* const name);
         const char*         getDispName(void) const;
 
-        void                setTransform(LuaVariant valTable);
+        void                setTransform(sol::object valTable);
 
         void                setElev(const unsigned char e);
         unsigned char       getElev(void) const;
@@ -104,17 +85,17 @@ namespace elysian {
 		Combat*				addCombat(void);
         Skeleton*           addSkeleton(void);
 
-        void                setRenderable(LuaVariant valTable);
-        void                setCollidable(LuaVariant valTable);
-        void                setRigidBody(LuaVariant valTable);
-        void                setCharacter(LuaVariant valTable);
-        void                setWarp(LuaVariant valTable);
-        void                setExaminable(LuaVariant valTable);
-        void                setAudioSource(LuaVariant valTable);
-        void                setLightSource(LuaVariant valTable);
-        void                setParticleEmitter(LuaVariant valTable);
-        void                setCombat(LuaVariant valTable);
-        void                setSkeleton(LuaVariant valTable);
+        void                setRenderable(sol::object valTable);
+        void                setCollidable(sol::object valTable);
+        void                setRigidBody(sol::object valTable);
+        void                setCharacter(sol::object valTable);
+        void                setWarp(sol::object valTable);
+        void                setExaminable(sol::object valTable);
+        void                setAudioSource(sol::object valTable);
+        void                setLightSource(sol::object valTable);
+        void                setParticleEmitter(sol::object valTable);
+        void                setCombat(sol::object valTable);
+        void                setSkeleton(sol::object valTable);
 
         Renderable*			getRenderable(void) const;
         Collidable*			getCollidable(void) const;
@@ -143,12 +124,12 @@ namespace elysian {
         Behavior*           addBehavior(Behavior* behavior);
         Behavior*           getBehavior(char const* constbehaviorName) const;
 
-        LuaBehavior*        addLuaBehavior(char const* scriptName, const OOLUA::Lua_table_ref paramTable);
+        LuaBehavior*        addLuaBehavior(char const* scriptName, const sol::object paramTable);
 
         LuaBehavior*        getLuaBehavior(char const* scriptName) const;
         std::vector<Behavior*>& getBehaviors(void);
         Behavior*           getBehaviorByIndex(const unsigned index) const;
-        void                setBehaviorByIndex(const unsigned index, LuaVariant valueTable);
+        void                setBehaviorByIndex(const unsigned index, sol::object valueTable);
         unsigned            getBehaviorCount(void) const;
 
         void                setParentEntity(Entity*const parent);
@@ -167,8 +148,8 @@ namespace elysian {
         Area*               getArea(void) const;
         void                setArea(Area*const area);
 
-		OOLUA::Lua_table_ref&	getSelfTable(void);
-		void					setSelfTable(const OOLUA::Lua_table_ref self);
+		sol::object&	getSelfTable(void);
+		void					setSelfTable(const sol::object self);
         void                    pushViewTransform(void);
         void                    popViewTransform(void);
 
@@ -207,7 +188,7 @@ namespace elysian {
         Combat*				_combat				= nullptr;
         Skeleton*           _skeleton           = nullptr;
 
-        OOLUA::Lua_table_ref	_selfTable;
+        sol::object	_selfTable;
         static float            _oldZ;
 
 
@@ -216,7 +197,7 @@ namespace elysian {
         template<typename T>
         void _removeComponent(T*& comp, std::vector<T*>* container=nullptr);
         template<typename T>
-        void _setComponent(T*& comp, LuaVariant valTable, std::vector<T*>* container=nullptr);
+        void _setComponent(T*& comp, sol::object valTable, std::vector<T*>* container=nullptr);
 
         void _renderRelative(void);
 
@@ -248,11 +229,11 @@ namespace elysian {
     inline void EntityBase::setDispName(const char* const name) { strcpy(_dispName, name); }
     inline const char* EntityBase::getDispName(void) const { return _dispName; }
 
-    inline OOLUA::Lua_table_ref& EntityBase::getSelfTable(void) {
+    inline sol::object& EntityBase::getSelfTable(void) {
         return _selfTable;
     }
 
-    inline void EntityBase::setSelfTable(const OOLUA::Lua_table_ref self) {
+    inline void EntityBase::setSelfTable(const sol::object self) {
         _selfTable = self;
     }
 

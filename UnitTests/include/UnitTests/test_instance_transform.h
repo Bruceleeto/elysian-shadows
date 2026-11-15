@@ -9,7 +9,7 @@
 
 #include <test_estk.h>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <AssetIO/proxy/elysian_instance_transform_proxy.hpp>
 
 namespace tktest {
@@ -99,7 +99,6 @@ namespace tktest {
 
     inline void Vector2Test::luaGetX(void) {
         elysian::Vector2 vec;
-        //elysian::NTLuaVariant ref(&vec);
 
 
     }

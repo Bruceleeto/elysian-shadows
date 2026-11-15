@@ -21,11 +21,6 @@
     such as memory cards, VMUs, and rumble units. These devices are usually assigned to a particular
     player, which can be retrieved by index.
 */
-OOLUA_EXPORT_FUNCTIONS(PlayerIODevice)
-OOLUA_EXPORT_FUNCTIONS_CONST(PlayerIODevice,
-                             getPlayerIndex,
-                             isAttached)
-
 /*!
  * \qmlmethod unsigned PlayerIODevice::getPlayerIndex()
  *
@@ -135,15 +130,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(PlayerIODevice,
  *  Returns a 2D vector containing the current screen-space position of the Mouse cursor.
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Mouse,
-                             getScreenPos,
-                             getScrollWheelAngleDelta,
-                             isTapped,
-                             isPressed,
-                             getButtonState)
-OOLUA_EXPORT_FUNCTIONS(Mouse)
-
-
 /*!
     \qmltype RumbleEffect
     \since 1.6.2
@@ -189,11 +175,6 @@ OOLUA_EXPORT_FUNCTIONS(Mouse)
  *  Sets the duration of the effect in seconds to \a{secs}.
  * \sa {RumbleEffect::INFINITE}
  */
-
-OOLUA_EXPORT_FUNCTIONS(RumbleEffect,
-                       setDuration)
-OOLUA_EXPORT_FUNCTIONS_CONST(RumbleEffect)
-
 
 /*!
     \qmltype LeftRightRumbleEffect
@@ -243,12 +224,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(RumbleEffect)
  * \e{NOTE: \a{intensity} is a normalized float, meaning it can range from 0 (off) to 1 (highest intensity).}
  *   \sa setLargeIntensity
  */
-
-OOLUA_EXPORT_FUNCTIONS(LeftRightRumbleEffect,
-                       setLargeIntensity,
-                       setSmallIntensity)
-OOLUA_EXPORT_FUNCTIONS_CONST(LeftRightRumbleEffect)
-
 
 /*!
     \qmltype DirectionalRumbleEffect
@@ -352,13 +327,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LeftRightRumbleEffect)
  *  Sets the properties of the effect's envelope. See \l{Envelope} for more details.
  */
 
-OOLUA_EXPORT_FUNCTIONS(DirectionalRumbleEffect,
-                       setDirection,
-                       setDelay,
-                       setEnvelope)
-OOLUA_EXPORT_FUNCTIONS_CONST(DirectionalRumbleEffect)
-
-
 /*!
     \qmltype ConstantRumbleEffect
     \since 1.6.2
@@ -391,11 +359,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(DirectionalRumbleEffect)
  *
  * Sets the normalized constant effect level to \a{intensity} which can range from 0 (no effect) to 1 (maximum intensity).
  */
-OOLUA_EXPORT_FUNCTIONS(ConstantRumbleEffect,
-                       setIntensity)
-OOLUA_EXPORT_FUNCTIONS_CONST(ConstantRumbleEffect)
-
-
 /*!
     \qmltype RampRumbleEffect
     \since 1.6.2
@@ -439,12 +402,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(ConstantRumbleEffect)
  * Sets the normalized ending intensity of the ramp to \a{intensity} which can range from 0 (no effect) to 1 (maximum intensity).
  * \sa setRampStartIntensity
  */
-OOLUA_EXPORT_FUNCTIONS(RampRumbleEffect,
-                       setRampStartIntensity,
-                       setRampEndIntensity)
-OOLUA_EXPORT_FUNCTIONS_CONST(RampRumbleEffect)
-
-
 /*!
     \qmltype PeriodicRumbleEffect
     \since 1.6.2
@@ -591,13 +548,6 @@ PERIODIC_TYPE can have one of the following values
  * \sa {Waveform Properties}, setPeriod, setIntensityPeak, setIntensityOffset
  */
 
-OOLUA_EXPORT_FUNCTIONS(PeriodicRumbleEffect,
-                       setPeriod,
-                       setPhaseShift,
-                       setIntensityPeak,
-                       setIntensityOffset)
-OOLUA_EXPORT_FUNCTIONS_CONST(PeriodicRumbleEffect)
-
 /*!
     \qmltype RumbleDevice
     \since 1.6.1
@@ -704,12 +654,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(PeriodicRumbleEffect)
  */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(RumbleDevice,
-                             stop,
-                             play,
-                             playEffect)
-OOLUA_EXPORT_FUNCTIONS(RumbleDevice)
-
 /*!
     \qmltype VisualMemoryUnit
     \since 1.6.0
@@ -803,13 +747,6 @@ OOLUA_EXPORT_FUNCTIONS(RumbleDevice)
  *  is [0, 32] (the VMU LCD screen resolution).}
  * \sa displayIcon, frameBufferReadPixel
  */
-
-OOLUA_EXPORT_FUNCTIONS(VisualMemoryUnit,
-                       beep,
-                       loadIcon,
-                       frameBufferWritePixel)
-OOLUA_EXPORT_FUNCTIONS_CONST(VisualMemoryUnit,
-                             frameBufferReadPixel)
 
 /*!
     \qmltype Keyboard
@@ -911,12 +848,6 @@ A key value can be one of the following:
  *
  */
 
-OOLUA_EXPORT_FUNCTIONS(Keyboard)
-OOLUA_EXPORT_FUNCTIONS_CONST(Keyboard,
-                             getButtonState,
-                             isPressed,
-                             isTapped)
-
 /*!
     \qmltype VirtualDPad
     \since 1.6.0
@@ -948,12 +879,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Keyboard,
  *  Returns whether or not the directional pad button given by \a button became pressed this frame.
  * \sa Controller::BUT_TYPE
  */
-
-OOLUA_EXPORT_FUNCTIONS(VirtualDPad)
-OOLUA_EXPORT_FUNCTIONS_CONST(VirtualDPad,
-                             getButtonState,
-                             isPressed,
-                             isTapped)
 
 /*!
     \qmltype Controller
@@ -1084,17 +1009,6 @@ The button can be one of:
  * \sa isPressed
  */
 
-OOLUA_EXPORT_FUNCTIONS(Controller)
-OOLUA_EXPORT_FUNCTIONS_CONST(Controller,
-                             getAnalogStick,
-                             getAnalogDir,
-                             getAnalogMag,
-                             getTriggerPressure,
-                             getButtonState,
-                             isPressed,
-                             isTapped,
-                             getVirtualDPad)
-
 /*!
     \qmltype TouchDevice
     \since 1.6.1
@@ -1106,9 +1020,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Controller,
     such as tablets and touch screens. They can also be other, more limited devices, such as the touch-sensitive
     button region in the center of the PS4 controller.
 */
-
-OOLUA_EXPORT_FUNCTIONS(TouchDevice)
-OOLUA_EXPORT_FUNCTIONS_CONST(TouchDevice)
 
 /*!
     \qmltype PowerSupply
@@ -1178,12 +1089,6 @@ The following is a table of the different states and their descriptions.
  * \sa getPowerState
  */
 
-OOLUA_EXPORT_FUNCTIONS(PowerSupply)
-OOLUA_EXPORT_FUNCTIONS_CONST(PowerSupply,
-                             getBatteryLevel,
-                             getBatteryRemainingSecs,
-                             getPowerState,
-                             isBattery)
 /*!
     \qmltype InputSystem
     \since 1.6.0
@@ -1328,26 +1233,6 @@ The button can be one of:
 
 
 
-OOLUA_EXPORT_FUNCTIONS(InputSystem,
-                       setDefaultVMUIcon,
-                       broadcastVMUIcon,
-                       broadcastVMUBeep)
-OOLUA_EXPORT_FUNCTIONS_CONST(InputSystem,
-                             getKeyboard,
-                             getMouse,
-                             getRumbleDevice,
-                             getVMU,
-                             getController
-#ifdef ELYSIAN_INPUT_SYSTEM_SENSORS_ENABLED
-                            ,getAccelerometer,
-                             getGyroscope,
-                             getMagnetometer,
-                             getAltimeter,
-                             getPedometer,
-                             getScale
-#endif
-                             )
-
 /*!
     \qmltype InputEvent
     \since 1.6.1
@@ -1365,10 +1250,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(InputSystem,
  *
  * Returns the player ID associated with the device that fired the event.
  */
-OOLUA_EXPORT_FUNCTIONS(InputEvent)
-OOLUA_EXPORT_FUNCTIONS_CONST(InputEvent,
-                             getPlayerIndex)
-
 /*!
     \qmltype KeyEvent
     \since 1.6.1
@@ -1411,14 +1292,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(InputEvent,
  * \sa getState
  */
 
-OOLUA_EXPORT_FUNCTIONS(KeyEvent)
-OOLUA_EXPORT_FUNCTIONS_CONST(KeyEvent,
-                             getKeyboard,
-                             isPressed,
-                             isTapped,
-                             getState,
-                             getKey)
-
 /*!
 \qmltype ControllerEvent
 \since 1.6.1
@@ -1445,10 +1318,6 @@ List of \l{Event::TYPE}s that are represented by subclasses of ControllerEvent.
  *
  * Returns the \l{Controller} device that fired this event.
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(ControllerEvent,
-                             getController)
-OOLUA_EXPORT_FUNCTIONS(ControllerEvent)
 
 /*!
 \qmltype ControllerButtonEvent
@@ -1494,14 +1363,6 @@ List of \l{Event::TYPE}s that are represented by ControllerButtonEvent.
  * Returns the current state of the Controller button corresponding to this event.
  * \sa isPressed, Controller::isTapped
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(ControllerButtonEvent,
-                             getButton,
-                             getButtonState,
-                             isPressed,
-                             isTapped)
-OOLUA_EXPORT_FUNCTIONS(ControllerButtonEvent)
-
-
 /*!
 \qmltype ControllerAnalogEvent
 \since 1.6.1
@@ -1549,15 +1410,6 @@ List of \l{Event::TYPE}s that are represented by ControllerAnalogEvent.
  * Returns the VirtualDPad object representing the analog stick in question being mapped to a 4-direction D-pad.
  * \sa Controller::getVirtualDPad
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(ControllerAnalogEvent,
-                             getAnalogStickType,
-                             getAnalogStick,
-                             getAnalogDir,
-                             getAnalogMag,
-                             getVirtualDPad)
-OOLUA_EXPORT_FUNCTIONS(ControllerAnalogEvent)
-
-
 /*!
 \qmltype ControllerTriggerEvent
 \since 1.6.1
@@ -1588,11 +1440,6 @@ List of \l{Event::TYPE}s that are represented by ControllerTriggerEvent:
  * \sa Controller::getTriggerPressure, getTrigger
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(ControllerTriggerEvent,
-                             getTrigger,
-                             getTriggerPressure)
-OOLUA_EXPORT_FUNCTIONS(ControllerTriggerEvent)
-
 /*!
 \qmltype MouseBaseEvent
 \since 1.6.1
@@ -1619,10 +1466,6 @@ List of \l{Event::TYPE}s that are represented by subclasses of MouseBaseEvent:
  *
  * Returns the \l Mouse device which this event originated from.
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(MouseBaseEvent,
-                            getMouse)
-OOLUA_EXPORT_FUNCTIONS(MouseBaseEvent)
 
 /*!
 \qmltype MouseEvent
@@ -1709,15 +1552,6 @@ It encapsulates a \l{Mouse} device handle, its position, and the button in quest
  *
  * \sa Mouse::isDoubleClicked, getButtonState, isTapped
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(MouseEvent,
-                             getScreenPos,
-                             getButton,
-                             getButtonState,
-                             isPressed,
-                             isTapped,
-                             isDoubleClicked)
-OOLUA_EXPORT_FUNCTIONS(MouseEvent)
-
 /*!
 \qmltype MouseWheelEvent
 \since 1.6.1
@@ -1744,11 +1578,6 @@ List of \l{Event::TYPE}s that are represented by subclasses of MouseBaseEvent:
  * \sa Mouse::getScrollWheelAngleDelta
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(MouseWheelEvent,
-                             getScrollWheelAngleDelta)
-OOLUA_EXPORT_FUNCTIONS(MouseWheelEvent)
-
-
 #ifdef ELYSIAN_INPUT_SYSTEM_SENSORS_ENABLED
 
 /*!
@@ -1770,10 +1599,6 @@ a motion sensor built into a controller, a Wiimote, or a Dreamcast fishing rod o
  * Returns the vector representing the current direction and magnitude of acceleration in meters per second being applied to the device.
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Accelerometer,
-                             getAcceleration)
-OOLUA_EXPORT_FUNCTIONS(Accelerometer)
-
 /*!
 \qmltype Gyroscope
 \since 1.6.1
@@ -1794,10 +1619,6 @@ or Dreamcast fishing rod or Samba De Amigo maracas.
  * Returns the device's rate of rotation (angular velocity) in radians.
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Gyroscope,
-                             getAngularVelocity)
-OOLUA_EXPORT_FUNCTIONS(Gyroscope)
-
 /*!
 \qmltype Magnetometer
 \since 1.6.1
@@ -1817,11 +1638,6 @@ this is typically the Earth's magnetic field and is used as a compass.
  * units of Microtesla (uT).
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Magnetometer,
-                             getMagneticField)
-OOLUA_EXPORT_FUNCTIONS(Magnetometer)
-
-
 /*!
 \qmltype Altimeter
 \since 1.6.1
@@ -1840,10 +1656,6 @@ foreign material or gas, this corresponds to altitude.
  * Returns a float representing the current altitude in meters of the device, relative to sea-level.
  * \e {NOTE: Positive values are above sea-level, negative are below, and 0 is exactly at sea-level.}
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(Altimeter,
-                             getAltitude)
-OOLUA_EXPORT_FUNCTIONS(Altimeter)
 
 /*!
 \qmltype Pedometer
@@ -1865,10 +1677,6 @@ not particularly accurate.
  * \qmlmethod uint64_t Pedometer::getSteps()
  * Returns the number of steps taken since measurements began.
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(Pedometer,
-                             getSteps)
-OOLUA_EXPORT_FUNCTIONS(Pedometer)
-
 /*!
 \qmltype Scale
 \since 1.6.1
@@ -1886,8 +1694,356 @@ used with PC or smartphones as a generic scale over bluetooth.
  * \qmlmethod float Scale::getWeight()
  * Returns the weight measured by the scale in lbs.
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(Scale,
-                             getWeight)
-OOLUA_EXPORT_FUNCTIONS(Scale)
-
 #endif
+
+namespace elysian::lua {
+using namespace elysian;
+using PlayerIODevice = elysian::PlayerIODevice;
+using Keyboard = elysian::Keyboard;
+using Mouse = elysian::Mouse;
+using VirtualDPad = elysian::VirtualDPad;
+using Controller = elysian::Controller;
+using TouchDevice = elysian::TouchDevice;
+using PowerSupply = elysian::PowerSupply;
+using InputEvent = elysian::InputEvent;
+using ControllerEvent = elysian::ControllerEvent;
+using ControllerButtonEvent = elysian::ControllerButtonEvent;
+using ControllerAnalogEvent = elysian::ControllerAnalogEvent;
+using ControllerTriggerEvent = elysian::ControllerTriggerEvent;
+using KeyEvent = elysian::KeyEvent;
+using MouseBaseEvent = elysian::MouseBaseEvent;
+using MouseEvent = elysian::MouseEvent;
+using MouseWheelEvent = elysian::MouseWheelEvent;
+using RumbleEffect = elysian::RumbleEffect;
+using LeftRightRumbleEffect = elysian::LeftRightRumbleEffect;
+using DirectionalRumbleEffect = elysian::DirectionalRumbleEffect;
+using ConstantRumbleEffect = elysian::ConstantRumbleEffect;
+using RampRumbleEffect = elysian::RampRumbleEffect;
+using PeriodicRumbleEffect = elysian::PeriodicRumbleEffect;
+using RumbleDevice = elysian::RumbleDevice;
+using VisualMemoryUnit = elysian::VisualMemoryUnit;
+using Accelerometer = elysian::Accelerometer;
+using Gyroscope = elysian::Gyroscope;
+using Magnetometer = elysian::Magnetometer;
+using Altimeter = elysian::Altimeter;
+using Pedometer = elysian::Pedometer;
+using Scale = elysian::Scale;
+using InputSystem = elysian::InputSystem;
+
+void registerPlayerIODevice(sol::state_view state) {
+    if (state["PlayerIODevice"].valid()) return;
+    using T = elysian::PlayerIODevice;
+    auto type = registerType<T>(state, "PlayerIODevice");
+    type["getPlayerIndex"] = method<T>(&T::getPlayerIndex);
+    type["isAttached"] = method<T>(&T::isAttached);
+}
+
+void registerKeyboard(sol::state_view state) {
+    if (state["Keyboard"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Keyboard;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Keyboard");
+    type["getButtonState"] = method<T, GY_BUTTON_STATE(GY_KEY) const>(&T::getButtonState);
+    type["isPressed"] = method<T, bool(GY_KEY) const>(&T::isPressed);
+    type["isTapped"] = method<T, bool(GY_KEY) const>(&T::isTapped);
+}
+
+void registerMouse(sol::state_view state) {
+    if (state["Mouse"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Mouse;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Mouse");
+    type["getButtonState"] = method<T>(&T::getButtonState);
+    type["getScrollWheelAngleDelta"] = method<T>(&T::getScrollWheelAngleDelta);
+    type["getScreenPos"] = method<T>(&T::getScreenPos);
+    type["isPressed"] = method<T>(&T::isPressed);
+    type["isTapped"] = method<T>(&T::isTapped);
+    type["isDoubleClicked"] = method<T>(&T::isDoubleClicked);
+}
+
+void registerVirtualDPad(sol::state_view state) {
+    if (state["VirtualDPad"].valid()) return;
+    using T = elysian::VirtualDPad;
+    auto type = registerType<T>(state, "VirtualDPad");
+    type["getButtonState"] = method<T, GY_BUTTON_STATE(GY_CONTROLLER_BUTTON) const>(&T::getButtonState);
+    type["isPressed"] = method<T, bool(GY_CONTROLLER_BUTTON) const>(&T::isPressed);
+    type["isTapped"] = method<T, bool(GY_CONTROLLER_BUTTON) const>(&T::isTapped);
+}
+
+void registerController(sol::state_view state) {
+    if (state["Controller"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Controller;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Controller");
+    type["getAnalogStick"] = method<T, const GYVector2&(const GY_CONTROLLER_ANALOG) const>(&T::getAnalogStick);
+    type["getAnalogDir"] = method<T, const GYVector2&(const GY_CONTROLLER_ANALOG) const>(&T::getAnalogDir);
+    type["getAnalogMag"] = method<T, float(const GY_CONTROLLER_ANALOG) const>(&T::getAnalogMag);
+    type["getButtonState"] = method<T, GY_BUTTON_STATE(const GY_CONTROLLER_BUTTON) const>(&T::getButtonState);
+    type["isPressed"] = method<T, bool(const GY_CONTROLLER_BUTTON) const>(&T::isPressed);
+    type["isTapped"] = method<T, bool(const GY_CONTROLLER_BUTTON) const>(&T::isTapped);
+    type["getVirtualDPad"] = method<T, const VirtualDPad&(GY_CONTROLLER_ANALOG) const>(&T::getVirtualDPad);
+    type["getTriggerPressure"] = method<T, float(const GY_CONTROLLER_TRIGGER) const>(&T::getTriggerPressure);
+}
+
+void registerTouchDevice(sol::state_view state) {
+    if (state["TouchDevice"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::TouchDevice;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "TouchDevice");
+}
+
+void registerPowerSupply(sol::state_view state) {
+    if (state["PowerSupply"].valid()) return;
+    using T = elysian::PowerSupply;
+    auto type = registerType<T>(state, "PowerSupply");
+    type["getBatteryLevel"] = method<T>(&T::getBatteryLevel);
+    type["getBatteryRemainingSecs"] = method<T>(&T::getBatteryRemainingSecs);
+    type["getPowerState"] = method<T>(&T::getPowerState);
+    type["isBattery"] = method<T>(&T::isBattery);
+}
+
+void registerInputEvent(sol::state_view state) {
+    if (state["InputEvent"].valid()) return;
+    using T = elysian::InputEvent;
+    auto type = registerType<T>(state, "InputEvent");
+    type["getPlayerIndex"] = method<T>(&T::getPlayerIndex);
+}
+
+void registerControllerEvent(sol::state_view state) {
+    if (state["ControllerEvent"].valid()) return;
+    registerInputEvent(state);
+    using T = elysian::ControllerEvent;
+    auto type = registerType<T, elysian::InputEvent>(state, "ControllerEvent");
+    type["getController"] = method<T>(&T::getController);
+}
+
+void registerControllerButtonEvent(sol::state_view state) {
+    if (state["ControllerButtonEvent"].valid()) return;
+    registerControllerEvent(state);
+    registerInputEvent(state);
+    using T = elysian::ControllerButtonEvent;
+    auto type = registerType<T, elysian::ControllerEvent, elysian::InputEvent>(state, "ControllerButtonEvent");
+    type["getButton"] = method<T>(&T::getButton);
+    type["getButtonState"] = method<T>(&T::getButtonState);
+    type["isPressed"] = method<T>(&T::isPressed);
+    type["isTapped"] = method<T>(&T::isTapped);
+}
+
+void registerControllerAnalogEvent(sol::state_view state) {
+    if (state["ControllerAnalogEvent"].valid()) return;
+    registerControllerEvent(state);
+    registerInputEvent(state);
+    using T = elysian::ControllerAnalogEvent;
+    auto type = registerType<T, elysian::ControllerEvent, elysian::InputEvent>(state, "ControllerAnalogEvent");
+    type["getAnalogStickType"] = method<T>(&T::getAnalogStickType);
+    type["getAnalogStick"] = method<T>(&T::getAnalogStick);
+    type["getAnalogDir"] = method<T>(&T::getAnalogDir);
+    type["getAnalogMag"] = method<T>(&T::getAnalogMag);
+    type["getVirtualDPad"] = method<T>(&T::getVirtualDPad);
+}
+
+void registerControllerTriggerEvent(sol::state_view state) {
+    if (state["ControllerTriggerEvent"].valid()) return;
+    registerControllerEvent(state);
+    registerInputEvent(state);
+    using T = elysian::ControllerTriggerEvent;
+    auto type = registerType<T, elysian::ControllerEvent, elysian::InputEvent>(state, "ControllerTriggerEvent");
+    type["getTrigger"] = method<T>(&T::getTrigger);
+    type["getTriggerPressure"] = method<T>(&T::getTriggerPressure);
+}
+
+void registerKeyEvent(sol::state_view state) {
+    if (state["KeyEvent"].valid()) return;
+    registerInputEvent(state);
+    using T = elysian::KeyEvent;
+    auto type = registerType<T, elysian::InputEvent>(state, "KeyEvent");
+    type["getKeyboard"] = method<T>(&T::getKeyboard);
+    type["isPressed"] = method<T>(&T::isPressed);
+    type["isTapped"] = method<T>(&T::isTapped);
+    type["getState"] = method<T>(&T::getState);
+    type["getKey"] = method<T>(&T::getKey);
+}
+
+void registerMouseBaseEvent(sol::state_view state) {
+    if (state["MouseBaseEvent"].valid()) return;
+    registerInputEvent(state);
+    using T = elysian::MouseBaseEvent;
+    auto type = registerType<T, elysian::InputEvent>(state, "MouseBaseEvent");
+    type["getMouse"] = method<T>(&T::getMouse);
+}
+
+void registerMouseEvent(sol::state_view state) {
+    if (state["MouseEvent"].valid()) return;
+    registerMouseBaseEvent(state);
+    registerInputEvent(state);
+    using T = elysian::MouseEvent;
+    auto type = registerType<T, elysian::MouseBaseEvent, elysian::InputEvent>(state, "MouseEvent");
+    type["getScreenPos"] = method<T>(&T::getScreenPos);
+    type["getButton"] = method<T>(&T::getButton);
+    type["getButtonState"] = method<T>(&T::getButtonState);
+    type["isPressed"] = method<T>(&T::isPressed);
+    type["isTapped"] = method<T>(&T::isTapped);
+    type["isDoubleClicked"] = method<T>(&T::isDoubleClicked);
+}
+
+void registerMouseWheelEvent(sol::state_view state) {
+    if (state["MouseWheelEvent"].valid()) return;
+    registerMouseBaseEvent(state);
+    registerInputEvent(state);
+    using T = elysian::MouseWheelEvent;
+    auto type = registerType<T, elysian::MouseBaseEvent, elysian::InputEvent>(state, "MouseWheelEvent");
+    type["getScrollWheelAngleDelta"] = method<T>(&T::getScrollWheelAngleDelta);
+}
+
+void registerRumbleEffect(sol::state_view state) {
+    if (state["RumbleEffect"].valid()) return;
+    using T = elysian::RumbleEffect;
+    auto type = registerType<T>(state, "RumbleEffect");
+    type["setDuration"] = method<T>(&T::setDuration);
+}
+
+void registerLeftRightRumbleEffect(sol::state_view state) {
+    if (state["LeftRightRumbleEffect"].valid()) return;
+    registerRumbleEffect(state);
+    using T = elysian::LeftRightRumbleEffect;
+    auto type = registerType<T, elysian::RumbleEffect>(state, "LeftRightRumbleEffect");
+    type["new"] = sol::factories(factory<T>(), factory<T, float, float, float>());
+    type["setLargeIntensity"] = method<T>(&T::setLargeIntensity);
+    type["setSmallIntensity"] = method<T>(&T::setSmallIntensity);
+}
+
+void registerDirectionalRumbleEffect(sol::state_view state) {
+    if (state["DirectionalRumbleEffect"].valid()) return;
+    registerRumbleEffect(state);
+    using T = elysian::DirectionalRumbleEffect;
+    auto type = registerType<T, elysian::RumbleEffect>(state, "DirectionalRumbleEffect");
+    type["setDirection"] = method<T>(&T::setDirection);
+    type["setDelay"] = method<T>(&T::setDelay);
+    type["setEnvelope"] = method<T>(&T::setEnvelope);
+}
+
+void registerConstantRumbleEffect(sol::state_view state) {
+    if (state["ConstantRumbleEffect"].valid()) return;
+    registerDirectionalRumbleEffect(state);
+    registerRumbleEffect(state);
+    using T = elysian::ConstantRumbleEffect;
+    auto type = registerType<T, elysian::DirectionalRumbleEffect, elysian::RumbleEffect>(state, "ConstantRumbleEffect");
+    type["new"] = sol::factories(factory<T>(), factory<T, float, float>());
+    type["setIntensity"] = method<T>(&T::setIntensity);
+}
+
+void registerRampRumbleEffect(sol::state_view state) {
+    if (state["RampRumbleEffect"].valid()) return;
+    registerDirectionalRumbleEffect(state);
+    registerRumbleEffect(state);
+    using T = elysian::RampRumbleEffect;
+    auto type = registerType<T, elysian::DirectionalRumbleEffect, elysian::RumbleEffect>(state, "RampRumbleEffect");
+    type["new"] = sol::factories(factory<T>(), factory<T, float, float, float>());
+    type["setRampStartIntensity"] = method<T>(&T::setRampStartIntensity);
+    type["setRampEndIntensity"] = method<T>(&T::setRampEndIntensity);
+}
+
+void registerPeriodicRumbleEffect(sol::state_view state) {
+    if (state["PeriodicRumbleEffect"].valid()) return;
+    registerDirectionalRumbleEffect(state);
+    registerRumbleEffect(state);
+    using T = elysian::PeriodicRumbleEffect;
+    auto type = registerType<T, elysian::DirectionalRumbleEffect, elysian::RumbleEffect>(state, "PeriodicRumbleEffect");
+    type["new"] = sol::factories(factory<T, GY_RUMBLE_EFFECT_PERIODIC_TYPE>(), factory<T, GY_RUMBLE_EFFECT_PERIODIC_TYPE, float, float, float>());
+    type["setPeriod"] = method<T>(&T::setPeriod);
+    type["setPhaseShift"] = method<T>(&T::setPhaseShift);
+    type["setIntensityPeak"] = method<T>(&T::setIntensityPeak);
+    type["setIntensityOffset"] = method<T>(&T::setIntensityOffset);
+}
+
+void registerRumbleDevice(sol::state_view state) {
+    if (state["RumbleDevice"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::RumbleDevice;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "RumbleDevice");
+    type["stop"] = method<T>(&T::stop);
+    type["play"] = method<T>(&T::play);
+    type["playEffect"] = method<T>(&T::playEffect);
+}
+
+void registerVisualMemoryUnit(sol::state_view state) {
+    if (state["VisualMemoryUnit"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::VisualMemoryUnit;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "VisualMemoryUnit");
+    type["beep"] = method<T>(&T::beep);
+    type["loadIcon"] = method<T>(&T::loadIcon);
+    type["frameBufferReadPixel"] = method<T>(&T::frameBufferReadPixel);
+    type["frameBufferWritePixel"] = method<T>(&T::frameBufferWritePixel);
+}
+
+void registerAccelerometer(sol::state_view state) {
+    if (state["Accelerometer"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Accelerometer;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Accelerometer");
+    type["getAcceleration"] = method<T>(&T::getAcceleration);
+}
+
+void registerGyroscope(sol::state_view state) {
+    if (state["Gyroscope"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Gyroscope;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Gyroscope");
+    type["getAngularVelocity"] = method<T>(&T::getAngularVelocity);
+}
+
+void registerMagnetometer(sol::state_view state) {
+    if (state["Magnetometer"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Magnetometer;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Magnetometer");
+    type["getMagneticField"] = method<T>(&T::getMagneticField);
+}
+
+void registerAltimeter(sol::state_view state) {
+    if (state["Altimeter"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Altimeter;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Altimeter");
+    type["getAltitude"] = method<T>(&T::getAltitude);
+}
+
+void registerPedometer(sol::state_view state) {
+    if (state["Pedometer"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Pedometer;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Pedometer");
+    type["getSteps"] = method<T>(&T::getSteps);
+}
+
+void registerScale(sol::state_view state) {
+    if (state["Scale"].valid()) return;
+    registerPlayerIODevice(state);
+    using T = elysian::Scale;
+    auto type = registerType<T, elysian::PlayerIODevice>(state, "Scale");
+    type["getWeight"] = method<T>(&T::getWeight);
+}
+
+void registerInputSystem(sol::state_view state) {
+    if (state["InputSystem"].valid()) return;
+    using T = elysian::InputSystem;
+    auto type = registerType<T>(state, "InputSystem");
+    type["getController"] = method<T, Controller*(const unsigned) const>(&T::getController);
+    type["getKeyboard"] = method<T, Keyboard*(const unsigned) const>(&T::getKeyboard);
+    type["getMouse"] = method<T>(&T::getMouse);
+    type["getVMU"] = method<T>(&T::getVMU);
+    type["getRumbleDevice"] = method<T>(&T::getRumbleDevice);
+    type["getTouchDevice"] = method<T>(&T::getTouchDevice);
+    type["getPowerSupply"] = method<T>(&T::getPowerSupply);
+    type["getAccelerometer"] = method<T>(&T::getAccelerometer);
+    type["getGyroscope"] = method<T>(&T::getGyroscope);
+    type["getMagnetometer"] = method<T>(&T::getMagnetometer);
+    type["getAltimeter"] = method<T>(&T::getAltimeter);
+    type["getPedometer"] = method<T>(&T::getPedometer);
+    type["getScale"] = method<T>(&T::getScale);
+    type["setDefaultVMUIcon"] = method<T>(&T::setDefaultVMUIcon);
+    type["broadcastVMUIcon"] = method<T>(&T::broadcastVMUIcon);
+    type["broadcastVMUBeep"] = method<T>(&T::broadcastVMUBeep);
+}
+}

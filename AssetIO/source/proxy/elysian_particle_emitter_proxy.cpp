@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_particle_emitter_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -355,33 +356,6 @@ pool size, when they need to be recycled and reemitted later.
  * \sa setAnimGridSize()
  */
 
-OOLUA_EXPORT_FUNCTIONS(ParticleEmitterAttrib,
-                       setAcceleration,
-                       setMaxLifeTime,
-                       setForceMask,
-                       setIntensityFactor,
-                       setStartSize,
-                       setEndSize,
-                       setEndColor,
-                       setAnimGridSize,
-                       setAnimGridIndex,
-                       setAnimFrameDuration,
-                       setStick,
-                       setRandomStartFrame,
-                       setShadowVolume,
-                       getEndColor,
-                       getForceMask)
-OOLUA_EXPORT_FUNCTIONS_CONST(ParticleEmitterAttrib,
-                       getShadowVolume,
-                       getRandomStartFrame,
-                       getStick,
-                       getAnimFrameDuration,
-                       getEndSize,
-                       getStartSize,
-                       getIntensityFactor,
-                       getMaxLifeTime)
-
-
 /*!
     \qmltype ParticleEmitter
     \inherits Component
@@ -493,11 +467,73 @@ attached to an active entity, otherwise behavior is undefined (ie: it's going to
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(ParticleEmitter,
-                       emitFromPoint,
-                       emitFromPointInDir,
-                       emitFromEntity,
-                       setAttrib,
-                       resizePool)
-OOLUA_EXPORT_FUNCTIONS_CONST(ParticleEmitter,
-                             getAttrib)
+
+namespace elysian::lua {
+using namespace elysian;
+using ParticleEmitterAttrib = elysian::ParticleEmitterAttrib;
+using ParticleEmitter = elysian::ParticleEmitter;
+
+void registerParticleEmitterAttrib(sol::state_view state) {
+    if (state["ParticleEmitterAttrib"].valid()) return;
+    registerSpriteAttrib(state);
+    registerPrimAttrib(state);
+    registerCollidableStaticAttrib(state);
+    using T = elysian::ParticleEmitterAttrib;
+    auto type = registerType<T, elysian::SpriteAttrib, elysian::PrimAttrib, elysian::CollidableStaticAttrib>(state, "ParticleEmitterAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setAcceleration"] = method<T>(&T::setAcceleration);
+    type["setMaxLifeTime"] = method<T>(&T::setMaxLifeTime);
+    type["setForceMask"] = method<T, void(BitMask32)>(&T::setForceMask);
+    type["setIntensityFactor"] = method<T, void(float)>(&T::setIntensityFactor);
+    type["setStartSize"] = method<T, void(unsigned)>(&T::setStartSize);
+    type["setEndSize"] = method<T, void(unsigned)>(&T::setEndSize);
+    type["setEndColor"] = method<T, void(const Color4&)>(&T::setEndColor);
+    type["setAnimGridSize"] = method<T, void(unsigned, unsigned)>(&T::setAnimGridSize);
+    type["setAnimGridIndex"] = method<T, void(unsigned, unsigned, int)>(&T::setAnimGridIndex);
+    type["setAnimFrameDuration"] = method<T, void(float)>(&T::setAnimFrameDuration);
+    type["setStick"] = method<T, void(bool)>(&T::setStick);
+    type["setRandomStartFrame"] = method<T, void(bool)>(&T::setRandomStartFrame);
+    type["setShadowVolume"] = method<T, void(bool)>(&T::setShadowVolume);
+    type["getEndColor"] = method<T, Color4()>(&T::getEndColor);
+    type["getShadowVolume"] = method<T, bool() const>(&T::getShadowVolume);
+    type["getRandomStartFrame"] = method<T, bool() const>(&T::getRandomStartFrame);
+    type["getStick"] = method<T, bool() const>(&T::getStick);
+    type["getAnimFrameDuration"] = method<T, float() const>(&T::getAnimFrameDuration);
+    type["getEndSize"] = method<T, unsigned() const>(&T::getEndSize);
+    type["getStartSize"] = method<T, unsigned() const>(&T::getStartSize);
+    type["getIntensityFactor"] = method<T, float() const>(&T::getIntensityFactor);
+    type["getForceMask"] = method<T, BitMask32&()>(&T::getForceMask);
+    type["getMaxLifeTime"] = method<T, float() const>(&T::getMaxLifeTime);
+    property(type, "maxLifeTime", method<T, float() const>(&T::getMaxLifeTime), method<T>(&T::setMaxLifeTime));
+    property(type, "startSize", method<T, unsigned() const>(&T::getStartSize), method<T, void(unsigned)>(&T::setStartSize));
+    property(type, "endSize", method<T, unsigned() const>(&T::getEndSize), method<T, void(unsigned)>(&T::setEndSize));
+    property(type, "endColor", method<T, Color4()>(&T::getEndColor), method<T, void(const Color4&)>(&T::setEndColor));
+    property(type, "intensityFactor", method<T, float() const>(&T::getIntensityFactor), method<T, void(float)>(&T::setIntensityFactor));
+    property(type, "randomStartFrame", method<T, bool() const>(&T::getRandomStartFrame), method<T, void(bool)>(&T::setRandomStartFrame));
+    property(type, "forceMask", method<T, BitMask32&()>(&T::getForceMask), method<T, void(BitMask32)>(&T::setForceMask));
+    property(type, "animFrameDuration", method<T, float() const>(&T::getAnimFrameDuration), method<T, void(float)>(&T::setAnimFrameDuration));
+    property(type, "shadowVolume", method<T, bool() const>(&T::getShadowVolume), method<T, void(bool)>(&T::setShadowVolume));
+    property(type, "stick", method<T, bool() const>(&T::getStick), method<T, void(bool)>(&T::setStick));
+    inheritProperties<T, elysian::SpriteAttrib, elysian::PrimAttrib, elysian::CollidableStaticAttrib>();
+    finish<T>(type, "ParticleEmitterAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerParticleEmitter(sol::state_view state) {
+    if (state["ParticleEmitter"].valid()) return;
+    registerComponent(state);
+    using T = elysian::ParticleEmitter;
+    auto type = registerType<T, elysian::Component>(state, "ParticleEmitter");
+    type["resizePool"] = method<T, void(unsigned)>(&T::resizePool);
+    type["setAttrib"] = method<T, void(std::shared_ptr<ParticleEmitterAttrib>)>(&T::setAttrib);
+    type["getAttrib"] = method<T, std::shared_ptr<ParticleEmitterAttrib>() const>(&T::getAttrib);
+    type["emitFromPoint"] = method<T, void(const GYVector3&, float, unsigned)>(&T::emitFromPoint);
+    type["emitFromEntity"] = method<T, void(const GYVector3&, float, unsigned)>(&T::emitFromEntity);
+    type["emitFromPointInDir"] = method<T, void(const GYVector3&, const GYVector3&, unsigned, float)>(&T::emitFromPointInDir);
+    property(type, "attrib", method<T, std::shared_ptr<ParticleEmitterAttrib>() const>(&T::getAttrib), method<T, void(std::shared_ptr<ParticleEmitterAttrib>)>(&T::setAttrib));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "ParticleEmitter", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

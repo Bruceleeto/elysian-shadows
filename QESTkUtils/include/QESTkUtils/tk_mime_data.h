@@ -8,7 +8,7 @@
 #define TK_MIME_DATA_H
 
 #include <QMimeData>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <AssetIO/utility/elysian_bit_mask.hpp>
 
 /*
@@ -34,12 +34,12 @@ public:
 
                                 TkMimeData(void) = default;
                                 TkMimeData(int type);
-                                TkMimeData(LuaVariant v);
-                                TkMimeData(int type, LuaVariant v);
+                                TkMimeData(sol::object v);
+                                TkMimeData(int type, sol::object v);
     virtual                     ~TkMimeData(void);
 
-    const LuaVariant&           getVariant(void) const;
-    void                        setVariant(LuaVariant v);
+    const sol::object&           getVariant(void) const;
+    void                        setVariant(sol::object v);
 
     int                         getType(void) const;
     void                        setType(const TYPE type);
@@ -60,7 +60,7 @@ private:
 
     const static QStringList    _formatsList;
 
-    LuaVariant                  _variant;
+    sol::object                  _variant;
     int                         _type       = TYPE_LUA_VARIANT;
     elysian::BitMask<uint32_t>  _luaAttribMask;
 };
@@ -74,10 +74,10 @@ private:
 // ======== INLINEZ =========
 
 inline TkMimeData::TkMimeData(int type): _type(type) {}
-inline TkMimeData::TkMimeData(LuaVariant v): _variant(std::move(v)), _type(TYPE_LUA_VARIANT) { _updateLuaAttribMask(); }
-inline TkMimeData::TkMimeData(int type, LuaVariant v): _variant(std::move(v)), _type(type) {}
-inline const LuaVariant& TkMimeData::getVariant(void) const { return _variant; }
-inline void TkMimeData::setVariant(LuaVariant v) { _variant = std::move(v); _type = TYPE_LUA_VARIANT; _updateLuaAttribMask(); }
+inline TkMimeData::TkMimeData(sol::object v): _variant(std::move(v)), _type(TYPE_LUA_VARIANT) { _updateLuaAttribMask(); }
+inline TkMimeData::TkMimeData(int type, sol::object v): _variant(std::move(v)), _type(type) {}
+inline const sol::object& TkMimeData::getVariant(void) const { return _variant; }
+inline void TkMimeData::setVariant(sol::object v) { _variant = std::move(v); _type = TYPE_LUA_VARIANT; _updateLuaAttribMask(); }
 inline int TkMimeData::getType(void) const { return _type; }
 inline void TkMimeData::setType(const TYPE type) { _type = type; }
 inline bool TkMimeData::isVariant(void) const { return _type == TYPE_LUA_VARIANT; }

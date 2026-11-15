@@ -1079,20 +1079,20 @@ void ESToolkit::_onEngineInitialized(void) {
     //Override
 }
 
-void ESToolkit::select(const LuaVariant& ref) {
+void ESToolkit::select(const sol::object& ref) {
     auto* self = _instance;
     Selectable* selection;
 
-    switch(ref.getType()) { //Check whether it's any of the supported Selectable types!
+    switch(elysian::lua::type(ref)) { //Check whether it's any of the supported Selectable types!
     case LUA_TUSERDATA:
-        if(strcmp(ref.getTypeString(), "Entity") == 0) {
-            selection = new EntitySelectable(ref.getValue<Entity*>());
+        if(strcmp(elysian::lua::typeName(ref).c_str(), "Entity") == 0) {
+            selection = new EntitySelectable(ref.as<Entity*>());
             break;
-        } else if(strcmp(ref.getTypeString(), "Area") == 0) {
-            selection = ref.getValue<Area*>();
+        } else if(strcmp(elysian::lua::typeName(ref).c_str(), "Area") == 0) {
+            selection = ref.as<Area*>();
             break;
-        } else if(strcmp(ref.getTypeString(), "Level") == 0) { //Level isn't really implemented via proxies yet...
-            selection = ref.getValue<Level*>();
+        } else if(strcmp(elysian::lua::typeName(ref).c_str(), "Level") == 0) { //Level isn't really implemented via proxies yet...
+            selection = ref.as<Level*>();
             break;
         }
         /* fallthrough */
@@ -1113,10 +1113,10 @@ int ESToolkit::pushSelection(lua_State * const vm) {
         static_cast<EntitySelectable*>(selection)->getTableRef().push();
         return 1;
     //case Selectable::AREA:
-        //LuaVariant::fromRef(static_cast<Area*>(selection)->getLuaTableRef()).push();
+        //elysian::lua::fromRegistry(static_cast<Area*>(selection)->getLuaTableRef()).push();
         //return 1;
    // case Selectable::LEVEL:
-   //     OOLUA::push(vm, static_cast<Level*>(selection)->ge);
+   //     sol::stack::push(vm, static_cast<Level*>(selection)->ge);
       //  return 1;
     case Selectable::LUA_TABLE:
         static_cast<LuaTableSelectable*>(selection)->getTableRef().push();
@@ -1233,23 +1233,23 @@ void ESToolkit::showStatusBarMessage(QString message) {
     ESToolkit::showStatusBarMessage(message, _instance? _instance->palette().color(QPalette::WindowText) : QColor());
 }
 
-QString ESToolkit::messageBoxQuestion(QString message, LuaVariant buttons, QString informativeText) {
+QString ESToolkit::messageBoxQuestion(QString message, sol::object buttons, QString informativeText) {
     QMessageBox msgBox;
     QList<QAbstractButton*> buttonList;
     msgBox.setText(message);
     if(!informativeText.isEmpty()) msgBox.setInformativeText(informativeText);
-    if(buttons.getType() == LUA_TTABLE) {
-        for(int i = 1; i <= buttons.getLength(); ++i) {
-            buttonList.push_back(msgBox.addButton(buttons[i].getVariant().asString().getValue<const char*>(), QMessageBox::AcceptRole));
+    if(elysian::lua::type(buttons) == LUA_TTABLE) {
+        for(std::size_t i = 1; i <= elysian::lua::length(buttons); ++i) {
+            buttonList.push_back(msgBox.addButton(elysian::lua::string(elysian::lua::get(buttons, i)).c_str(), QMessageBox::AcceptRole));
         }
     }
 
     msgBox.exec();
 
-    if(buttons.getType() == LUA_TTABLE) {
-        for(int i = 0; i < buttons.getLength(); ++i) {
+    if(elysian::lua::type(buttons) == LUA_TTABLE) {
+        for(std::size_t i = 0; i < elysian::lua::length(buttons); ++i) {
             if(buttonList[i] == msgBox.clickedButton()) {
-                return buttons[i+1].getVariant().asString().getValue<const char*>();
+                return elysian::lua::string(elysian::lua::get(buttons, i+1)).c_str();
             }
         }
     }
@@ -1257,12 +1257,12 @@ QString ESToolkit::messageBoxQuestion(QString message, LuaVariant buttons, QStri
     return QString();
 }
 
-LuaVariant ESToolkit::messageBoxTextPrompt(QString message) {
-    LuaVariant value;
+sol::object ESToolkit::messageBoxTextPrompt(QString message) {
+    sol::object value;
     QString string = QInputDialog::getText(nullptr, "Input Prompt", Q_CSTR(message));
     if(!string.isEmpty()) {
-        OOLUA::push(*_mainState, string);
-        OOLUA::pull(*_mainState, value);
+        sol::stack::push(_mainState, string);
+        value = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(value)>>>(_mainState);
     }
     return value;
 }

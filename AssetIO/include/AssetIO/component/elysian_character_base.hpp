@@ -9,8 +9,8 @@
 
 #include <AssetIO/crtp/elysian_component.hpp>
 #include <AssetIO/level/elysian_direction.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
 
 #define ELYSIAN_CHAR_WALK_DEFAULT_FORCE         28000000.0f
@@ -28,8 +28,10 @@ namespace elysian {
 
     class CharacterBase:
         public Component,
-        public LuaTableProxy<CharacterBase, Character>
+        public LuaObject<CharacterBase, Character>
     {
+    public: using LuaObjectType = LuaObject<CharacterBase, Character>;
+
         friend class EntityBase;
         friend Entity;
 		friend class CharacterSystem;
@@ -70,7 +72,7 @@ namespace elysian {
 
         CharacterBase&      operator=(const CharacterBase& rhs);
 
-        OOLUA::Lua_func_ref _luaCallback;
+        sol::protected_function _luaCallback;
         int                 _callbackTrack      = 0;
         bool                _tempStateActive    = false;
         Direction::DIR4		_faceDir			= Direction::DIR4_CENTER;
@@ -83,7 +85,7 @@ namespace elysian {
         bool                _dashing            = false;
 
         //REMOVE ME EVENTUALLY
-        mutable LuaVariant  _getAnimNameFromStatesRef;
+        mutable sol::object  _getAnimNameFromStatesRef;
 
 
         static float		_deltaTime;
@@ -97,13 +99,7 @@ namespace elysian {
         bool                _checkPushing(void);
 
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(faceDir,            getFaceDir,             setFaceDir)
-            ELYSIAN_LUA_PROXY_FIELD(walkForce,          getWalkForce,           setWalkForce)
-            ELYSIAN_LUA_PROXY_FIELD(dashMultiplier,     getDashMultiplier,      setDashMultiplier)
-            ELYSIAN_LUA_PROXY_FIELD(holdingDampFactor,  getEntityForceDampFactor)
-            ELYSIAN_LUA_PROXY_FIELD(heldEntity,         getHeldEntity)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         static constexpr const Component::TYPE componentType = Component::CHARACTER;
 
@@ -147,7 +143,7 @@ namespace elysian {
         void                addChildEntity(Entity*entity, const char*const name);
         void                removeState(const ANIM_STATE state);
         void                addState(const ANIM_STATE state);
-        void                addTempState(const ANIM_STATE state, const int trackIndex, OOLUA::Lua_func_ref ref);
+        void                addTempState(const ANIM_STATE state, const int trackIndex, sol::protected_function ref);
         bool                hasState(const ANIM_STATE state) const;
         void                setSpeedMultiplier(const float factor);
         const char*         getAnimNameFromStates(const Direction::DIR4 dir) const;

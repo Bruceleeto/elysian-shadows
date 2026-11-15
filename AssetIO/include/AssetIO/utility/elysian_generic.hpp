@@ -40,7 +40,7 @@ namespace elysian {
 
     //THIS IS COMPLETELY UNECCESSARY IN C++11 WITH VARIADIC MACROS!!!!11111ONE
     /*No No, No No No No, No No No No, No No there's a limit! */
-    #	define OOLUA_INTERNAL_60_N \
+    #	define ELYSIAN_INTERNAL_60_N \
             N, N, N, N, N, N, N, N, N, N \
             , N, N, N, N, N, N, N, N, N, N \
             , N, N, N, N, N, N, N, N, N, N \
@@ -49,10 +49,10 @@ namespace elysian {
             , N, N, N, N, N, N, N, N, N, N
 
 
-    #	define OOLUA_NARG(...)\
-            OOLUA_NARG_DO(__VA_ARGS__, OOLUA_RSEQ_N)
+    #	define ELYSIAN_NARG(...)\
+            ELYSIAN_NARG_DO(__VA_ARGS__, ELYSIAN_RSEQ_N)
 
-    #	define OOLUA_ARG_N(\
+    #	define ELYSIAN_ARG_N(\
             _1, _2, _3, _4, _5, _6, _7, _8, _9, _10 \
             , _11, _12, _13, _14, _15, _16, _17, _18, _19, _20 \
             , _21, _22, _23, _24, _25, _26, _27, _28, _29, _30 \
@@ -61,7 +61,7 @@ namespace elysian {
             , _51, _52, _53, _54, _55, _56, _57, _58, _59, _60 \
             , _61, _62, _63, N, ...) N
 
-    #	define OOLUA_RSEQ_N\
+    #	define ELYSIAN_RSEQ_N\
             63, 62, 61, 60 \
             , 59, 58, 57, 56, 55, 54, 53, 52, 51, 50 \
             , 49, 48, 47, 46, 45, 44, 43, 42, 41, 40 \
@@ -70,8 +70,8 @@ namespace elysian {
             , 19, 18, 17, 16, 15, 14, 13, 12, 11, 10 \
             , 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 
-#		define OOLUA_NARG_DO(...) \
-            OOLUA_ARG_N(__VA_ARGS__)
+#		define ELYSIAN_NARG_DO(...) \
+            ELYSIAN_ARG_N(__VA_ARGS__)
 
 #define _ELYSIAN_VA_EXPAND_0(COMMA, OPERATION)
 #define _ELYSIAN_VA_EXPAND_1(COMMA, OPERATION, PARAM1) OPERATION(PARAM1)
@@ -93,7 +93,7 @@ namespace elysian {
 #define _ELYSIAN_VA_NO_COMMA()
 
 #define _ELYSIAN_VA_EXPAND(COMMA, OPERATION, ...)  \
-    _ELYSIAN_VA_CONCAT(_ELYSIAN_VA_EXPAND_, OOLUA_NARG(__VA_ARGS__)) (COMMA, OPERATION, __VA_ARGS__)
+    _ELYSIAN_VA_CONCAT(_ELYSIAN_VA_EXPAND_, ELYSIAN_NARG(__VA_ARGS__)) (COMMA, OPERATION, __VA_ARGS__)
 
 #define ELYSIAN_VA_EXPAND(OPERATION, ...)  \
     _ELYSIAN_VA_EXPAND(_ELYSIAN_VA_NO_COMMA, OPERATION, __VA_ARGS__)

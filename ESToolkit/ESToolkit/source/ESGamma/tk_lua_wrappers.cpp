@@ -7,7 +7,7 @@
 #include <ESToolkit/ESGamma/tk_lua_wrappers.h>
 //#include <ESGamma/lua/elysian_lua_wrappers.hpp>
 #include <ESToolkit/ESGamma/tk_lua_manager.h>
-#include <ESToolkit/AssetIO/tk_lua_table_proxy.h>
+#include <ESToolkit/AssetIO/tk_lua_observer.h>
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
 //#include <model/tk_property_item_delegate.h>
 
@@ -51,11 +51,11 @@ static inline int alertprint(lua_State* const /*l*/) {
 
     \sa Engine, Behavior
 */
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(Toolkit)
-EXPORT_OOLUA_FUNCTIONS_0_CONST(Toolkit)
+
+
 
 /*!
- * \qmlmethod void Toolkit::setSelection(LuaVariant obj)
+ * \qmlmethod void Toolkit::setSelection(sol::object obj)
  * Sets the current Toolkit selection to \a{obj}, clearing the previous selection, updating the active layers,
  * and displaying it within \l{Selection View}. The selection is cleared if \a{obj} is nil.
  *
@@ -74,12 +74,12 @@ EXPORT_OOLUA_FUNCTIONS_0_CONST(Toolkit)
  */
 
 static inline int Toolkit_setSelection(lua_State* const /*vm*/) { //this could really support multi-select with arbitrary # of arguments...
-    ESToolkit::select(LuaVariant::fromStack());
+    ESToolkit::select(elysian::lua::fromStack());
     return 0;
 }
 
 /*!
- * \qmlmethod LuaVariant Toolkit::getSelection()
+ * \qmlmethod sol::object Toolkit::getSelection()
  * Returns a Lua reference to the object set as the current selection within ESTk, or nil if nothing is selected.
  * \sa setSelection
  */
@@ -94,9 +94,9 @@ static inline int Toolkit_setSelection(lua_State* const /*vm*/) { //this could r
  */
 static inline int Toolkit_findEntity(lua_State* const vm) {
     QString name;
-    OOLUA::pull(vm, name);
+    name = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(name)>>>(vm);
     auto* entity = Debug::getCurrentArea()->findEntity(Q_CSTR(name));
-    OOLUA::push(vm, entity);
+    sol::stack::push(vm, entity);
     return entity? 1 : 0;
 }
 
@@ -108,7 +108,7 @@ static inline int Toolkit_findEntity(lua_State* const vm) {
  */
 static inline int Toolkit_showStatusBarMessage(lua_State* const vm) {
     QString qstr;
-    if(OOLUA::pull(vm, qstr)) {
+    if((qstr = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(qstr)>>>(vm), true)) {
         ESToolkit::showStatusBarMessage(qstr);
     }
     return 0;
@@ -124,7 +124,7 @@ static inline int Toolkit_showStatusBarMessage(lua_State* const vm) {
 
 static inline int Toolkit_searchDocs(lua_State* const vm) {
     QString qstr;
-    if(OOLUA::pull(vm, qstr)) {
+    if((qstr = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(qstr)>>>(vm), true)) {
         ESToolkit::searchDocs(qstr);
     }
     return 0;
@@ -137,15 +137,15 @@ static inline int Toolkit_searchDocs(lua_State* const vm) {
  */
 static inline int Toolkit_openDocs(lua_State* const vm) {
     QString page, section;
-    if(OOLUA::pull(vm, page)) {
-        OOLUA::pull(vm, section);
+    if((page = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(page)>>>(vm), true)) {
+        section = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(section)>>>(vm);
         ESToolkit::openDoc(page, section);
     }
     return 0;
 }
 
 /*!
- * \qmlmethod LuaVariant Toolkit::messageBoxQuestion(string message, array buttonNames, string informativeText)
+ * \qmlmethod sol::object Toolkit::messageBoxQuestion(string message, array buttonNames, string informativeText)
  * Pops a modal dialog box with text given by \a{message} and push buttons on the bottom whose text comes
  * from the array of string names given by \a{buttonNames}. \a{InformativeText} is a submessage beneath \a{message}
  * containing more detailed information. The value to be returned is the string name of the button pressed by the user,
@@ -161,25 +161,25 @@ static inline int Toolkit_openDocs(lua_State* const vm) {
  */
 static inline int Toolkit_messageBoxQuestion(lua_State* const vm) {
     QString msg;
-    LuaVariant buttons;
+    sol::object buttons;
     QString informativeText;
 
     int depth = LuaManager::stackDepth();
     if(depth >= 3) {
-        OOLUA::pull(vm, informativeText);
+        informativeText = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(informativeText)>>>(vm);
     }
     if(depth >= 2) {
-        OOLUA::pull(vm, buttons);
+        buttons = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(buttons)>>>(vm);
     }
 
     if(depth >= 1) {
-        OOLUA::pull(vm, msg);
+        msg = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(msg)>>>(vm);
     }
 
     QString retVal = ESToolkit::messageBoxQuestion(msg, buttons, informativeText);
 
     if(!retVal.isEmpty()) {
-        OOLUA::push(vm, retVal);
+        sol::stack::push(vm, retVal);
         return 1;
     }
 
@@ -187,9 +187,9 @@ static inline int Toolkit_messageBoxQuestion(lua_State* const vm) {
 }
 
 /*!
- * \qmlmethod LuaVariant Toolkit::messageBoxTextPrompt(string message)
+ * \qmlmethod sol::object Toolkit::messageBoxTextPrompt(string message)
  * Pops a modal dialog box with the given \a {message} text with a Text Edit field
- * for the user to specify an arbitary string. The value is returned as a LuaVariant,
+ * for the user to specify an arbitary string. The value is returned as a sol::object,
  * meaning it will be converted to boolean, nil, numbers, or any other Lua type if applicable,
  * otherwise the default will return as a string type.
  *
@@ -197,9 +197,9 @@ static inline int Toolkit_messageBoxQuestion(lua_State* const vm) {
  */
 static inline int Toolkit_messageBoxTextPrompt(lua_State* const vm) {
     QString msg;
-    OOLUA::pull(vm, msg);
-    LuaVariant variant = ESToolkit::messageBoxTextPrompt(msg);
-    return OOLUA::push(vm, variant);
+    msg = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(msg)>>>(vm);
+    sol::object variant = ESToolkit::messageBoxTextPrompt(msg);
+    return sol::stack::push(vm, variant);
 }
 
 /*!
@@ -208,8 +208,8 @@ static inline int Toolkit_messageBoxTextPrompt(lua_State* const vm) {
     \inmodule Toolkit
     \brief Delegate
 */
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(PropertyItemDelegate)
-EXPORT_OOLUA_FUNCTIONS_0_CONST(PropertyItemDelegate)
+
+
 
 /*!
     \qmltype EnumDropdownPropertyItemDelegate
@@ -217,96 +217,164 @@ EXPORT_OOLUA_FUNCTIONS_0_CONST(PropertyItemDelegate)
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(EnumDropdownPropertyItemDelegate)
-OOLUA_EXPORT_FUNCTIONS(EnumDropdownPropertyItemDelegate,
-                       insertEnumValue)
-
 /*!
     \qmltype SpinboxPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(SpinboxPropertyItemDelegate)
-OOLUA_EXPORT_FUNCTIONS(SpinboxPropertyItemDelegate,
-                       setMaxValue,
-                       setMinValue)
-
 /*!
     \qmltype FileBrowserPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(FileBrowserPropertyItemDelegate)
-OOLUA_EXPORT_FUNCTIONS(FileBrowserPropertyItemDelegate)
-
 /*!
     \qmltype ComboboxPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(ComboBoxPropertyItemDelegate)
-OOLUA_EXPORT_FUNCTIONS(ComboBoxPropertyItemDelegate)
-
 /*!
     \qmltype DynamicContentPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(DynamicContentPropertyItemDelegate)
-OOLUA_EXPORT_FUNCTIONS(DynamicContentPropertyItemDelegate)
-
 /*!
     \qmltype ColorSwatchPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_FUNCTIONS_CONST(QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>)
-OOLUA_EXPORT_FUNCTIONS(QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>)
-
-OOLUA_EXPORT_NO_FUNCTIONS(QESTkUtils::ColorSwatchPropertyItemDelegate<Vector4>)
-
 /*!
     \qmltype PlainTextEditPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_NO_FUNCTIONS(QESTkUtils::PlainTextEditPropertyItemDelegate)
-
 /*!
     \qmltype SliderPropertyItemDelegate
     \since 1.6.1
     \inmodule Toolkit
     \brief Delegate
 */
-OOLUA_EXPORT_NO_FUNCTIONS(QESTkUtils::SliderPropertyItemDelegate)
-
 void TkLuaManager::_registerWrappers(void) {
-    elysian::LuaManagerBase::_registerWrappers();
 
-    lua_register(*_mainState, "alertprint", &alertprint);
-    _mainState->register_class<Toolkit>();
-    _mainState->register_class<PropertyItemDelegate>();
-    _mainState->register_class<EnumDropdownPropertyItemDelegate>();
-    _mainState->register_class<SpinboxPropertyItemDelegate>();
-    _mainState->register_class<FileBrowserPropertyItemDelegate>();
-    _mainState->register_class<QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>>();
-    _mainState->register_class_static<Toolkit>("setSelection", &Toolkit_setSelection);
-    _mainState->register_class_static<Toolkit>("getSelection", &ESToolkit::pushSelection);
-    _mainState->register_class_static<Toolkit>("findEntity", &Toolkit_findEntity);
-    _mainState->register_class_static<Toolkit>("searchDocs", &Toolkit_searchDocs);
-    _mainState->register_class_static<Toolkit>("openDocs", &Toolkit_openDocs);
-    _mainState->register_class_static<Toolkit>("showStatusBarMessage", &Toolkit_showStatusBarMessage);
-    _mainState->register_class_static<Toolkit>("messageBoxQuestion", &Toolkit_messageBoxQuestion);
-    _mainState->register_class_static<Toolkit>("messageBoxTextPrompt", &Toolkit_messageBoxTextPrompt);
+    lua_register(_mainState, "alertprint", &alertprint);
+    elysian::lua::registerToolkit(_mainState);
+    elysian::lua::registerPropertyItemDelegate(_mainState);
+    elysian::lua::registerEnumDropdownPropertyItemDelegate(_mainState);
+    elysian::lua::registerSpinboxPropertyItemDelegate(_mainState);
+    elysian::lua::registerFileBrowserPropertyItemDelegate(_mainState);
+    elysian::lua::registerQESTkUtils__ColorSwatchPropertyItemDelegate_Color4_(_mainState);
+    elysian::lua::registerComboBoxPropertyItemDelegate(_mainState);
+    elysian::lua::registerDynamicContentPropertyItemDelegate(_mainState);
+    elysian::lua::registerQESTkUtils__ColorSwatchPropertyItemDelegate_Vector4_(_mainState);
+    elysian::lua::registerQESTkUtils__PlainTextEditPropertyItemDelegate(_mainState);
+    elysian::lua::registerQESTkUtils__SliderPropertyItemDelegate(_mainState);
+    elysian::LuaManagerBase::_registerWrappers();
+    _mainState["Toolkit"]["setSelection"] = &Toolkit_setSelection;
+    _mainState["Toolkit"]["getSelection"] = &ESToolkit::pushSelection;
+    _mainState["Toolkit"]["findEntity"] = &Toolkit_findEntity;
+    _mainState["Toolkit"]["searchDocs"] = &Toolkit_searchDocs;
+    _mainState["Toolkit"]["openDocs"] = &Toolkit_openDocs;
+    _mainState["Toolkit"]["showStatusBarMessage"] = &Toolkit_showStatusBarMessage;
+    _mainState["Toolkit"]["messageBoxQuestion"] = &Toolkit_messageBoxQuestion;
+    _mainState["Toolkit"]["messageBoxTextPrompt"] = &Toolkit_messageBoxTextPrompt;
 
     luaRegisterTkEnumsConstants(_mainState);
     TkLuaTableUserdata::staticInitialize();
 
 }
 
+
+namespace elysian::lua {
+using namespace elysian;
+
+void registerToolkit(sol::state_view state) {
+    if (state["Toolkit"].valid()) return;
+    state.create_named_table("Toolkit");
+}
+
+void registerPropertyItemDelegate(sol::state_view state) {
+    if (state["PropertyItemDelegate"].valid()) return;
+    using T = PropertyItemDelegate;
+    auto type = registerType<T>(state, "PropertyItemDelegate");
+}
+
+void registerEnumDropdownPropertyItemDelegate(sol::state_view state) {
+    if (state["EnumDropdownPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = EnumDropdownPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "EnumDropdownPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+    type["insertEnumValue"] = method<T, void(const char*)>(&T::insertEnumValue);
+}
+
+void registerSpinboxPropertyItemDelegate(sol::state_view state) {
+    if (state["SpinboxPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = SpinboxPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "SpinboxPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+    type["setMaxValue"] = method<T, void(int)>(&T::setMaxValue);
+    type["setMinValue"] = method<T, void(int)>(&T::setMinValue);
+}
+
+void registerFileBrowserPropertyItemDelegate(sol::state_view state) {
+    if (state["FileBrowserPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = FileBrowserPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "FileBrowserPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerComboBoxPropertyItemDelegate(sol::state_view state) {
+    if (state["ComboBoxPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = ComboBoxPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "ComboBoxPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerDynamicContentPropertyItemDelegate(sol::state_view state) {
+    if (state["DynamicContentPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = DynamicContentPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "DynamicContentPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerQESTkUtils__ColorSwatchPropertyItemDelegate_Color4_(sol::state_view state) {
+    if (state["QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>;
+    auto type = registerType<T, PropertyItemDelegate>(state, "QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerQESTkUtils__ColorSwatchPropertyItemDelegate_Vector4_(sol::state_view state) {
+    if (state["QESTkUtils::ColorSwatchPropertyItemDelegate<Vector4>"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = QESTkUtils::ColorSwatchPropertyItemDelegate<Vector4>;
+    auto type = registerType<T, PropertyItemDelegate>(state, "QESTkUtils::ColorSwatchPropertyItemDelegate<Vector4>");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerQESTkUtils__PlainTextEditPropertyItemDelegate(sol::state_view state) {
+    if (state["QESTkUtils::PlainTextEditPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = QESTkUtils::PlainTextEditPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "QESTkUtils::PlainTextEditPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerQESTkUtils__SliderPropertyItemDelegate(sol::state_view state) {
+    if (state["QESTkUtils::SliderPropertyItemDelegate"].valid()) return;
+    registerPropertyItemDelegate(state);
+    using T = QESTkUtils::SliderPropertyItemDelegate;
+    auto type = registerType<T, PropertyItemDelegate>(state, "QESTkUtils::SliderPropertyItemDelegate");
+    type["new"] = sol::factories(factory<T>());
+}
+}

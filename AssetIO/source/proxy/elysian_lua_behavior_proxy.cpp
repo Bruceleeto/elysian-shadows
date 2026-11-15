@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_lua_behavior_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -85,11 +86,8 @@ A TRIGGER_TYPE can be one of the following:
  * Returns the name of the Behavior for a C++ Behavior or the asset-relative file path of
  * the Behavior script for a LuaBehavior.
  */
-EXPORT_OOLUA_FUNCTIONS_2_NON_CONST(Behavior,
-                                   addTrigger,
-                                   removeTrigger)
-EXPORT_OOLUA_FUNCTIONS_1_CONST(Behavior,
-                                getBehavName)
+
+
 
 
 /*!
@@ -783,12 +781,46 @@ loaded from \l{path}.
  * \sa script
  */
 
-OOLUA_EXPORT_FUNCTIONS(LuaBehavior,
-                        getSelfTable,
-                        setTriggers,
-                        setBehavName,
-                        setParamTable,
-                        getParamTable)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaBehavior,
-                             getTriggers,
-                             getScript)
+
+namespace elysian::lua {
+using namespace elysian;
+using Behavior = elysian::Behavior;
+using LuaBehavior = elysian::LuaBehavior;
+
+void registerBehavior(sol::state_view state) {
+    if (state["Behavior"].valid()) return;
+    registerComponent(state);
+    registerEventTarget(state);
+    registerEventObserver(state);
+    using T = elysian::Behavior;
+    auto type = registerType<T, elysian::Component, elysian::EventTarget, elysian::EventObserver>(state, "Behavior");
+    type["addTrigger"] = method<T, void(Behavior::TRIGGER)>(&T::addTrigger);
+    type["removeTrigger"] = method<T, void(Behavior::TRIGGER)>(&T::removeTrigger);
+    type["getBehavName"] = method<T, const char*() const>(&T::getBehavName);
+}
+
+void registerLuaBehavior(sol::state_view state) {
+    if (state["LuaBehavior"].valid()) return;
+    registerBehavior(state);
+    registerComponent(state);
+    registerEventTarget(state);
+    registerEventObserver(state);
+    using T = elysian::LuaBehavior;
+    auto type = registerType<T, elysian::Behavior, elysian::Component, elysian::EventTarget, elysian::EventObserver>(state, "LuaBehavior");
+    type["getSelfTable"] = method<T, sol::object()>(&T::getSelfTable);
+    type["getTriggers"] = method<T, uint32_t() const>(&T::getTriggers);
+    type["setTriggers"] = method<T, void(uint32_t)>(&T::setTriggers);
+    type["getScript"] = method<T, LuaBehaviorScript*() const>(&T::getScript);
+    type["setBehavName"] = method<T, void(const char*)>(&T::setBehavName);
+    type["getParamTable"] = method<T, sol::object()>(&T::getParamTable);
+    type["setParamTable"] = method<T, void(sol::object)>(&T::setParamTable);
+    property(type, "path", method<T, const char*() const>(&T::getBehavName), method<T, void(const char*)>(&T::setBehavName));
+    property(type, "paramTable", method<T, sol::object()>(&T::getParamTable), method<T, void(sol::object)>(&T::setParamTable));
+    property(type, "triggers", method<T, uint32_t() const>(&T::getTriggers), method<T, void(uint32_t)>(&T::setTriggers));
+    property(type, "selfTable", method<T, sol::object()>(&T::getSelfTable));
+    property(type, "script", method<T, LuaBehaviorScript*() const>(&T::getScript));
+    inheritProperties<T, elysian::Behavior, elysian::Component, elysian::EventTarget, elysian::EventObserver>();
+    finish<T>(type, "LuaBehavior", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

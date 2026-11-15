@@ -7,52 +7,30 @@
 #ifndef ELYSIAN_EVENT_PROXY_HPP
 #define ELYSIAN_EVENT_PROXY_HPP
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_binding.hpp>
 #include <AssetIO/level/elysian_event.hpp>
 
-namespace OOLUA {
-    typedef elysian::Event          Event;
-    typedef elysian::LuaEvent       LuaEvent;
-    typedef elysian::EventTarget    EventTarget;
-    typedef elysian::EventObserver  EventObserver;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace elysian::lua {
+void registerEventTarget(sol::state_view state);
+void registerEventObserver(sol::state_view state);
+void registerEvent(sol::state_view state);
+void registerLuaEvent(sol::state_view state);
 }
-
-OOLUA_PROXY(EventTarget)
-    OOLUA_TAGS(
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MFUNC_CONST(getEventTargetType)
-OOLUA_PROXY_END
-
-
-OOLUA_PROXY(EventObserver)
-    OOLUA_TAGS(
-        No_public_constructors,
-        No_public_destructor
-    )
-OOLUA_PROXY_END
-
-
-OOLUA_PROXY(Event)
-    OOLUA_TAGS(
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MFUNC_CONST(getEventType)
-    OOLUA_MFUNC_CONST(getEventState)
-    OOLUA_MFUNC(setEventState)
-OOLUA_PROXY_END
-
-OOLUA_PROXY(LuaEvent, Event)
-    OOLUA_CTORS(
-        OOLUA_CTOR(LuaVariant)
-    )
-    OOLUA_MFUNC_CONST(getVariant)
-    OOLUA_MFUNC(setVariant)
-OOLUA_PROXY_END
-
-
-
 
 #endif // ELYSIAN_EVENT_PROXY_HPP

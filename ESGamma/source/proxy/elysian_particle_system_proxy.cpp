@@ -84,7 +84,16 @@
  * \sa getAttrib, ParticleEmitterAttrib
  */
 
-OOLUA_EXPORT_FUNCTIONS(ParticleSystem,
-                       emitFromPoint)
-OOLUA_EXPORT_FUNCTIONS_CONST(ParticleSystem,
-                             getAttrib)
+
+namespace elysian::lua {
+using namespace elysian;
+using ParticleSystem = elysian::ParticleSystem;
+
+void registerParticleSystem(sol::state_view state) {
+    if (state["ParticleSystem"].valid()) return;
+    using T = elysian::ParticleSystem;
+    auto type = registerType<T>(state, "ParticleSystem");
+    type["emitFromPoint"] = method<T>(&T::emitFromPoint);
+    type["getAttrib"] = method<T>(&T::getAttrib);
+}
+}

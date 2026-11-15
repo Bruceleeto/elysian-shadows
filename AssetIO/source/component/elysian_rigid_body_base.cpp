@@ -12,10 +12,6 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(ForceTarget)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(RigidBodyAttrib)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(RigidBodyBase)
-
 ForceTarget::ForceTarget(void):
 	GYKinetic {
 		{ 0.0f, 0.0f, 0.0f },		//vel

@@ -11,9 +11,6 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(LightAttrib)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(LightSourceBase)
-
 LightSourceBase::~LightSourceBase(void) {
     if(_entity) gyVidLightSourceUninit(static_cast<GYLightSource*>(this));
 }

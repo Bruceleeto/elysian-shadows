@@ -28,7 +28,7 @@
 #include <QGridLayout>
 #include <QPushButton>
 #include <memory>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 #ifdef ESTK_UNIT_TESTS
 #include <UnitTests/test_estk.h>

@@ -25,4 +25,14 @@
     \sa {Examinable}, {Dialog}, {DialogSystem}, {Engine}
 */
 
-OOLUA_EXPORT_NO_FUNCTIONS(ExaminableSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using ExaminableSystem = elysian::ExaminableSystem;
+
+void registerExaminableSystem(sol::state_view state) {
+    if (state["ExaminableSystem"].valid()) return;
+    using T = elysian::ExaminableSystem;
+    auto type = registerType<T>(state, "ExaminableSystem");
+}
+}

@@ -182,12 +182,21 @@
  * \sa addEventObserver
  */
 
-OOLUA_EXPORT_FUNCTIONS(EventSystem,
-                       sendEvent,
-                       emitEvent,
-                       broadcastEvent,
-                       addEventObserver,
-                       removeEventObserver)
 
-OOLUA_EXPORT_FUNCTIONS_CONST(EventSystem)
+namespace elysian::lua {
+using namespace elysian;
+using EventSystem = elysian::EventSystem;
 
+void registerEventSystem(sol::state_view state) {
+    if (state["EventSystem"].valid()) return;
+    using T = elysian::EventSystem;
+    auto type = registerType<T>(state, "EventSystem");
+    type["sendEvent"] = method<T, void(Event*, EventTarget*)>(&T::sendEvent);
+    type["emitEvent"] = method<T, void(Event*, EventTarget*)>(&T::emitEvent);
+    type["broadcastEvent"] = method<T, void(Event*)>(&T::broadcastEvent);
+    type["addEventObserverLua"] = method<T, void(EventObserver*, EventType, sol::object)>(&T::addEventObserverLua);
+    type["removeEventObserverLua"] = method<T, void(EventObserver*, EventType, sol::object)>(&T::removeEventObserverLua);
+    type["addEventObserver"] = method<T, void(EventObserver*, EventType, sol::object)>(&T::addEventObserverLua);
+    type["removeEventObserver"] = method<T, void(EventObserver*, EventType, sol::object)>(&T::removeEventObserverLua);
+}
+}

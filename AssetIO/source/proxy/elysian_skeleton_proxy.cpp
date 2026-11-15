@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_skeleton_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -81,16 +82,6 @@ false if it should only be played once. By default, it is set to true.
  * \sa looping, getLooping()
  */
 
-OOLUA_EXPORT_FUNCTIONS(AnimationTrack,
-                       setName,
-                       setLooping,
-                       setTimeScale)
-OOLUA_EXPORT_FUNCTIONS_CONST(AnimationTrack,
-                             getName,
-                             getLooping,
-                             getTimeScale)
-
-
 /*!
     \qmltype Animation
     \since 1.6.0
@@ -169,15 +160,6 @@ to the track number on which the \l{AnimationTrack} is played.
  * Returns the size of the \l{tracks} array.
  * \sa tracks, getTrack(), setTrack()
  */
-
-OOLUA_EXPORT_FUNCTIONS(Animation,
-                       setName,
-                       setTrack)
-OOLUA_EXPORT_FUNCTIONS_CONST(Animation,
-                             getName,
-                             getTrack,
-                             getTrackCount)
-
 
 /*!
     \qmltype SkeletonAttrib
@@ -273,17 +255,6 @@ to be used by the \l{Skeleton}.
  * \l{jsonPath} property to \a{json}, loading both.
  * \sa atlasPath, jsonPath, setAtlasPath(), setJsonPath()
  */
-
-OOLUA_EXPORT_FUNCTIONS(SkeletonAttrib,
-                        loadAssets,
-                        setJsonPath,
-                        setAtlasPath,
-                        setAnimation)
-OOLUA_EXPORT_FUNCTIONS_CONST(SkeletonAttrib,
-                             getJsonPath,
-                             getAtlasPath,
-                             getAnimation,
-                             getAnimationCount)
 
 /*!
     \qmltype Skeleton
@@ -562,22 +533,98 @@ String name of the aggregate \l{Animation} currently being played by the Skeleto
 
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Skeleton,
-                             getAttrib,
-                             getAnimTimeScale,
-                             getEntityAttachedToSlot,
-                             getSkin,
-                             getAnimName
-#ifndef ELYSIAN_ENGINE
-                             ,printSlotData
-#endif
-                             )
-OOLUA_EXPORT_FUNCTIONS(Skeleton,
-                       setAttrib,
-                       setAnimName,
-                       playAnimNameBlocking,
-                       setAnimTimeScale,
-                       attachEntityToSlot,
-                       removeEntityFromSlot,
-                       setAnimTrackByName,
-                       setSkin)
+
+namespace elysian::lua {
+using namespace elysian;
+using AnimationTrack = elysian::AnimationTrack;
+using Animation = elysian::Animation;
+using SkeletonAttrib = elysian::SkeletonAttrib;
+using Skeleton = elysian::Skeleton;
+
+void registerAnimationTrack(sol::state_view state) {
+    if (state["AnimationTrack"].valid()) return;
+    using T = elysian::AnimationTrack;
+    auto type = registerType<T>(state, "AnimationTrack");
+    type["new"] = sol::factories(factory<T>());
+    type["getName"] = method<T, const char*() const>(&T::getName);
+    type["setName"] = method<T, void(const char*)>(&T::setName);
+    type["getTimeScale"] = method<T, float() const>(&T::getTimeScale);
+    type["setTimeScale"] = method<T, void(const float)>(&T::setTimeScale);
+    type["getLooping"] = method<T, bool() const>(&T::getLooping);
+    type["setLooping"] = method<T, void(const bool)>(&T::setLooping);
+    property(type, "name", method<T, const char*() const>(&T::getName), method<T, void(const char*)>(&T::setName));
+    property(type, "timeScale", method<T, float() const>(&T::getTimeScale), method<T, void(const float)>(&T::setTimeScale));
+    property(type, "looping", method<T, bool() const>(&T::getLooping), method<T, void(const bool)>(&T::setLooping));
+    inheritProperties<T>();
+    finish<T>(type, "AnimationTrack", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerAnimation(sol::state_view state) {
+    if (state["Animation"].valid()) return;
+    using T = elysian::Animation;
+    auto type = registerType<T>(state, "Animation");
+    type["new"] = sol::factories(factory<T>());
+    type["getName"] = method<T, const char*() const>(&T::getName);
+    type["setName"] = method<T, void(const char*)>(&T::setName);
+    type["getTrack"] = method<T, AnimationTrack*(const unsigned) const>(&T::getTrack);
+    type["setTrack"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, AnimationTrack*)>(&T::setTrack), self, arg0, take<AnimationTrack>(arg1)); };
+    type["getTrackCount"] = method<T, unsigned() const>(&T::getTrackCount);
+    property(type, "name", method<T, const char*() const>(&T::getName), method<T, void(const char*)>(&T::setName));
+    viewProperty(type, array<T>("tracks", method<T, AnimationTrack*(const unsigned) const>(&T::getTrack), [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, AnimationTrack*)>(&T::setTrack), self, arg0, take<AnimationTrack>(arg1)); }, method<T, unsigned() const>(&T::getTrackCount)));
+    inheritProperties<T>();
+    finish<T>(type, "Animation", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerSkeletonAttrib(sol::state_view state) {
+    if (state["SkeletonAttrib"].valid()) return;
+    using T = elysian::SkeletonAttrib;
+    auto type = registerType<T>(state, "SkeletonAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["loadAssets"] = method<T, void(const char*, const char*)>(&T::loadAssets);
+    type["getAtlasPath"] = method<T, const char*() const>(&T::getAtlasPath);
+    type["getJsonPath"] = method<T, const char*() const>(&T::getJsonPath);
+    type["setAtlasPath"] = method<T, void(const char*)>(&T::setAtlasPath);
+    type["setJsonPath"] = method<T, void(const char*)>(&T::setJsonPath);
+    type["setAnimation"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Animation*)>(&T::setAnimation), self, arg0, take<Animation>(arg1)); };
+    type["getAnimation"] = method<T, Animation*(const unsigned) const>(&T::getAnimation);
+    type["getAnimationCount"] = method<T, unsigned() const>(&T::getAnimationCount);
+    property(type, "atlasPath", method<T, const char*() const>(&T::getAtlasPath), method<T, void(const char*)>(&T::setAtlasPath));
+    property(type, "jsonPath", method<T, const char*() const>(&T::getJsonPath), method<T, void(const char*)>(&T::setJsonPath));
+    viewProperty(type, array<T>("animations", method<T, Animation*(const unsigned) const>(&T::getAnimation), [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Animation*)>(&T::setAnimation), self, arg0, take<Animation>(arg1)); }, method<T, unsigned() const>(&T::getAnimationCount)));
+    inheritProperties<T>();
+    finish<T>(type, "SkeletonAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerSkeleton(sol::state_view state) {
+    if (state["Skeleton"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Skeleton;
+    auto type = registerType<T, elysian::Component>(state, "Skeleton");
+    type["setAttrib"] = method<T>(&T::setAttrib);
+    type["getAttrib"] = method<T, std::shared_ptr<SkeletonAttrib>() const>(&T::getAttrib);
+    type["setAnimTimeScale"] = method<T, void(const float)>(&T::setAnimTimeScale);
+    type["getAnimTimeScale"] = method<T, float() const>(&T::getAnimTimeScale);
+    type["setAnimTrackByName"] = method<T, void(const int, const char*const, const bool)>(&T::setAnimTrackByName);
+    type["setAnimName"] = method<T, void(const char*)>(&T::setAnimName);
+    type["playAnimNameBlocking"] = method<T, void(const char*)>(&T::playAnimNameBlocking);
+    type["getAnimName"] = method<T, const char*() const>(&T::getAnimName);
+    type["getEntityAttachedToSlot"] = method<T, Entity*(const char*) const>(&T::getEntityAttachedToSlot);
+    type["attachEntityToSlot"] = [](T& self, const char* arg0, sol::object arg1) { return std::invoke(method<T, void(const char*, Entity*)>(&T::attachEntityToSlot), self, arg0, take<Entity>(arg1)); };
+    type["removeEntityFromSlot"] = method<T, void(const char*)>(&T::removeEntityFromSlot);
+    type["setSkin"] = method<T, void(const char*)>(&T::setSkin);
+    type["getSkin"] = method<T, const char*() const>(&T::getSkin);
+    type["printSlotData"] = method<T, void() const>(&T::printSlotData);
+    property(type, "attrib", method<T, std::shared_ptr<SkeletonAttrib>() const>(&T::getAttrib), method<T>(&T::setAttrib));
+    property(type, "skin", method<T, const char*() const>(&T::getSkin), method<T, void(const char*)>(&T::setSkin));
+    property(type, "curAnim", method<T, const char*() const>(&T::getAnimName), method<T, void(const char*)>(&T::playAnimNameBlocking));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Skeleton", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

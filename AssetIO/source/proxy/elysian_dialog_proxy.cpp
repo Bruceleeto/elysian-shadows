@@ -85,16 +85,6 @@
  * \sa addSourceEntity()
  */
 
-OOLUA_EXPORT_FUNCTIONS(DialogScreen,
-                       addSourceEntity,
-                       setTrigger,
-                       setText)
-OOLUA_EXPORT_FUNCTIONS_CONST(DialogScreen,
-                             getText,
-                             getIndex,
-                             isTrigger,
-                             getEntity)
-
 /*!
     \qmltype DialogText
     \inherits DialogScreen
@@ -127,11 +117,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(DialogScreen,
  * Sets the value of the \l{nextIndex} property to \a{index}.
  * \sa nextIndex, getNextIndex()
  */
-
-OOLUA_EXPORT_FUNCTIONS(DialogText,
-                       setNextIndex)
-OOLUA_EXPORT_FUNCTIONS_CONST(DialogText,
-                             getNextIndex)
 
 /*!
     \qmltype DialogOption
@@ -182,14 +167,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(DialogText,
  * Sets the value of the \l{text} property to \a{text}.
  * \sa text, getText()
  */
-
-OOLUA_EXPORT_FUNCTIONS(DialogOption,
-                       setNextIndex,
-                       setText)
-OOLUA_EXPORT_FUNCTIONS_CONST(DialogOption,
-                             getNextIndex,
-                             getText)
-
 
 /*!
     \qmltype DialogPrompt
@@ -242,14 +219,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(DialogOption,
  * \a{options} list.
  * \sa options, getOption(), addOption()
  */
-
-OOLUA_EXPORT_FUNCTIONS(DialogPrompt,
-                       addOption,
-                       setOption)
-OOLUA_EXPORT_FUNCTIONS_CONST(DialogPrompt,
-                             getOption,
-                             getOptionCount)
-
 
 /*!
     \qmltype Dialog
@@ -414,15 +383,102 @@ OOLUA_EXPORT_FUNCTIONS_CONST(DialogPrompt,
  * \sa setTriggerEntity()
  */
 
-OOLUA_EXPORT_FUNCTIONS(Dialog,
-                       addTextScreen,
-                       addPromptScreen,
-                       setTriggerEntity,
-                       setStartScreen,
-                       setScreen)
-OOLUA_EXPORT_FUNCTIONS_CONST(Dialog,
-                             getScreen,
-                             getScreenCount,
-                             getTriggerEntity,
-                             getStartScreen)
 
+namespace elysian::lua {
+using namespace elysian;
+using DialogScreen = elysian::DialogScreen;
+using DialogText = elysian::DialogText;
+using DialogOption = elysian::DialogOption;
+using DialogPrompt = elysian::DialogPrompt;
+using Dialog = elysian::Dialog;
+
+void registerDialogScreen(sol::state_view state) {
+    if (state["DialogScreen"].valid()) return;
+    using T = elysian::DialogScreen;
+    auto type = registerType<T>(state, "DialogScreen");
+    type["getText"] = method<T, const char*() const>(&T::getText);
+    type["setText"] = method<T, void(const char*)>(&T::setText);
+    type["addSourceEntity"] = method<T, void(Entity*)>(&T::addSourceEntity);
+    type["getEntity"] = method<T, Entity*() const>(&T::getEntity);
+    type["getIndex"] = method<T, unsigned() const>(&T::getIndex);
+    type["setTrigger"] = method<T, void(bool)>(&T::setTrigger);
+    type["isTrigger"] = method<T, bool() const>(&T::isTrigger);
+    property(type, "text", method<T, const char*() const>(&T::getText), method<T, void(const char*)>(&T::setText));
+    property(type, "trigger", method<T, bool() const>(&T::isTrigger), method<T, void(bool)>(&T::setTrigger));
+    inheritProperties<T>();
+    finish<T>(type, "DialogScreen", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+
+void registerDialogText(sol::state_view state) {
+    if (state["DialogText"].valid()) return;
+    registerDialogScreen(state);
+    using T = elysian::DialogText;
+    auto type = registerType<T, elysian::DialogScreen>(state, "DialogText");
+    type["new"] = sol::factories(factory<T>());
+    type["getNextIndex"] = method<T, int() const>(&T::getNextIndexLua);
+    type["setNextIndex"] = method<T, void(int)>(&T::setNextIndexLua);
+    property(type, "nextIndex", method<T, int() const>(&T::getNextIndexLua), method<T, void(int)>(&T::setNextIndexLua));
+    inheritProperties<T, elysian::DialogScreen>();
+    finish<T>(type, "DialogText", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerDialogOption(sol::state_view state) {
+    if (state["DialogOption"].valid()) return;
+    using T = elysian::DialogOption;
+    auto type = registerType<T>(state, "DialogOption");
+    type["new"] = sol::factories(factory<T>());
+    type["getText"] = method<T, const char*() const>(&T::getText);
+    type["setText"] = method<T, void(const char*)>(&T::setText);
+    type["getNextIndex"] = method<T, int() const>(&T::getNextIndexLua);
+    type["setNextIndex"] = method<T, void(int)>(&T::setNextIndexLua);
+    property(type, "text", method<T, const char*() const>(&T::getText), method<T, void(const char*)>(&T::setText));
+    property(type, "nextIndex", method<T, int() const>(&T::getNextIndexLua), method<T, void(int)>(&T::setNextIndexLua));
+    inheritProperties<T>();
+    finish<T>(type, "DialogOption", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerDialogPrompt(sol::state_view state) {
+    if (state["DialogPrompt"].valid()) return;
+    registerDialogScreen(state);
+    using T = elysian::DialogPrompt;
+    auto type = registerType<T, elysian::DialogScreen>(state, "DialogPrompt");
+    type["new"] = sol::factories(factory<T>());
+    type["addOption"] = method<T, void(const char*, int)>(&T::addOption);
+    type["getOptionCount"] = method<T, unsigned() const>(&T::getOptionCount);
+    type["getOption"] = method<T, DialogOption*(unsigned) const>(&T::getOption);
+    type["setOption"] = [](T& self, unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(unsigned, DialogOption*)>(&T::setOption), self, arg0, take<DialogOption>(arg1)); };
+    viewProperty(type, array<T>("options", method<T, DialogOption*(unsigned) const>(&T::getOption), [](T& self, unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(unsigned, DialogOption*)>(&T::setOption), self, arg0, take<DialogOption>(arg1)); }, method<T, unsigned() const>(&T::getOptionCount)));
+    inheritProperties<T, elysian::DialogScreen>();
+    finish<T>(type, "DialogPrompt", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerDialog(sol::state_view state) {
+    if (state["Dialog"].valid()) return;
+    using T = elysian::Dialog;
+    auto type = registerType<T>(state, "Dialog");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["addTextScreen"] = method<T, DialogText*(const char*)>(&T::addTextScreen);
+    type["addPromptScreen"] = method<T, DialogPrompt*(const char*)>(&T::addPromptScreen);
+    type["setScreen"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, DialogScreen*)>(&T::setScreen), self, arg0, take<DialogScreen>(arg1)); };
+    type["getScreenLua"] = method<T, sol::object(const unsigned) const>(&T::getScreenLua);
+    type["getScreenCount"] = method<T, unsigned() const>(&T::getScreenCount);
+    type["setTriggerEntity"] = method<T, void(Entity*)>(&T::setTriggerEntity);
+    type["getTriggerEntity"] = method<T, Entity*() const>(&T::getTriggerEntity);
+    type["setStartScreen"] = method<T, void(const int)>(&T::setStartScreenLua);
+    type["getStartScreen"] = method<T, int() const>(&T::getStartScreenLua);
+    type["getScreen"] = method<T, sol::object(const unsigned) const>(&T::getScreenLua);
+    property(type, "startScreen", method<T, int() const>(&T::getStartScreenLua), method<T, void(const int)>(&T::setStartScreenLua));
+    viewProperty(type, array<T>("screens", method<T, sol::object(const unsigned) const>(&T::getScreenLua), [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, DialogScreen*)>(&T::setScreen), self, arg0, take<DialogScreen>(arg1)); }, method<T, unsigned() const>(&T::getScreenCount)));
+    inheritProperties<T>();
+    finish<T>(type, "Dialog", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+}

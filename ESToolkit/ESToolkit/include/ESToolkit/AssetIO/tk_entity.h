@@ -70,7 +70,7 @@ public:
 
                                 TkEntity(void);
                                 TkEntity(const bool selectable, TkEntity* prefab=nullptr);
-                                TkEntity(const OOLUA::Lua_table_ref valTable);
+                                TkEntity(const sol::object valTable);
                                 TkEntity(TkEntity* prefab);
     virtual                     ~TkEntity(void) override;
 
@@ -90,7 +90,7 @@ public:
     QString                     getTexturePath(void) const;
     void                        centerInScene(void) const;
 
-    //LuaTableProxy
+    //Lua property metadata
     static void                 initializeDelegates(void);
     static void                 initializeVirtualTableDelegates(QString property);
 
@@ -109,7 +109,7 @@ public:
     virtual QVariant            data(int column, int role) const override;
 
     //static Entity*              create(void);
-    static Entity*              create(const OOLUA::Lua_table_ref valTable);
+    static Entity*              create(const sol::object valTable);
 
 
 public Q_SLOTS:

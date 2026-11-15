@@ -150,17 +150,25 @@ COMBAT_MGMT_TYPE can be one of the following values:
 */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(CombatSystem,
-                             getCombatState,
-                             getCombatants)
-OOLUA_EXPORT_FUNCTIONS(CombatSystem,
-                       addCombatant,
-                       removeCombatant,
-                       killCombatant,
-                       clearCombatants,
-                       //resolveCombatAction,
-                       sendStatusModifier,
-                       setBgmCombatTrack,
-                       setBgmDynamic,
-                       setCombatMgmtType,
-                       setCombatEnabled)
+
+namespace elysian::lua {
+using namespace elysian;
+using CombatSystem = elysian::CombatSystem;
+
+void registerCombatSystem(sol::state_view state) {
+    if (state["CombatSystem"].valid()) return;
+    using T = elysian::CombatSystem;
+    auto type = registerType<T>(state, "CombatSystem");
+    type["addCombatant"] = method<T, void(Entity&)>(&T::addCombatant);
+    type["removeCombatant"] = method<T, void(Entity&)>(&T::removeCombatant);
+    type["killCombatant"] = method<T, void(Entity&)>(&T::killCombatant);
+    type["getCombatants"] = method<T, sol::object() const>(&T::getCombatants);
+    type["sendStatusModifier"] = method<T, void(Combat*, CombatStatusModifier*)>(&T::sendStatusModifier);
+    type["setBgmCombatTrack"] = method<T, void(unsigned)>(&T::setBgmCombatTrack);
+    type["setBgmDynamic"] = method<T, void(bool)>(&T::setBgmDynamic);
+    type["clearCombatants"] = method<T, void()>(&T::clearCombatants);
+    type["getCombatState"] = method<T, CombatSystem::COMBAT_STATE() const>(&T::getCombatState);
+    type["setCombatMgmtType"] = method<T, void(CombatSystem::COMBAT_MGMT_TYPE)>(&T::setCombatMgmtType);
+    type["setCombatEnabled"] = method<T, void(bool)>(&T::setCombatEnabled);
+}
+}

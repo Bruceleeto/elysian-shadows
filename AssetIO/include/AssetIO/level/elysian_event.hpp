@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <AssetIO//utility/elysian_cpp_lua_callback.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <type_traits>
 
 
@@ -129,7 +129,9 @@ namespace elysian {
     using EventType = uint32_t;
 
 
-    class Event: public LuaTableProxy<Event> {
+    class Event: public LuaObject<Event> {
+    public: using LuaObjectType = LuaObject<Event>;
+
     public:
                         Event(EventType type);
 
@@ -142,13 +144,15 @@ namespace elysian {
 
     };
 
-    class LuaEvent: public Event, public LuaTableProxy<LuaEvent, LuaEvent, Event> {
-        LuaVariant  _luaVariant;
+    class LuaEvent: public Event, public LuaObject<LuaEvent, LuaEvent, Event> {
+    public: using LuaObjectType = LuaObject<LuaEvent, LuaEvent, Event>;
+
+        sol::object  _luaVariant;
     public:
                     LuaEvent(void);
-                    LuaEvent(LuaVariant v);
-        LuaVariant  getVariant(void) const;
-        void        setVariant(LuaVariant v);
+                    LuaEvent(sol::object v);
+        sol::object  getVariant(void) const;
+        void        setVariant(sol::object v);
     };
 
 
@@ -247,9 +251,9 @@ namespace elysian {
 
     //----LuaEvent----
     inline LuaEvent::LuaEvent(void): Event(EVENT_LUA) {}
-    inline LuaEvent::LuaEvent(LuaVariant v): Event(EVENT_LUA), _luaVariant(std::move(v)) {}
-    inline LuaVariant LuaEvent::getVariant(void) const { return _luaVariant; }
-    inline void LuaEvent::setVariant(LuaVariant v) { _luaVariant = std::move(v); }
+    inline LuaEvent::LuaEvent(sol::object v): Event(EVENT_LUA), _luaVariant(std::move(v)) {}
+    inline sol::object LuaEvent::getVariant(void) const { return _luaVariant; }
+    inline void LuaEvent::setVariant(sol::object v) { _luaVariant = std::move(v); }
 
     //-----EventTarget----
     inline EventTarget::EventTarget(Callback callback): _callback(std::move(callback)) {}

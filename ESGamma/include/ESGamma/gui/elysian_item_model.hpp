@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_ITEM_MODEL_HPP
 #define ELYSIAN_ITEM_MODEL_HPP
 
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/gui/elysian_widget.hpp>
 
 #define ELYSIAN_ITEM_MODEL_INDEX_INVALID    -1
@@ -33,8 +33,8 @@ namespace elysian {
         virtual             ~ItemModel(void) = default;
 
         virtual unsigned    getAxisCount(Widget::AXIS axis) const = 0;
-        virtual LuaVariant  getItemValue(const ItemModelIndex& index) const = 0;
-        virtual bool        setItemValue(const ItemModelIndex& index, LuaVariant value) = 0;
+        virtual sol::object  getItemValue(const ItemModelIndex& index) const = 0;
+        virtual bool        setItemValue(const ItemModelIndex& index, sol::object value) = 0;
 
         //built-in utility functions
         unsigned            getRowCount(void) const;
@@ -47,18 +47,18 @@ namespace elysian {
     };
 
 
-    //Super thin-as-fuck inlined proxy around a LuaVariant table
+    //Super thin-as-fuck inlined proxy around a sol::object table
     class LuaArrayModel: public ItemModel {
     private:
-        LuaVariant          _table;
+        sol::object          _table;
         bool                _isValid = false;
 
     public:
-                            LuaArrayModel(LuaVariant table);
+                            LuaArrayModel(sol::object table);
 
         virtual unsigned    getAxisCount(Widget::AXIS axis) const override;
-        virtual LuaVariant  getItemValue(const ItemModelIndex& index) const override;
-        virtual bool        setItemValue(const ItemModelIndex& index, LuaVariant value) override;
+        virtual sol::object  getItemValue(const ItemModelIndex& index) const override;
+        virtual bool        setItemValue(const ItemModelIndex& index, sol::object value) override;
 
     };
 
@@ -95,22 +95,24 @@ namespace elysian {
                 index.getCol() < (int)getColCount();
     }
 
-    inline LuaArrayModel::LuaArrayModel(LuaVariant table):
+    inline LuaArrayModel::LuaArrayModel(sol::object table):
         _table(std::move(table))
     {
-        _isValid = (_table.getType() == LUA_TTABLE);
+        _isValid = (elysian::lua::type(_table) == LUA_TTABLE);
     }
 
     inline unsigned LuaArrayModel::getAxisCount(Widget::AXIS axis) const {
-        return (axis == Widget::Y)? _table.getLength() : 1;
+        return (axis == Widget::Y)? elysian::lua::length(_table) : 1;
     }
 
-    inline LuaVariant LuaArrayModel::getItemValue(const ItemModelIndex &index) const {
-        return _table[index.getRow()+1].getVariant();
+    inline sol::object LuaArrayModel::getItemValue(const ItemModelIndex &index) const {
+        return elysian::lua::get(_table, index.getRow()+1);
     }
 
-    inline bool LuaArrayModel::setItemValue(const ItemModelIndex &index, LuaVariant value) {
-        return _table[index.getRow()+1].setVariant(std::move(value)); //Lua arrays start at index 1, dickweasel!!!
+    inline bool LuaArrayModel::setItemValue(const ItemModelIndex &index, sol::object value) {
+        if (!_isValid) return false;
+        elysian::lua::set(_table, index.getRow()+1, std::move(value));
+        return true;
     }
 
 }

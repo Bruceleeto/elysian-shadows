@@ -70,13 +70,20 @@
 
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(DaySystem,
-                             getDays,
-                             getHours,
-                             getMinutes,
-                             getSunLightAttrib)
-OOLUA_EXPORT_FUNCTIONS(DaySystem,
-                       setTimeDilation,
-                  //    setSunEnabled,
-                       setTimeOfDay)
 
+namespace elysian::lua {
+using namespace elysian;
+using DaySystem = elysian::DaySystem;
+
+void registerDaySystem(sol::state_view state) {
+    if (state["DaySystem"].valid()) return;
+    using T = elysian::DaySystem;
+    auto type = registerType<T>(state, "DaySystem");
+    type["getDays"] = method<T>(&T::getDays);
+    type["getHours"] = method<T>(&T::getHours);
+    type["getMinutes"] = method<T>(&T::getMinutes);
+    type["getSunLightAttrib"] = method<T>(&T::getSunLightAttrib);
+    type["setTimeDilation"] = method<T>(&T::setTimeDilation);
+    type["setTimeOfDay"] = method<T, void(float)>(&T::setTimeOfDay);
+}
+}

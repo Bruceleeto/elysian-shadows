@@ -10,7 +10,7 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QAction>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 #include <QESTkUtils/ui/delegate/tk_property_item_delegate.h>
 #include <QESTkUtils/ui/delegate/tk_file_browser_property_item_delegate.h>
@@ -128,9 +128,9 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
             break;
         case LUA_TTABLE:
             menu.insertCheckableAction("table", [=](const bool) {
-                LuaVariant v;
-                lua_newtable(*_mainState);
-                v.pull();
+                sol::object v;
+                lua_newtable(_mainState);
+                v = elysian::lua::fromStack();
                 fieldItem->setVariant(v);
             }, fieldItem->getValueLuaType() == LUA_TTABLE);
             break;
@@ -142,7 +142,7 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
     menu.push("userdata");
     for(auto it: LuaManager::_udTypeNames) {
         menu.insertCheckableAction(it, [=](const bool) {
-            LuaVariant v = LuaManager::exec("if(%s.new) then return %s.new() else return {} end", Q_CSTR(it), Q_CSTR(it));
+            sol::object v = LuaManager::exec("if(%s.new) then return %s.new() else return {} end", Q_CSTR(it), Q_CSTR(it));
             fieldItem->setVariant(v);
         });
     }
@@ -166,30 +166,30 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
 
             if(type.isNull()) return;
 
-            //lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, fieldItem->getTableData()->getLuaRef());
+            //lua_rawgeti(_mainState, LUA_REGISTRYINDEX, fieldItem->getTableData()->getLuaRef());
             fieldItem->getTableData()->getTableRef().push();
-            OOLUA::push(*_mainState, QVariant(key));
+            sol::stack::push(_mainState, QVariant(key));
 
             if(type == "nil") {
-                OOLUA::push(*_mainState, LuaVariant(nullptr));
+                sol::stack::push(_mainState, elysian::lua::make(nullptr));
             } else if(type == "boolean") {
-                OOLUA::push(*_mainState, LuaVariant(false));
+                sol::stack::push(_mainState, elysian::lua::make(false));
             } else if(type == "number") {
-                OOLUA::push(*_mainState, LuaVariant(0.0f));
+                sol::stack::push(_mainState, elysian::lua::make(0.0f));
             } else if(type == "string") {
-                OOLUA::push(*_mainState, LuaVariant("none"));
+                sol::stack::push(_mainState, elysian::lua::make("none"));
             } else if(type == "table") {
-              //  OOLUA::push(*_mainState, LuaVariant({1}));
-                lua_newtable(*_mainState);
+              //  sol::stack::push(_mainState, elysian::lua::make({1}));
+                lua_newtable(_mainState);
             } else {
-                OOLUA::push(*_mainState, LuaManager::exec("if(%s.new) then return %s.new() else return {} end", Q_CSTR(type), Q_CSTR(type)));
+                sol::stack::push(_mainState, LuaManager::exec("if(%s.new) then return %s.new() else return {} end", Q_CSTR(type), Q_CSTR(type)));
             }
 
-            lua_settable(*_mainState, -3);
+            lua_settable(_mainState, -3);
 
 #if 0
             elysian::LuaTableRef ref(fieldItem->getTableData()->getLuaRef());
-            ref.insert(Q_CSTR(key), elysian::LuaVariant(12.0f));
+            ref.insert(Q_CSTR(key), elysian::lua::make(12.0f));
            // fieldItem->getTableData()->insertTableFieldItem(key);
 #endif
 
@@ -199,7 +199,7 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
             QString filename = QFileDialog::getSaveFileName(nullptr, "Save as Prefab", FileUtilities::getAbsoluteAssetPath(ELYSIAN_LUA_PREFAB_PATH));
             filename = PrefabAssetFileType::prefabifyFilePath(filename);
             if(LuaManager::saveTable(fieldItem->getTableData()->getTableRef(), Q_CSTR(filename))) {
-                LuaVariant prefabRef = LuaManager::getPrefab(Q_CSTR(PrefabAssetFileType::prefabNameFromFilePath(filename)));
+                sol::object prefabRef = LuaManager::getPrefab(Q_CSTR(PrefabAssetFileType::prefabNameFromFilePath(filename)));
                 fieldItem->setVariant(prefabRef);
             }
         });
@@ -210,18 +210,18 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
         });
 
         auto v = fieldItem->getVariant();
-        if(strcmp(v.getTypeString(), "Entity") == 0) {
+        if(strcmp(elysian::lua::typeName(v).c_str(), "Entity") == 0) {
             menu.insertAction("Make Parent", [=](bool) {
                 QString filename = QFileDialog::getSaveFileName(nullptr, "Save as Prefab", FileUtilities::getAbsoluteAssetPath(ELYSIAN_LUA_PREFAB_PATH));
                 filename = PrefabAssetFileType::prefabifyFilePath(filename);
                 if(LuaManager::saveTable(fieldItem->getTableData()->getTableRef(), Q_CSTR(filename))) {
                     //remove prefab from the area
-                    getAssets()->getCurrentArea()->removeEntity(v.getValue<TkEntity*>());
+                    getAssets()->getCurrentArea()->removeEntity(v.as<TkEntity*>());
 
-                    LuaVariant prefabRef = LuaManager::getPrefab(Q_CSTR(PrefabAssetFileType::prefabNameFromFilePath(filename)));
-                    auto entity = prefabRef["new"].getVariant()(prefabRef);
+                    sol::object prefabRef = LuaManager::getPrefab(Q_CSTR(PrefabAssetFileType::prefabNameFromFilePath(filename)));
+                    auto entity = elysian::lua::call(elysian::lua::get(prefabRef, "new"), prefabRef);
 
-                    getAssets()->getCurrentArea()->addEntity(entity.getValue<TkEntity*>());
+                    getAssets()->getCurrentArea()->addEntity(entity.as<TkEntity*>());
                     fieldItem->setVariant(entity);
                 }
             });
@@ -230,16 +230,11 @@ QMenu* PropertyItemDelegate::getContextMenu(ESTkStandardItem*const item) {
 
         menu.insertAction("Break Prefab", [=](bool) {
             LuaManager::callGlobalFunction<void>("separatefromparent", nullptr, fieldItem->getVariant());
-        }, !LuaManager::callGlobalFunction<LuaVariant>("getparenttable", nullptr, fieldItem->getVariant()).isNil());
+        }, LuaManager::callGlobalFunction<sol::object>("getparenttable", nullptr, fieldItem->getVariant()).valid());
 
     }
 
-    menu.insertAction("Find Documentation", [=](bool) {
-        fieldItem->getKey();
-        fieldItem->getTableRef().getTypeString();
 
-
-    });
 
 
     return menu.takeTopLevel();

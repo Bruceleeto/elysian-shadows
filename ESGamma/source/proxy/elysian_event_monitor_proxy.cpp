@@ -82,15 +82,36 @@
 
 
 
-OOLUA_EXPORT_FUNCTIONS(EventMonitor,
-                       cancel)
-OOLUA_EXPORT_FUNCTIONS_CONST(EventMonitor)
 
-OOLUA_EXPORT_FUNCTIONS(LuaEventMonitor,
-                       setTable,
-                       getTable)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaEventMonitor)
+namespace elysian::lua {
+using namespace elysian;
+using EventMonitor = elysian::EventMonitor;
+using LuaEventMonitor = elysian::LuaEventMonitor;
+using LuaEventCallback = elysian::LuaEventCallback;
 
-OOLUA_EXPORT_FUNCTIONS(LuaEventCallback,
-                       setCallbackFunction)
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaEventCallback)
+void registerEventMonitor(sol::state_view state) {
+    if (state["EventMonitor"].valid()) return;
+    using T = elysian::EventMonitor;
+    auto type = registerType<T>(state, "EventMonitor");
+    type["cancel"] = method<T, void()>(&T::cancel);
+}
+
+void registerLuaEventMonitor(sol::state_view state) {
+    if (state["LuaEventMonitor"].valid()) return;
+    registerEventMonitor(state);
+    using T = elysian::LuaEventMonitor;
+    auto type = registerType<T, elysian::EventMonitor>(state, "LuaEventMonitor");
+    type["setTable"] = method<T, void(const sol::object&)>(&T::setTable);
+    type["getTable"] = method<T, sol::object&()>(&T::getTable);
+}
+
+void registerLuaEventCallback(sol::state_view state) {
+    if (state["LuaEventCallback"].valid()) return;
+    registerLuaEventMonitor(state);
+    registerEventMonitor(state);
+    using T = elysian::LuaEventCallback;
+    auto type = registerType<T, elysian::LuaEventMonitor, elysian::EventMonitor>(state, "LuaEventCallback");
+    type["new"] = sol::factories(factory<T, const sol::protected_function&>());
+    type["setCallbackFunction"] = method<T, void(const sol::protected_function&)>(&T::setCallbackFunction);
+}
+}

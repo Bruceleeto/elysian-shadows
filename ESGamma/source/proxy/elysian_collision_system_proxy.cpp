@@ -50,4 +50,14 @@
     \sa {Collidable}, {CollisionContact}, {RigidBody}, {RigidBodySystem}, {Engine}
 */
 
-OOLUA_EXPORT_NO_FUNCTIONS(CollisionSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using CollisionSystem = elysian::CollisionSystem;
+
+void registerCollisionSystem(sol::state_view state) {
+    if (state["CollisionSystem"].valid()) return;
+    using T = elysian::CollisionSystem;
+    auto type = registerType<T>(state, "CollisionSystem");
+}
+}

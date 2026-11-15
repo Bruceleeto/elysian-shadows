@@ -13,18 +13,13 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(CollisionFlags)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(CollidableStaticAttrib)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(CollidableAttribBase)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(CollidableBase)
-
 CollisionSystem* CollidableBase::_colSys = nullptr;
 
-void CollidableAttribBase::setStaticAttrib(const OOLUA::Lua_table_ref valTable) {
+void CollidableAttribBase::setStaticAttrib(const sol::object valTable) {
     _staticAttrib.fromTable(valTable);
 }
 
-void CollidableAttribBase::setFlags(const OOLUA::Lua_table_ref valTable) {
+void CollidableAttribBase::setFlags(const sol::object valTable) {
     flags.fromTable(valTable);
 }
 

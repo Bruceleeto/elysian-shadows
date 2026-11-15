@@ -66,10 +66,10 @@ public:
 
 PlayablePane::PlayablePane(void) {
     auto newFromPrefab = [](const char* name) {
-        LuaVariant pref = LuaManager::getPrefab(name);
-        Entity* en1 = pref.getValue<Entity*>();
-        GY_ASSERT(!pref.isNil());
-        Entity* entity = new elysian::Entity(pref.getValue<Entity*>());//(*pref["new"])(pref).getValue<Entity*>();
+        sol::object pref = LuaManager::getPrefab(name);
+        Entity* en1 = pref.as<Entity*>();
+        GY_ASSERT(pref.valid());
+        Entity* entity = new elysian::Entity(pref.as<Entity*>());//(*pref["new"])(pref).as<Entity*>();
         GY_ASSERT(entity);
         GY_ASSERT(en1 != entity);
         return entity;
@@ -165,11 +165,11 @@ PlayablePane::PlayablePane(void) {
 void PlayablePane::update(void) {
     char buff[50];
     EntityWidget::update();
-    if(_playable && !_combatTable.isNil() && _playable->getCombat()) {
+    if(_playable && _combatTable.valid() && _playable->getCombat()) {
 
         CombatStatus& stats = _playable->getCombat()->getStatus();
 
-        sprintf(buff, "Lv. %d", _combatTable["stats"]["level"].getVariant().getValue<int>());
+        sprintf(buff, "Lv. %d", elysian::lua::get(elysian::lua::get(_combatTable, "stats"), "level").as<int>());
         _levelText->setText(buff);
 
         sprintf(buff, "HP %d/%d", stats.getHp(), stats.getMaxHp());
@@ -185,10 +185,10 @@ void PlayablePane::update(void) {
 
 
         //self.echo is the Echoes table entry; its progress (level) lives in self.echoes[name]
-        LuaVariant echoName = _combatTable["echo"]["name"].getVariant();
-        if(echoName.getType() == LUA_TSTRING) {
-            _echoNameText->setText(echoName.getValue<const char*>());
-            sprintf(buff, "Lv. %d", _combatTable["echoes"][echoName.getValue<const char*>()]["level"].getVariant().getValue<int>());
+        sol::object echoName = elysian::lua::get(elysian::lua::get(_combatTable, "echo"), "name");
+        if(elysian::lua::type(echoName) == LUA_TSTRING) {
+            _echoNameText->setText(echoName.as<const char*>());
+            sprintf(buff, "Lv. %d", elysian::lua::get(elysian::lua::get(elysian::lua::get(_combatTable, "echoes"), echoName), "level").as<int>());
             _echoLevelText->setText(buff);
         } else {
             _echoNameText->setText("");
@@ -226,10 +226,10 @@ void PlayablePane::setPartyMember(Entity* entity) {
         _nameText->setText(_playable->getName());
         _combatTable = combat->getSelfTable();
         _portrait->enable();
-        _portrait->getEntity()->getRenderable()->getSpriteAttrib()->setTexPath(_combatTable["playable"]["portrait"].getVariant().getValue<const char*>());
+        _portrait->getEntity()->getRenderable()->getSpriteAttrib()->setTexPath(elysian::lua::get(elysian::lua::get(_combatTable, "playable"), "portrait").as<const char*>());
         _echoIcon->getEntity()->getRenderable()->getSpriteAttrib()->setTexPath("/assets/graphics/items/health_globe.png");
     } else {
-        _combatTable.setNil();
+        _combatTable = sol::object{};
         _nameText->disable();
         _portrait->disable();
 

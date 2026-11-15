@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_component_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -26,5 +27,17 @@
  * Returns a reference to the parent Entity the component is currently attached to.
  */
 
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(Component)
-EXPORT_OOLUA_FUNCTIONS_1_CONST(Component, getEntity)
+
+
+
+namespace elysian::lua {
+using namespace elysian;
+using Component = elysian::Component;
+
+void registerComponent(sol::state_view state) {
+    if (state["Component"].valid()) return;
+    using T = elysian::Component;
+    auto type = registerType<T>(state, "Component");
+    type["getEntity"] = method<T, Entity*() const>(&T::getEntity);
+}
+}

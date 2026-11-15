@@ -8,23 +8,19 @@
 #define ELYSIAN_MATERIAL_HPP
 
 #include <libGyro/gyro_shader_api.h>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
 
 namespace elysian {
 
     class Material:
             public GYMaterial,
-            public LuaTableProxy<Material>
+            public LuaObject<Material>
     {
+    public: using LuaObjectType = LuaObject<Material>;
+
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(ambient, getAmbient)
-            ELYSIAN_LUA_PROXY_FIELD(diffuse, getDiffuse)
-            ELYSIAN_LUA_PROXY_FIELD(specular, getSpecular)
-            ELYSIAN_LUA_PROXY_FIELD(emissive, getEmissive)
-            ELYSIAN_LUA_PROXY_FIELD(shininess, getShininess, setShininess)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                     Material(void);
 

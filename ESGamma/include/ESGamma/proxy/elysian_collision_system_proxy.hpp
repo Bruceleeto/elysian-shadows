@@ -8,17 +8,15 @@
 #define ELYSIAN_COLLISION_SYSTEM_PROXY_HPP
 
 #include <ESGamma/system/elysian_collision_system.hpp>
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_binding.hpp>
 
-namespace OOLUA {
-    typedef elysian::CollisionSystem     CollisionSystem;
+
+
+
+
+
+namespace elysian::lua {
+void registerCollisionSystem(sol::state_view state);
 }
-
-OOLUA_PROXY(CollisionSystem)
-    OOLUA_TAGS (
-        No_public_constructors,
-        No_public_destructor
-    )
-OOLUA_PROXY_END
 
 #endif // ELYSIAN_COLLISION_SYSTEM_PROXY_HPP

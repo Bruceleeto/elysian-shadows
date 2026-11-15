@@ -55,7 +55,7 @@ public:
 
 inline void ESTkTest::flagWarning(const QString msg) {
     if(!_initialized || _expectWarning) return;
-    QWARN(Q_CSTR(msg));
+    qWarning().noquote() << msg;
 }
 
 

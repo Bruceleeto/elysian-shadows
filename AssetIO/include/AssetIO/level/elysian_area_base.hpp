@@ -10,7 +10,7 @@
 #include <libGyro/gyro_video_api.h>
 #include <vector>
 #include <stdint.h>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
 #include <AssetIO/crtp/elysian_component.hpp>
 
@@ -88,33 +88,12 @@ namespace elysian {
     };
 
     class AreaBase:
-        public LuaTableProxy<AreaBase, Area> {
+        public LuaObject<AreaBase, Area> {
+    public: using LuaObjectType = LuaObject<AreaBase, Area>;
+
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(dirName, getDirName, setDirName)
-            ELYSIAN_LUA_PROXY_FIELD(nameString, getNameString, setNameString)
-            ELYSIAN_LUA_PROXY_FIELD(path, getPath)
-
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(size)
-                ELYSIAN_LUA_PROXY_FIELD(width, getMapWidth, setMapWidth)
-                ELYSIAN_LUA_PROXY_FIELD(height, getMapHeight, setMapHeight)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-
-            ELYSIAN_LUA_PROXY_FIELD(useSun,       getUseSun,        setUseSun)
-            ELYSIAN_LUA_PROXY_FIELD(ambientColor, getAmbientColor, setAmbientColor)
-
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN(music)
-                ELYSIAN_LUA_PROXY_ARRAY_FIELD(bgm,      getBgmOggByTrack,       setBgmOggByTrack,       getBgmOggTrackCount)
-                ELYSIAN_LUA_PROXY_ARRAY_FIELD(aux,      getAuxOggByTrack,       setAuxOggByTrack,       getAuxOggTrackCount)
-                ELYSIAN_LUA_PROXY_FIELD(gain,           getOggGain,             setOggGain)
-            ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_END()
-
-            ELYSIAN_LUA_PROXY_FIELD(startPosition, getStartPosition, setStartPosition)
-
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(activeEntities,   getActiveEntityByIndex,     setActiveEntityByIndex,     getActiveEntityCount)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(inactiveEntities, getInactiveEntityByIndex,   setInactiveEntityByIndex,   getInactiveEntityCount)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         //Entity data
         vector<Entity*>             entities;

@@ -4,7 +4,6 @@ CONFIG += staticlib
 
 CONFIG -= app_bundle
 CONFIG -= qt
-CONFIG += warn_off
 
 DEFINES+=ELYSIAN_DEREESTING
 DEFINES+=ELYSIAN_RUNTIME_CHECKS
@@ -13,7 +12,7 @@ DEFINES+=ELYSIAN_RUNTIME_CHECKS
 INCLUDEPATH += ../../include \
                 ../../../libGyro/include \
                 ../../../libGyro/api
-QMAKE_CFLAGS += -Wno-unused-parameter -std=c99
+QMAKE_CFLAGS += -std=c99
 
 SOURCES += \
     ../../src/spine/Animation.c \

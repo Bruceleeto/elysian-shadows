@@ -11,7 +11,7 @@
 //#include <tk_rows_joiner_proxy_model.h>
 #include <ESToolkit/core/tk_asset_manager.h>
 #include <ESToolkit/ESGamma/tk_lua_manager.h>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <QVector>
 
 class TkEntity;
@@ -39,7 +39,7 @@ private:
     QVector<EntityEntry>            _entities;
     TkEntity*                       _baseEntity     = nullptr;
     mutable LuaTableStackModel*     _luaModel       = nullptr;
-    LuaVariant                      _tableRef;
+    sol::object                      _tableRef;
 
 
 public:
@@ -55,7 +55,7 @@ public:
     void                        removeEntity(TkEntity*const entity);
     virtual TYPE                getType(void) const override;
     bool                        isInSelection(const TkEntity*const entity) const;
-    const LuaVariant&           getTableRef(void) const;
+    const sol::object&           getTableRef(void) const;
 
     void                        translate(const float x, const float y);
     void                        setPosition(const float x, const float y);
@@ -122,6 +122,6 @@ inline EntitySelectable::EntityEntry::operator const TkEntity*(void) const { ret
 inline QVector<EntitySelectable::EntityEntry>::iterator EntitySelectable::begin(void) { return _entities.begin(); }
 inline QVector<EntitySelectable::EntityEntry>::iterator EntitySelectable::end(void) { return _entities.end(); }
 
-inline const LuaVariant& EntitySelectable::getTableRef(void) const { return _tableRef; }
+inline const sol::object& EntitySelectable::getTableRef(void) const { return _tableRef; }
 
 #endif // ENTITY_SELECTABLE_H

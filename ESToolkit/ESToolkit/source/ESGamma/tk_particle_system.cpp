@@ -22,18 +22,17 @@ TkParticleSystem::TkParticleSystem(void):
     _previewWidget->setFloating(true);
     _previewWidget->setVisible(false);
 
-    LuaVariant parentTable = {
-        { "position", &_previewProperties.getPos() },
-        { "direction", &_previewProperties.getDir() }
-    };
+    sol::table parentTable = elysian::lua::table();
+    parentTable.set("position", &_previewProperties.getPos());
+    parentTable.set("direction", &_previewProperties.getDir());
 
     QStandardItem* label = new QStandardItem("position");
-    auto* luaItem = new LuaTableFieldItem(LuaFieldRef(parentTable, "position"), label);
+    auto* luaItem = new LuaTableFieldItem(parentTable, elysian::lua::make("position"), label);
     luaItem->insertingModelItem();
     _model->addRow(label, luaItem);
 
     label = new QStandardItem("direction");
-    luaItem = new LuaTableFieldItem(LuaFieldRef(parentTable, "direction"), label);
+    luaItem = new LuaTableFieldItem(parentTable, elysian::lua::make("direction"), label);
     luaItem->insertingModelItem();
     _model->addRow(label, luaItem);
 

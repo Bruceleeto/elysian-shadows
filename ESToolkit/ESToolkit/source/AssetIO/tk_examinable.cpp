@@ -13,22 +13,22 @@
 #include <QApplication>
 
 void TkExaminable::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     auto* dirDelegate = new EnumDropdownPropertyItemDelegate({
         "DIR4_CENTER", "DIR4_UP", "DIR4_DOWN", "DIR4_LEFT", "DIR4_RIGHT"
     });
 
-    OOLUA::push(*_mainState, dirDelegate);
-    lua_setfield(*_mainState, -2, "relativeDir");
+    sol::stack::push(_mainState, dirDelegate);
+    lua_setfield(_mainState, -2, "relativeDir");
 
 
     DynamicContentPropertyItemDelegate* dialogDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+            auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
             if(dialog) {
                 QString errorMsg;
                 const bool valid = dialog->validate(errorMsg);
@@ -44,7 +44,7 @@ void TkExaminable::initializeDelegates(void) {
     dialogDelegate->addButton(QApplication::style()->standardIcon(QStyle::SP_MediaPlay), [](ESTkStandardItem* item) {
         auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+            auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
             elysian::System::getDialogSys()->startDialog(dialog);
         }
     });
@@ -53,11 +53,11 @@ void TkExaminable::initializeDelegates(void) {
         [](ESTkStandardItem* item) {
             auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
-                auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
                 if(!dialog) {
                     auto* examinableItem = luaFieldItem->getAncestorSiblingLuaItem({"examinable"}, 1);
                     if(examinableItem) {
-                        auto* examinableComp = examinableItem->getVariant().getValue<TkExaminable*>();
+                        auto* examinableComp = examinableItem->getVariant().as<TkExaminable*>();
                         examinableComp->setDialog(std::make_shared<TkDialog>());
                     }
                 }
@@ -68,7 +68,7 @@ void TkExaminable::initializeDelegates(void) {
         [](ESTkStandardItem* item) -> bool {
             auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
-                auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
                 return !dialog.get();
             }
             return false;
@@ -78,12 +78,12 @@ void TkExaminable::initializeDelegates(void) {
     dialogDelegate->setDeleteCallback([](ESTkStandardItem* item) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+            auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
 
             if(dialog) {
                 auto* examinableItem = luaFieldItem->getAncestorSiblingLuaItem({"examinable"}, 1);
                 if(examinableItem) {
-                    auto* examinableComp = examinableItem->getVariant().getValue<TkExaminable*>();
+                    auto* examinableComp = examinableItem->getVariant().as<TkExaminable*>();
                     if(examinableComp) {
                         examinableComp->setDialog(nullptr);
                     }
@@ -98,11 +98,11 @@ void TkExaminable::initializeDelegates(void) {
         [](ESTkStandardItem* item) {
             auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
-                auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
                 if(dialog) {
                     auto* examinableItem = luaFieldItem->getAncestorSiblingLuaItem({"examinable"}, 1);
                     if(examinableItem) {
-                        auto* examinableComp = examinableItem->getVariant().getValue<TkExaminable*>();
+                        auto* examinableComp = examinableItem->getVariant().as<TkExaminable*>();
                         examinableComp->setDialog(nullptr);
                         luaFieldItem->setDirty(true);
                         luaFieldItem->setToolTip(""); //reset any errors in tooltip
@@ -115,7 +115,7 @@ void TkExaminable::initializeDelegates(void) {
         [](ESTkStandardItem* item) -> bool {
             auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
-                auto dialog = luaFieldItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                auto dialog = luaFieldItem->getVariant().as<std::shared_ptr<TkDialog>>();
                 return dialog.get();
             }
             return false;
@@ -127,9 +127,9 @@ void TkExaminable::initializeDelegates(void) {
     delegate->setContextMenuCallback([](ESTkStandardItem* item) -> QMenu* {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            TkSkeletonAttrib* attrib = luaFieldItem->getTableRef()["__ud"]->getValue<TkSkeletonAttrib*>();
+            TkSkeletonAttrib* attrib = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkSkeletonAttrib*>();
             if(attrib) {
-                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
 
                 MenuStack stack("Animation");
                 stack.insertAction("Delete", [=](bool) {
@@ -148,10 +148,10 @@ void TkExaminable::initializeDelegates(void) {
         return nullptr;
     });
 #endif
-    OOLUA::push(*_mainState, dialogDelegate);
-    lua_setfield(*_mainState, -2, "dialog");
+    sol::stack::push(_mainState, dialogDelegate);
+    lua_setfield(_mainState, -2, "dialog");
 
 
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }

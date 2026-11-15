@@ -40,24 +40,34 @@ Before you dive in, know what you're getting:
 | **QESTkUtils** | Shared Qt utilities and widgets |
 | **UnitTests** | Tests for ESToolkit |
 
-Third-party libraries (OOLua, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
+Third-party libraries (sol2, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
 
 ## Building
 
 ESToolkit builds with qmake and Qt 6. Linux is the tested platform.
 
-### 1. Install dependencies
+### 1. Get the source
+
+sol2 (the C++/Lua bindings) is a git submodule, so clone recursively:
+
+```sh
+git clone --recursive git@github.com:Bruceleeto/elysian-shadows.git
+```
+
+In an existing clone, run `git submodule update --init` instead.
+
+### 2. Install dependencies
 
 On Debian or Ubuntu:
 
 ```sh
-sudo apt install build-essential qt6-base-dev qt6-base-dev-tools qmake6 liblua5.2-dev \
+sudo apt install build-essential qt6-base-dev qt6-base-dev-tools qmake6 liblua5.5-dev \
     qt6-charts-dev qt6-tools-dev libglew-dev libglu1-mesa-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
     zlib1g-dev
 ```
 
-### 2. Build
+### 3. Build
 
 From the repository root:
 
@@ -73,6 +83,13 @@ Optional extras, passed to `qmake`:
 
 - `CONFIG+=tests` builds the unit tests.
 - `CONFIG+=docs` builds the Lua API docs (not tested recently).
+
+### Lua binding checks
+
+Run `sh UnitTests/sol2/run.sh` for the headless ownership, identity, property,
+constructor and Qt conversion tests. Serialization checks also run when the
+local assets are present. Script paths can be passed to the same command for
+Lua 5.5 syntax checks. These checks do not launch the editor.
 
 ### Qt Creator
 

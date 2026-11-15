@@ -36,14 +36,6 @@
  * Clears all visible text from the AdventureLog.
  */
 
-OOLUA_EXPORT_FUNCTIONS(AdventureLog,
-                       setLabel,
-                       setStaticText,
-                       addLine,
-                       clear)
-OOLUA_EXPORT_FUNCTIONS_CONST(AdventureLog)
-
-
 /*!
     \qmltype GuiSystem
     \since 1.6.0
@@ -168,17 +160,37 @@ OOLUA_EXPORT_FUNCTIONS_CONST(AdventureLog)
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(GuiSystem,
-                       addCombatText,
-                       setFgWidget,
-                       clearFgWidget,
-                       setBgWidget,
-                       clearBgWidget,
-                       setClearColor,
-                       setAdvLogEnabled,
-                       addVictoryText,
-                       setFontColorPaletteEntry,
-                       getAdvLog)
-OOLUA_EXPORT_FUNCTIONS_CONST(GuiSystem,
-                             getResolution,
-                             getFontColorPaletteEntry)
+
+namespace elysian::lua {
+using namespace elysian;
+using AdventureLog = elysian::AdventureLog;
+using GuiSystem = elysian::GuiSystem;
+
+void registerAdventureLog(sol::state_view state) {
+    if (state["AdventureLog"].valid()) return;
+    using T = elysian::AdventureLog;
+    auto type = registerType<T>(state, "AdventureLog");
+    type["setLabel"] = method<T, void(const char*)>(&T::setLabel);
+    type["setStaticText"] = method<T, void(bool)>(&T::setStaticText);
+    type["addLine"] = method<T, void(const char*)>(&T::addLine);
+    type["clear"] = method<T, void()>(&T::clear);
+}
+
+void registerGuiSystem(sol::state_view state) {
+    if (state["GuiSystem"].valid()) return;
+    using T = elysian::GuiSystem;
+    auto type = registerType<T>(state, "GuiSystem");
+    type["addCombatText"] = method<T, void(const char*, GYColor4, const GYVector2&, const GYVector2&)>(&T::addCombatText);
+    type["setFgWidget"] = method<T, void(Widget*)>(&T::setFgWidget);
+    type["clearFgWidget"] = method<T, void()>(&T::clearFgWidget);
+    type["setBgWidget"] = method<T, void(Widget*)>(&T::setBgWidget);
+    type["clearBgWidget"] = method<T, void()>(&T::clearBgWidget);
+    type["setClearColor"] = method<T, void(GYColor4)>(&T::setClearColor);
+    type["setAdvLogEnabled"] = method<T, void(bool)>(&T::setAdvLogEnabled);
+    type["getAdvLog"] = method<T, AdventureLog&()>(&T::getAdvLog);
+    type["addVictoryText"] = method<T, void(const GYVector2&, const char*)>(&T::addVictoryText);
+    type["getResolution"] = [](const T& self) { unsigned arg0{}; unsigned arg1{}; std::invoke(method<T, void(unsigned&, unsigned&) const>(&T::getResolution), self, arg0, arg1); return std::make_tuple(arg0, arg1); };
+    type["getFontColorPaletteEntry"] = method<T, GYColor4(const unsigned) const>(&T::getFontColorPaletteEntry);
+    type["setFontColorPaletteEntry"] = method<T, void(const unsigned, const GYColor4)>(&T::setFontColorPaletteEntry);
+}
+}

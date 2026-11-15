@@ -13,8 +13,8 @@ EventMonitor EventMonitor::_nullMonitor;
 
 void LuaEventCallback::onFinish(void) {
     EventMonitor::onFinish();
-	_callback.push(*_mainState);
-	_table.push(*_mainState);
+	_callback.push(_mainState);
+	_table.push(_mainState);
 	ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 0, nullptr);
 }
 

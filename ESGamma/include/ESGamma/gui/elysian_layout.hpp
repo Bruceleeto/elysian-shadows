@@ -8,7 +8,7 @@
 #define ELYSIAN_LAYOUT_HPP
 
 #include <vector>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 #define ELYSIAN_GUI_LAYOUT_Z_COORD_OFFSET   0.1f
 #define ELYSIAN_GUI_LAYOUT_SIZE_POS_EPSILON 0.1f
@@ -130,9 +130,9 @@ namespace elysian {
         Widget*         replaceWidget(unsigned index, Widget* widget);
         Widget*         removeWidget(unsigned index);
         auto            getWidgets(void) const -> std::vector<Widget*>;
-        LuaVariant      getWidgetsLua(void) const;
+        sol::object      getWidgetsLua(void) const;
         void            setWidgets(const std::vector<Widget*>& widgets);
-        void            setWidgetsLua(LuaVariant array);
+        void            setWidgetsLua(sol::object array);
 
         //Overridden from TableLayout
         virtual Widget* removeWidget(Widget* widget) override;   //Returns widget given as argument (for owernship change in Lua API).

@@ -14,7 +14,9 @@ ELYSIAN_ASSET_TYPEDEF(BlendMode)
 namespace elysian {
 
     class BlendModeBase:
-        public LuaTableProxy<BlendModeBase, BlendMode> {
+        public LuaObject<BlendModeBase, BlendMode> {
+    public: using LuaObjectType = LuaObject<BlendModeBase, BlendMode>;
+
     private:
         Color4          _constColor;
         uint8_t         _srcFactor      = 0;
@@ -22,11 +24,7 @@ namespace elysian {
 
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(constColor, getConstColor,  setConstColor)
-            ELYSIAN_LUA_PROXY_FIELD(srcFactor,  getSrcFactor,   setSrcFactor)
-            ELYSIAN_LUA_PROXY_FIELD(dstFactor,  getDstFactor,   setDstFactor)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                         BlendModeBase(void) = default;
                         BlendModeBase(GY_BLEND_FACTOR srcFactor, GY_BLEND_FACTOR dstFactor, Color4 constColor=Color4());

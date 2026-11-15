@@ -8,7 +8,7 @@
 #define ELYSIAN_SPRITE_ATTRIB_BASE_HPP
 
 #include <AssetIO/primitive/elysian_prim_attrib.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/crtp/elysian_color.hpp>
 #include <AssetIO/crtp/elysian_blend_mode.hpp>
 #include <libGyro/gyro_shader_api.h>
@@ -23,8 +23,10 @@ namespace elysian {
 
     class SpriteAttribBase:
             public PrimAttrib,
-            public LuaTableProxy<SpriteAttribBase, SpriteAttrib>
+            public LuaObject<SpriteAttribBase, SpriteAttrib>
     {
+    public: using LuaObjectType = LuaObject<SpriteAttribBase, SpriteAttrib>;
+
         friend SpriteAttrib;
         friend Renderable;
         friend class RenderableBase;
@@ -41,15 +43,7 @@ namespace elysian {
         GYColor4	_color			= {255, 255, 255, 255};
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(texture,        getTexPath,         setTexPath)
-            ELYSIAN_LUA_PROXY_FIELD(normalMap,      getNormalMapPath,   setNormalMapPath)
-            ELYSIAN_LUA_PROXY_FIELD(specularMap,    getSpecularMapPath, setSpecularMapPath)
-            ELYSIAN_LUA_PROXY_FIELD(material,       getMaterial,        setMaterial)
-            ELYSIAN_LUA_PROXY_FIELD(color,          getColor4,          setColor4)
-            ELYSIAN_LUA_PROXY_FIELD(blendMode,      getBlendMode,       setBlendMode)
-            ELYSIAN_LUA_PROXY_FIELD(frame,          getFrame,           setFrame)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         void                setSpecularMapPath(const char*const path);
         void                setNormalMapPath(const char*const path);

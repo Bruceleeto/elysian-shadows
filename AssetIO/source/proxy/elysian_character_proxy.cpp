@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_character_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -33,8 +34,8 @@ The different direction types are:
 */
 
 
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(Direction)
-EXPORT_OOLUA_FUNCTIONS_0_CONST(Direction)
+
+
 
 /*!
     \qmltype Character
@@ -290,27 +291,52 @@ The animation states are:
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(Character,
-                        faceEntity,
-                        setFaceDir,
-                        moveByForce,
-                        setAnimate,
-                        setWalkForce,
-                        setDashMultiplier,
-                        setDashing,
-                        getEntityForceDampFactor,
-                        addState,
-                        removeState,
-                        jump,
-                        applyKnockbackForce,
-                        addTempState)
-OOLUA_EXPORT_FUNCTIONS_CONST(Character,
-                            getFaceDir,
-                            getFaceDirVec,
-                            isFacing,
-                            getHeldEntity,
-                            getLastMoveDir,
-                            getWalkForce,
-                            getDashMultiplier,
-                            hasState,
-                            getAnimNameFromStates)
+
+namespace elysian::lua {
+using namespace elysian;
+using Direction = elysian::Direction;
+using Character = elysian::Character;
+
+void registerDirection(sol::state_view state) {
+    if (state["Direction"].valid()) return;
+    using T = elysian::Direction;
+    auto type = registerType<T>(state, "Direction");
+}
+
+void registerCharacter(sol::state_view state) {
+    if (state["Character"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Character;
+    auto type = registerType<T, elysian::Component>(state, "Character");
+    type["faceEntity"] = method<T, void(Entity&)>(&T::faceEntity);
+    type["setFaceDir"] = method<T, void(Direction::DIR4)>(&T::setFaceDir);
+    type["moveByForce"] = method<T, void(const GYVector2&)>(&T::moveByForce);
+    type["setAnimate"] = method<T, void(bool)>(&T::setAnimate);
+    type["isFacing"] = method<T, bool(const Entity&) const>(&T::isFacing);
+    type["getFaceDir"] = method<T, Direction::DIR4() const>(&T::getFaceDir);
+    type["getFaceDirVec"] = method<T, Vector2() const>(&T::getFaceDirVec);
+    type["setWalkForce"] = method<T, void(float)>(&T::setWalkForce);
+    type["setDashMultiplier"] = method<T, void(float)>(&T::setDashMultiplier);
+    type["setDashing"] = method<T, void(bool)>(&T::setDashing);
+    type["getHeldEntity"] = method<T, Entity*() const>(&T::getHeldEntity);
+    type["getLastMoveDir"] = method<T, const GYVector3&() const>(&T::getLastMoveDir);
+    type["getWalkForce"] = method<T, float() const>(&T::getWalkForce);
+    type["getDashMultiplier"] = method<T, float() const>(&T::getDashMultiplier);
+    type["getEntityForceDampFactor"] = method<T, float()>(&T::getEntityForceDampFactor);
+    type["addState"] = method<T, void(const Character::ANIM_STATE)>(&T::addState);
+    type["addTempState"] = method<T, void(const Character::ANIM_STATE, const int, sol::protected_function)>(&T::addTempState);
+    type["removeState"] = method<T, void(const Character::ANIM_STATE)>(&T::removeState);
+    type["jump"] = method<T, void()>(&T::jump);
+    type["applyKnockbackForce"] = method<T, void(const GYVector3&)>(&T::applyKnockbackForce);
+    type["hasState"] = method<T, bool(const Character::ANIM_STATE) const>(&T::hasState);
+    type["getAnimNameFromStates"] = method<T, const char*(Direction::DIR4) const>(&T::getAnimNameFromStates);
+    property(type, "faceDir", method<T, Direction::DIR4() const>(&T::getFaceDir), method<T, void(Direction::DIR4)>(&T::setFaceDir));
+    property(type, "walkForce", method<T, float() const>(&T::getWalkForce), method<T, void(float)>(&T::setWalkForce));
+    property(type, "dashMultiplier", method<T, float() const>(&T::getDashMultiplier), method<T, void(float)>(&T::setDashMultiplier));
+    property(type, "holdingDampFactor", method<T, float()>(&T::getEntityForceDampFactor));
+    property(type, "heldEntity", method<T, Entity*() const>(&T::getHeldEntity));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Character", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

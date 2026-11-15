@@ -63,15 +63,6 @@
  \sa addForce, removeForce, applyForce
 */
 
-OOLUA_EXPORT_FUNCTIONS(RigidBodySystem,
-                       applyForce,
-                       addForce,
-                       removeForce,
-                       clearForces)
-OOLUA_EXPORT_FUNCTIONS_CONST(RigidBodySystem)
-
-
-
 /*!
     \qmltype ForceGenerator
     \since 1.6.0
@@ -103,10 +94,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(RigidBodySystem)
 */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(ForceGenerator)
-OOLUA_EXPORT_FUNCTIONS(ForceGenerator,
-                       setForceMask)
-
 /*!
     \qmltype GravityForceGenerator
     \since 1.6.0
@@ -123,10 +110,6 @@ OOLUA_EXPORT_FUNCTIONS(ForceGenerator,
  \qmlmethod void GravityForceGenerator::setAccel(GYVector3 accel)
 Sets the acceleration vector to be applied to each \l{RigidBody} every frame to be \a{accel}.
 */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(GravityForceGenerator)
-OOLUA_EXPORT_FUNCTIONS(GravityForceGenerator,
-                       setAccel)
 
 /*!
     \qmltype ImplosionForceGenerator
@@ -156,12 +139,6 @@ Entities will be sucked towards the center.
 Sets the region-of-effect to a circle whose origin is given by the focal Entity's position with the given \a{radius}.
 */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(ImplosionForceGenerator)
-OOLUA_EXPORT_FUNCTIONS(ImplosionForceGenerator,
-                       setFocalEntity,
-                       setForceMagnitude,
-                       setRadius)
-
 /*!
     \qmltype ExplosionForceGenerator
     \inherits ForceGenerator
@@ -188,8 +165,60 @@ Sets the region-of-effect to a circle whose origin is given by the focal Entity'
 */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(ExplosionForceGenerator)
-OOLUA_EXPORT_FUNCTIONS(ExplosionForceGenerator,
-                       setFocalEntity,
-                       setForceMagnitude,
-                       setRadius)
+
+namespace elysian::lua {
+using namespace elysian;
+using ForceGenerator = elysian::ForceGenerator;
+using GravityForceGenerator = elysian::GravityForceGenerator;
+using ImplosionForceGenerator = elysian::ImplosionForceGenerator;
+using ExplosionForceGenerator = elysian::ExplosionForceGenerator;
+using RigidBodySystem = elysian::RigidBodySystem;
+
+void registerForceGenerator(sol::state_view state) {
+    if (state["ForceGenerator"].valid()) return;
+    using T = elysian::ForceGenerator;
+    auto type = registerType<T>(state, "ForceGenerator");
+    type["setForceMask"] = method<T, void(BitMask32)>(&T::setForceMask);
+}
+
+void registerGravityForceGenerator(sol::state_view state) {
+    if (state["GravityForceGenerator"].valid()) return;
+    registerForceGenerator(state);
+    using T = elysian::GravityForceGenerator;
+    auto type = registerType<T, elysian::ForceGenerator>(state, "GravityForceGenerator");
+    type["new"] = sol::factories(factory<T>());
+    type["setAccel"] = method<T, void(const GYVector3&)>(&T::setAccel);
+}
+
+void registerImplosionForceGenerator(sol::state_view state) {
+    if (state["ImplosionForceGenerator"].valid()) return;
+    registerForceGenerator(state);
+    using T = elysian::ImplosionForceGenerator;
+    auto type = registerType<T, elysian::ForceGenerator>(state, "ImplosionForceGenerator");
+    type["new"] = sol::factories(factory<T>());
+    type["setFocalEntity"] = method<T, void(Entity*)>(&T::setFocalEntity);
+    type["setForceMagnitude"] = method<T, void(float)>(&T::setForceMagnitude);
+    type["setRadius"] = method<T, void(float)>(&T::setRadius);
+}
+
+void registerExplosionForceGenerator(sol::state_view state) {
+    if (state["ExplosionForceGenerator"].valid()) return;
+    registerForceGenerator(state);
+    using T = elysian::ExplosionForceGenerator;
+    auto type = registerType<T, elysian::ForceGenerator>(state, "ExplosionForceGenerator");
+    type["new"] = sol::factories(factory<T>());
+    type["setFocalEntity"] = method<T, void(Entity*)>(&T::setFocalEntity);
+    type["setForceMagnitude"] = method<T, void(float)>(&T::setForceMagnitude);
+    type["setRadius"] = method<T, void(float)>(&T::setRadius);
+}
+
+void registerRigidBodySystem(sol::state_view state) {
+    if (state["RigidBodySystem"].valid()) return;
+    using T = elysian::RigidBodySystem;
+    auto type = registerType<T>(state, "RigidBodySystem");
+    type["addForce"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(ForceGenerator*)>(&T::addForce), self, take<ForceGenerator>(arg0)); };
+    type["applyForce"] = method<T, void(ForceGenerator*)>(&T::applyForce);
+    type["removeForce"] = method<T, void(ForceGenerator*)>(&T::removeForce);
+    type["clearForces"] = method<T, void()>(&T::clearForces);
+}
+}

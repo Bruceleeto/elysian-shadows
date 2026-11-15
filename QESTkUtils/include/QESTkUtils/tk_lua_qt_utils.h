@@ -1,51 +1,33 @@
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
- * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
-
 #ifndef TK_LUA_QT_UTILS_H
 #define TK_LUA_QT_UTILS_H
-
-#include <oolua.h>
+#include <sol/sol.hpp>
 #include <QHash>
 #include <QVariant>
 #include <QString>
 
-namespace OOLUA {
+int sol_lua_push(sol::types<QString>, lua_State* state, const QString& value);
+QString sol_lua_get(sol::types<QString>, lua_State* state, int index, sol::stack::record& tracking);
+int sol_lua_push(sol::types<QVariant>, lua_State* state, const QVariant& value);
+QVariant sol_lua_get(sol::types<QVariant>, lua_State* state, int index, sol::stack::record& tracking);
 
-    namespace STRING {
-        //Template specialization allowing OOLUA to push a QString to Lua as a character array
-        template<>
-        inline bool push<QString>(lua_State* state, QString const& string) {
-            return OOLUA::push(state, string.toStdString().c_str());
-        }
-
-        //Template specialization allowing OOLUA to pull a character array from Lua as a QString
-        template<>
-        inline bool pull<QString>(lua_State* state, QString& string) {
-            string = luaL_tolstring(state, -1, nullptr); //stringify ANY type
-            lua_pop(state, 2);
-            return (!string.isNull())? true : false;
-        }
-    }
-
-    template<>
-    bool push<QVariant>(lua_State* state, QVariant const& variant);
-
-    template<>
-    bool pull<QVariant>(lua_State* state, QVariant& variant);
-
+template<class Handler>
+bool sol_lua_check(sol::types<QString>, lua_State*, int, Handler&&, sol::stack::record& tracking) {
+    tracking.use(1);
+    return true;
 }
-
-//Overload this bitch for  Lua QVariant-indexed hashtables
-inline size_t qHash(const QVariant& variant, size_t seed = 0) {
-    if(variant.typeId() == QMetaType::Bool) return qHash(variant.toBool(), seed);
-    if(variant.canConvert(QMetaType(QMetaType::Float))) return qHash(variant.toFloat(), seed);
-    return qHash(variant.toString(), seed);
+template<class Handler>
+bool sol_lua_check(sol::types<QVariant>, lua_State*, int, Handler&&, sol::stack::record& tracking) {
+    tracking.use(1);
+    return true;
 }
-
-
-
-#endif // TK_LUA_QT_UTILS_H
-
+inline size_t qHash(const QVariant& value, size_t seed = 0) {
+    if (value.typeId() == QMetaType::Bool) return qHash(value.toBool(), seed);
+    if (value.canConvert(QMetaType(QMetaType::Double))) return qHash(value.toDouble(), seed);
+    return qHash(value.toString(), seed);
+}
+Q_DECLARE_METATYPE(sol::object)
+#endif

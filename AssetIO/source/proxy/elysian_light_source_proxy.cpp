@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_light_source_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -134,28 +135,6 @@
  * Sets \a{factors} equal to the value of the \l{attenuation} property.
  * \sa attenuation, getAttenuation(), setAttenuation()
  */
-
-OOLUA_EXPORT_FUNCTIONS(LightAttrib,
-                       setAmbientColor,
-                       setDiffuseColor,
-                       setSpecularColor,
-                       setAttenuationFactors,
-                       setSpotExponent,
-                       getAmbient,
-                       getDiffuse,
-                       getSpecular,
-                       getAttenuation,
-                       getRadius,
-                       setDiffuse,
-                       setSpecular,
-                       setAmbient,
-                       setAttenuation)
-OOLUA_EXPORT_FUNCTIONS_CONST(LightAttrib,
-                             getAmbientColor,
-                             getDiffuseColor,
-                             getSpecularColor,
-                             getAttenuationFactors,
-                             getSpotExponent)
 
 /*!
     \qmltype LightSource
@@ -333,20 +312,74 @@ See \l{Types of Dynamic Lights} for detailed descriptions of each.
  * \sa spotCutoffAngle, getSpotCutoffAngle()
  */
 
-OOLUA_EXPORT_FUNCTIONS(LightSource,
-                       setLightType,
-                       setDirection,
-                       setSpotCutoffAngle,
-                       setAttrib,
-                       setShadowCaster,
-                     //  setRelativePos,
-                       setRelPos,
-                       getRelPos,
-                       getDir)
-OOLUA_EXPORT_FUNCTIONS_CONST(LightSource,
-                             getDirection,
-                             getSpotCutoffAngle,
-                             getLightType,
-                             getAttrib,
-                             isShadowCaster,
-                             getRelativePos)
+
+namespace elysian::lua {
+using namespace elysian;
+using LightAttrib = elysian::LightAttrib;
+using LightSource = elysian::LightSource;
+
+void registerLightAttrib(sol::state_view state) {
+    if (state["LightAttrib"].valid()) return;
+    using T = elysian::LightAttrib;
+    auto type = registerType<T>(state, "LightAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setAmbientColor"] = method<T, void(const GYVector4&)>(&T::setAmbientColor);
+    type["setDiffuseColor"] = method<T, void(const GYVector4&)>(&T::setDiffuseColor);
+    type["setSpecularColor"] = method<T, void(const GYVector4&)>(&T::setSpecularColor);
+    type["setAttenuationFactors"] = method<T, void(const GYVector3&)>(&T::setAttenuationFactors);
+    type["setSpotExponent"] = method<T, void(const float)>(&T::setSpotExponent);
+    type["getAmbientColor"] = method<T, void(GYVector4&) const>(&T::getAmbientColor);
+    type["getDiffuseColor"] = method<T, void(GYVector4&) const>(&T::getDiffuseColor);
+    type["getSpecularColor"] = method<T, void(GYVector4&) const>(&T::getSpecularColor);
+    type["getAttenuationFactors"] = method<T, void(GYVector3&) const>(&T::getAttenuationFactors);
+    type["setAmbient"] = method<T, void(const Vector4&)>(&T::setAmbient);
+    type["setDiffuse"] = method<T, void(const Vector4&)>(&T::setDiffuse);
+    type["setSpecular"] = method<T, void(const Vector4&)>(&T::setSpecular);
+    type["setAttenuation"] = method<T, void(const Vector3&)>(&T::setAttenuation);
+    type["getSpotExponent"] = method<T, float() const>(&T::getSpotExponent);
+    type["getAmbient"] = method<T, Vector4()>(&T::getAmbient);
+    type["getDiffuse"] = method<T, Vector4()>(&T::getDiffuse);
+    type["getSpecular"] = method<T, Vector4()>(&T::getSpecular);
+    type["getAttenuation"] = method<T, Vector3()>(&T::getAttenuation);
+    type["getRadius"] = method<T, float()>(&T::getRadius);
+    property(type, "diffuse", method<T, Vector4()>(&T::getDiffuse), method<T, void(const Vector4&)>(&T::setDiffuse));
+    property(type, "specular", method<T, Vector4()>(&T::getSpecular), method<T, void(const Vector4&)>(&T::setSpecular));
+    property(type, "attenuation", method<T, Vector3()>(&T::getAttenuation), method<T, void(const Vector3&)>(&T::setAttenuation));
+    property(type, "spotExponent", method<T, float() const>(&T::getSpotExponent), method<T, void(const float)>(&T::setSpotExponent));
+    property(type, "radius", method<T, float()>(&T::getRadius));
+    inheritProperties<T>();
+    finish<T>(type, "LightAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerLightSource(sol::state_view state) {
+    if (state["LightSource"].valid()) return;
+    registerComponent(state);
+    using T = elysian::LightSource;
+    auto type = registerType<T, elysian::Component>(state, "LightSource");
+    type["setLightType"] = method<T, void(const GY_LIGHT_TYPE)>(&T::setLightType);
+    type["setDirection"] = method<T, void(const GYVector3&)>(&T::setDirection);
+    type["setRelPos"] = method<T>(&T::setRelPos);
+    type["setSpotCutoffAngle"] = method<T, void(const float)>(&T::setSpotCutoffAngle);
+    type["setAttrib"] = method<T, void(std::shared_ptr<LightAttrib>)>(&T::setAttrib);
+    type["getAttrib"] = method<T, std::shared_ptr<LightAttrib>() const>(&T::getAttrib);
+    type["setShadowCaster"] = method<T>(&T::setShadowCaster);
+    type["getDirection"] = method<T, void(GYVector3&) const>(&T::getDirection);
+    type["getSpotCutoffAngle"] = method<T, float() const>(&T::getSpotCutoffAngle);
+    type["getLightType"] = method<T, GY_LIGHT_TYPE() const>(&T::getLightType);
+    type["isShadowCaster"] = method<T, bool() const>(&T::isShadowCaster);
+    type["getRelativePos"] = method<T, void(GYVector3&) const>(&T::getRelativePos);
+    type["getRelPos"] = method<T, Vector3()>(&T::getRelPos);
+    type["getDir"] = method<T, Vector3()>(&T::getDir);
+    property(type, "shadowCaster", method<T, bool() const>(&T::isShadowCaster), method<T>(&T::setShadowCaster));
+    property(type, "type", method<T, GY_LIGHT_TYPE() const>(&T::getLightType), method<T, void(const GY_LIGHT_TYPE)>(&T::setLightType));
+    property(type, "attrib", method<T, std::shared_ptr<LightAttrib>() const>(&T::getAttrib), method<T, void(std::shared_ptr<LightAttrib>)>(&T::setAttrib));
+    property(type, "relPos", method<T, Vector3()>(&T::getRelPos), method<T>(&T::setRelPos));
+    property(type, "dir", method<T, Vector3()>(&T::getDir));
+    property(type, "spotCutoffAngle", method<T, float() const>(&T::getSpotCutoffAngle), method<T, void(const float)>(&T::setSpotCutoffAngle));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "LightSource", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

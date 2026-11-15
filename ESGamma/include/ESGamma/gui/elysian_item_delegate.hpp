@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_ITEM_DELEGATE_HPP
 #define ELYSIAN_ITEM_DELEGATE_HPP
 
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/gui/elysian_item_model.hpp>
 #include <map>
 

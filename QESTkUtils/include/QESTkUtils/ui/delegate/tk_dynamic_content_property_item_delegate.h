@@ -109,8 +109,8 @@ inline void DynamicContentPropertyItemDelegate::addButton(QIcon icon, ButtonCall
 template<typename T>
 inline void DynamicContentPropertyItemDelegate::luaAddItemButtonCallback(ESTkStandardItem* item) {
     LuaTableFieldItem* luaItem = static_cast<LuaTableFieldItem*>(item);
-    const LuaVariant& table = luaItem->getTableData()->getTableRef();
-    table[table.getLength()+1].setVariant(new T);
+    const sol::object& table = luaItem->getTableData()->getTableRef();
+    elysian::lua::set(table, elysian::lua::length(table)+1, new T);
 }
 
 template<bool EmptyInvalid>

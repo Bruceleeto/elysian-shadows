@@ -8,7 +8,7 @@
 #define ELYSIAN_LUA_MANAGER_BASE_HPP
 
 #include <map>
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <functional>
 #include <type_traits>
 #include <AssetIO/utility/elysian_stl_algorithm.hpp>
@@ -21,7 +21,6 @@
 #if GYRO_PLATFORM == GYRO_PLATFORM_x86
 #	define ELYSIAN_LUA_DEBUG                            true
 #   define ELYSIAN_LUA_STACK_BALANCE_RECURSIVE_DEPTH     100
-//#	define OOLUA_DEBUG_CHECKS 1
 #else
 #	define ELYSIAN_LUA_DEBUG                            true
 #   define ELYSIAN_LUA_TASK_MONITOR_NAME                 "LuaVM"
@@ -35,13 +34,6 @@
 #define ELYSIAN_LUA_PROXY_TYPE_METAFIELD                "__typename"
 #define ELYSIAN_LUA_PROXY_DOWN_CAST_METAFIELD           "__downcast"
 
-#if 0
-#define ELYSIAN_LUA_PROXY_FIELD_READ_WRITE(f, g, s) { #f, #g, #s, nullptr, elysian::LuaTableFieldProxy::FLAG_NONE },
-#define ELYSIAN_LUA_PROXY_FIELD_READ_ONLY(f, g) { #f, #g, nullptr, nullptr, elysian::LuaTableFieldProxy::FLAG_NONE },
-
-#define ELYSIAN_LUA_PROXY_FIELD_GET_MACRO(_1, _2, _3, NAME, ...) NAME
-#define ELYSIAN_LUA_PROXY_FIELD(...) ELYSIAN_LUA_PROXY_FIELD_GET_MACRO(__VA_ARGS__, ELYSIAN_LUA_PROXY_FIELD_READ_WRITE, ELYSIAN_LUA_PROXY_FIELD_READ_ONLY)(__VA_ARGS__)
-#endif
 
 #define ELYSIAN_LUA_MANAGER_PROTECTED_CALL_WITH_SCRIPT(nargs, nresults, script) \
     (elysian::LuaManager::_protectedCall(nargs, nresults, script, __FILE__, __LINE__, __func__))
@@ -57,15 +49,11 @@ ELYSIAN_ASSET_TYPEDEF(LuaManager)
 
 namespace elysian {
 	
-    class LuaVariantBase;
-    using LuaVariant                = LuaVariantBase;
-    using LuaPair                   = std::pair<LuaVariantBase, LuaVariantBase>;
-
     class LuaManagerBase {
     protected:
 		
 		static std::map<const char *, LuaScript *, ltstr> _scripts;
-        static OOLUA::Script*       _mainState;
+        static sol::state           _mainState;
         static int                  _errorCode;
         static int                  _printSeverity;
 #ifdef ELYSIAN_LUA_DEBUG
@@ -104,7 +92,7 @@ namespace elysian {
 		static bool					uninitialize(void);
         static void                 updateFrameStats(void);
 		
-        static LuaVariant           exec(const char*const str, ...);
+        static sol::object           exec(const char*const str, ...);
 		static bool					runString(const char *const string);
 		static LuaScript*			loadScript(const char *const file);
 		static LuaBehaviorScript*	loadBehaviorScript(const char *const file);
@@ -134,44 +122,18 @@ namespace elysian {
         static const char*          getVariadicStringFromStack(void);
         static bool                 getMetatable(const int index);
         static void                 pushGlobalField(const char*const key);
-        static LuaVariant           getGlobalsTable(void);
-        static LuaVariant           getPrefab(const char*const name);
-        static const char*          getPrefabName(const LuaVariant& v);
+        static sol::object           getGlobalsTable(void);
+        static sol::object           getPrefab(const char*const name);
+        static const char*          getPrefabName(const sol::object& v);
 
-        static bool                 saveTable(const LuaVariant& v, const char*const filename);
+        static bool                 saveTable(const sol::object& v, const char*const filename);
 
-        // NEWFANGLED-ASS STACK API
-        static void                 push(const LuaVariant& variant);
-        static void                 push(const char*const string); //gracefully push nil for nullptr
-        static void                 push(const std::nullptr_t null);
-        static void                 push(void); //doesn't do shit
-        static void                 push(const char number);
-        static void                 push(const int number);
-        static void                 push(const unsigned number);
-        static void                 push(const float number);
-        static void                 push(const double number);
-        static void                 push(const bool boolean);
-        static void                 push(void*const lightUd);
-                                    template<typename T>
-        static void                 push(T*const userdata);
-        static void                 push(OOLUA::Lua_table_ref& tableRef);
-        static void                 push(OOLUA::Lua_func_ref& funcRef);
-        static void                 push(const std::initializer_list<LuaPair>& pairs);
-                                    template<typename... Upvalues>
-        static void                 push(const lua_CFunction funcPtr);
-                                    template<typename Ret, typename... Args>
-        static void                 push(const std::function<Ret(Args...)>& closure);
-                                    template<typename First, typename... Rest, typename = typename std::enable_if<(bool)sizeof...(Rest)>::type> //disable for single arugments to avoid ambiguity
-        static void                 push(First&& first, Rest&&... rest);
-                                    template<typename Ret, typename... Args>
-        static void                 push(Ret (*const f)(Args...));
-                                    template<typename Ret, typename C, typename... Args>
-        static void                 push(Ret (C::*const mf)(Args...));
-                                    template<typename T, typename = typename std::enable_if<(!std::is_enum<T>::value/* && !std::is_empty<T>::value*/)>::type>
-        static void                 push(const T lambda);
-
-                                    template<typename T>
-        static T                    pull(void);
+        template<class... A> static void push(A&&... args) {
+            sol::stack::multi_push(_mainState, std::forward<A>(args)...);
+        }
+        template<class T> static T pull() {
+            if constexpr (!std::is_void_v<T>) return sol::stack::pop<T>(_mainState);
+        }
 
 	};
 
@@ -190,39 +152,37 @@ namespace elysian {
     //Assumes actual function is already at the top of the stack!
     template<typename RType, typename... PTypes>
     inline RType LuaManagerBase::_callFunction(LuaScript* script, PTypes&&... parameters) {
-        const unsigned argc = sizeof...(PTypes);
-        const unsigned retc = (unsigned)!std::is_void<RType>::value;
-
-        push(std::forward<PTypes>(parameters)...);
-        if(!_protectedCall(argc, retc, script, nullptr, -1, nullptr) && retc) {
-            /* If a nonvoid function fails, we still have to return something to the calling function,
-             * or we're going to start pulling other shit off the stack.
-             * Put nil on the stack to simulate error return type. */
-            lua_pushnil(*_mainState);
+        auto function = sol::stack::pop<sol::protected_function>(_mainState);
+        auto result = function(std::forward<PTypes>(parameters)...);
+        if (!result.valid()) {
+            const sol::error error = result;
+            luaPrint(error.what(), Debug::LOG_ERROR);
+            if (script) script->setError();
+            return RType();
         }
-        return pull<RType>();
+        if constexpr (std::is_void_v<RType>) return;
+        else if constexpr (std::is_same_v<RType, const char*>) {
+            static std::string buffer;
+            auto value = result.template get<sol::object>();
+            if (!value.valid()) return nullptr;
+            buffer = lua::string(value);
+            return buffer.c_str();
+        } else return result.template get<RType>();
     }
 
     template<typename RType, typename... PTypes>
-    inline RType LuaManagerBase::callGlobalFunction(const char*const funcName, LuaScript* script, PTypes&&... parameters) {
-
-        //Retrieve function and place ontop of the stack.
-        if(script) { //if script is provided, check _ENV first and let it defer to _G
-            lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, script->getEnvironRef());	//push ENV
-            lua_getfield(*_mainState, -1, funcName);								//get ENV.<function>()
-            lua_remove(*_mainState, -2);											//remove ENV
-        } else { //No _ENV provided, call _G directly
-            lua_getglobal(*_mainState, funcName);
-        }
-
-        //Check if function is on top of stack.
-        if(lua_type(*_mainState, -1) != LUA_TFUNCTION) {
-            errprintf("LuaManager::callGlobalFunction(%s): Function not found! %s type is on stack, instead!", funcName, lua_typename(*_mainState, -1));
+    inline RType LuaManagerBase::callGlobalFunction(const char* name, LuaScript* script, PTypes&&... parameters) {
+        sol::object function;
+        if (script) {
+            sol::table environment(_mainState, sol::ref_index(script->getEnvironRef()));
+            function = environment[name];
+        } else function = _mainState[name];
+        if (function.get_type() != sol::type::function) {
+            errprintf("Lua function '%s' was not found", name);
             return RType();
-        } else {
-            //Invoke next template to push args, make the call, and pop retVal
-            return _callFunction<RType>(script, std::forward<PTypes>(parameters)...);
         }
+        function.push();
+        return _callFunction<RType>(script, std::forward<PTypes>(parameters)...);
     }
 
 inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, LuaScript *script, const char* file, int line, const char* func) {
@@ -232,17 +192,17 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
 #ifdef ELYSIAN_LUA_DEBUG
         bool success = true;
         if(script) {
-            lua_pushcfunction(*_mainState, &LuaManagerBase::_traceBack);
-            lua_insert(*_mainState, 1);
+            lua_pushcfunction(_mainState, &LuaManagerBase::_traceBack);
+            lua_insert(_mainState, 1);
         }
         _taskMonitor.resume();
-        if((_errorCode = lua_pcall(*_mainState, nargs, nresults, script? 1 : 0)) != 0) {
+        if((_errorCode = lua_pcall(_mainState, nargs, nresults, script? 1 : 0)) != 0) {
             DbgEvent event("Lua Exception");
             if(script) {
-                lua_remove(*_mainState, 1);
+                lua_remove(_mainState, 1);
                 script->setError();
                 _cStackDump();
-                lua_remove(*_mainState, lua_gettop(*_mainState));		//clean up stack after reesting
+                lua_remove(_mainState, lua_gettop(_mainState));		//clean up stack after reesting
                 //_envDump(script);
                 dumpStats();
                 if(file && func) {
@@ -259,18 +219,18 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
                     DbgEvent event("C/++ Caller Info");
                     dbgprintf("%s:%d (function: %s)", file, line, func);
                 }
-                //lua_remove(*_mainState, 1);
+                //lua_remove(_mainState, 1);
                 //_cStackDump();
                 //dumpStats();
             }
             success = false;
         } else {
             if(script)
-                lua_remove(*_mainState, 1); //remove c traceback function from bottom of stack
+                lua_remove(_mainState, 1); //remove c traceback function from bottom of stack
         }
 
 #else	//ain't NOBODY got time for debug overhead!
-        lua_call(*_mainState, nargs, nresults);
+        lua_call(_mainState, nargs, nresults);
 #endif
         _taskMonitor.pause();
         return success; // shit was just fine
@@ -278,7 +238,7 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
 
 
     inline int LuaManagerBase::stackDepth(void) {
-        return _mainState->stack_count();
+        return lua_gettop(_mainState);
     }
 
     inline void LuaManagerBase::stackBalanceBegin(void) {
@@ -295,12 +255,12 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
     }
 
     inline bool LuaManagerBase::getMetatable(const int index) {
-        return (bool)lua_getmetatable(*_mainState, index);
+        return (bool)lua_getmetatable(_mainState, index);
     }
 
     inline void LuaManagerBase::pushGlobalField(const char * const key) {
-        lua_getglobal(*_mainState, key);
-        GY_ASSERT(!lua_isnil(*_mainState, -1));
+        lua_getglobal(_mainState, key);
+        GY_ASSERT(!lua_isnil(_mainState, -1));
     }
 
 
@@ -321,247 +281,12 @@ inline bool LuaManagerBase::_protectedCall(const int nargs, const int nresults, 
 
 
 
-    //===== STACK PUSH OPERATIONS ======
-
-    inline void LuaManagerBase::push(void) {} //here fore conditionless empty template parameter-pack expansion for pushing args.
-
-    inline void LuaManagerBase::push(const char*const string) {
-        if(string) lua_pushstring(*_mainState, string);
-        else lua_pushnil(*_mainState);
-    }
-
-    inline void LuaManagerBase::push(const std::nullptr_t) {
-        lua_pushnil(*_mainState);
-    }
-
-    inline void LuaManagerBase::push(const char number) {
-        lua_pushnumber(*_mainState, number);
-    }
-
-    inline void LuaManagerBase::push(const int number) {
-        lua_pushnumber(*_mainState, number);
-    }
-
-    inline void LuaManagerBase::push(const unsigned int number) {
-        lua_pushnumber(*_mainState, number);
-    }
-
-    inline void LuaManagerBase::push(const float number) {
-        lua_pushnumber(*_mainState, number);
-    }
-
-    inline void LuaManagerBase::push(const double number) {
-        lua_pushnumber(*_mainState, number);
-    }
-
-    inline void LuaManagerBase::push(const bool boolean) {
-        lua_pushboolean(*_mainState, boolean);
-    }
-
-    inline void LuaManagerBase::push(void*const lightUd) {
-        lua_pushlightuserdata(*_mainState, lightUd);
-    }
-
-    inline void LuaManagerBase::push(OOLUA::Lua_table_ref& tableRef) {
-        OOLUA::push(*_mainState, tableRef);
-    }
-
-    inline void LuaManagerBase::push(OOLUA::Lua_func_ref& funcRef) {
-        OOLUA::push(*_mainState, funcRef);
-    }
-
-    template<typename T>
-    inline void LuaManagerBase::push(T* const userdata) {
-        OOLUA::push(*_mainState, userdata);
-    }
-
-    template<typename First,
-             typename... Rest,
-             typename>
-    inline void LuaManagerBase::push(First&& first, Rest&&... rest) {
-        push(std::forward<First>(first));
-        push(std::forward<Rest>(rest)...);
-    }
-
-
-    template<typename... Upvalues>
-    inline void LuaManagerBase::push(const lua_CFunction funcPtr/*, Upvalues... upvalues*/) {
-        //push(upvalues...);
-        lua_pushcclosure(*_mainState, funcPtr, 0/*sizeof...(Upvalues)*/);
-    }
-
-
-
-
-    template<typename Ret, typename... Args>
-    inline void LuaManagerBase::push(const std::function<Ret(Args...)>& closure) {
-
-        auto _lambdaCFunctionWrapper = [](lua_State* vm) {
-            std::tuple<Args...> argTuple;
-
-            //pull function arguments off of stack
-            foreach_in_tuple_reverse(argTuple, [&](auto&& element) {
-                OOLUA::pull(vm, element);
-                //element = pull<decltype(element)>();
-            });
-
-            //extract std::function pointer from lightuserdata in first upvalue
-            lua_pushvalue(vm, lua_upvalueindex(1));
-            lua_rawgeti(vm, -1, 1);
-            auto* function = static_cast<const std::function<Ret(Args...)>*>(LuaManagerBase::pull<void*>());
-            lua_pop(vm, 1);
-
-            //invoke function with tuple as arguments
-            const Ret retVal = forward_tuple(*function, argTuple);
-
-            //push function result back onto stack for return
-            LuaManagerBase::push(retVal);
-            return 1;
-        };
-
-#if 0
-
-
-        LuaVariantBase upValue = {
-            { 1, (void*)new std::function<Ret(Args...)>(closure) },
-            { "__gc", (lua_CFunction)[](lua_State*) {
-                  LuaVariantBase t = LuaVariantBase::fromStack();
-                    GY_ASSERT(t.getType() == LUA_TTABLE);
-                    dbgprintf("LUA LAMBDA FUNCTION FINALIZER INVOKED, NOT A MEMORY LEAK!!!111");
-                    delete static_cast<std::function<Ret(Args...)>*>(t[1]->getValue<void*>());
-                    return 0;
-                }
-            }
-        };
-
-        upValue.setMetatable(upValue);
-        upvalue.push();
-
-#endif
-
-        lua_newtable(*_mainState);
-        const auto *f = new std::function<Ret(Args...)>(closure);
-        lua_pushlightuserdata(*_mainState, (void*)f);
-        lua_rawseti(*_mainState, -2, 1);
-
-        //push as a regular C function, with lambda table as upvalue
-        //push((lua_CFunction)&_callLambda<Ret, Args...>, upValue);
-        lua_pushcclosure(*_mainState, (lua_CFunction)_lambdaCFunctionWrapper, 1);
-
-    }
-
-
-    template<typename Ret, typename... Args>
-    inline void LuaManagerBase::push(Ret (*const f)(Args...)) {
-        auto _cFunctionWrapper = [](lua_State* vm) {
-            std::tuple<Args...> argTuple;
-
-            //pull function arguments off of stack
-            foreach_in_tuple_reverse(argTuple, [&](auto&& element) {
-                OOLUA::pull(vm, element);
-            });
-
-            //grab actual function pointer from first upvalue index
-            lua_pushvalue(vm, lua_upvalueindex(1));
-            Ret (*function)(Args...) = LuaManagerBase::pull<void*>();
-
-            //invoke function with tuple as arguments
-            const Ret retVal = forward_tuple(*function, argTuple);
-
-            //push function result back onto stack for return
-            LuaManagerBase::push(retVal);
-            return 1;
-        };
-
-        /* Have to push actual function pointer as upvalue index, since same template is instantiated for every function with this signature.
-         * Additional state is introduced due to lack of uniqueness, but what-the-fuck-ever. */
-        lua_pushlightuserdata(*_mainState, (void*)f);
-        lua_pushcclosure(*_mainState, (lua_CFunction)_cFunctionWrapper, 1);
-    }
-
-
-    template<typename Ret, typename C, typename... Args>
-    inline void LuaManagerBase::push(Ret (C::*const mf)(Args...)) {
-        auto _cppFunctionWrapper = [](lua_State* vm) {
-            std::tuple<C*, Args...> argTuple;
-
-            //pull function arguments off of stack
-            foreach_in_tuple_reverse(argTuple, [&](auto&& element) {
-                OOLUA::pull(vm, element);
-            });
-
-            //grab actual function pointer from first upvalue index
-            lua_pushvalue(vm, lua_upvalueindex(1));
-            Ret (C::*const memFunc)(Args...) = LuaManagerBase::pull<void*>();
-
-            //invoke function with tuple as arguments
-            const Ret retVal = forward_tuple(*memFunc, argTuple);
-
-            //push function result back onto stack for return
-            LuaManagerBase::push(retVal);
-            return 1;
-        };
-
-        /* Have to push actual function pointer as upvalue index, since same template is instantiated for every function with this signature.
-         * Additional state is introduced due to lack of uniqueness, but what-the-fuck-ever. */
-        lua_pushlightuserdata(*_mainState, (void*)mf);
-        lua_pushcclosure(*_mainState, (lua_CFunction)_cppFunctionWrapper, 1);
-
-
-    }
-
-    template<typename T, typename>
-    inline void LuaManagerBase::push(const T lambda) {
-        push(make_function(lambda));
-    }
-
-
-    //====== STACK PULL OPERATIONS =====
-
-    template<typename T>
-    inline T LuaManagerBase::pull(void) {
-        T value;
-        OOLUA::pull(*_mainState, value);
-        return value;
-    }
-
-    template<> //empty for orthogonality with functions not returning values
-    inline void LuaManagerBase::pull<void>(void) {}
-
-    template<>
-    inline void* LuaManagerBase::pull<void*>(void) { //specialization because fucking OOLua does not pop from stack after pulling void*
-        void* lud;
-        OOLUA::pull(*_mainState, lud);
-        lua_pop(*_mainState, 1);
-        return lud;
-    }
-
-    template<>
-    inline const char* LuaManagerBase::pull<const char*>(void) {
-        static char _internalBuffer[GYRO_PRINTF_BUFFER_SIZE]; //gay way of handling this, but only way if we want to return value
-
-        if(lua_isnil(*_mainState, -1)) {    //allow for nil to convert to a NULL C string ptr
-            lua_pop(*_mainState, 1);
-           return nullptr;
-        } else {
-            size_t len;
-            const char* str = lua_tolstring(*_mainState, -1, &len);
-            if(str) {
-                if(len < GYRO_PRINTF_BUFFER_SIZE) {
-                    strcpy(_internalBuffer, str);
-                } else {
-                    errprintf("String on Lua stack is too big to be pulled into C++ buffer [%d/%d]!", len, GYRO_PRINTF_BUFFER_SIZE);
-                    strncpy(_internalBuffer, str, GYRO_PRINTF_BUFFER_SIZE-1);
-                    _internalBuffer[GYRO_PRINTF_BUFFER_SIZE-1] = '\0';
-                }
-                lua_pop(*_mainState, 1);
-                return _internalBuffer; //you better copy this shit asap!!!!
-            } else {
-                errprintf("Expected to pull string-compatible value from Lua stack, got '%s' instead.", lua_typename(*_mainState, -1));
-                return nullptr;
-            }
-        }
+    template<> inline const char* LuaManagerBase::pull<const char*>() {
+        static std::string buffer;
+        auto value = sol::stack::pop<sol::object>(_mainState);
+        if (!value.valid()) return nullptr;
+        buffer = lua::string(value);
+        return buffer.c_str();
     }
 }
-
 #endif

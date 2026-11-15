@@ -47,13 +47,7 @@ defines += GYRO_PLATFORM GYRO_PLATFORM_Qt \
 falsehoods += ELYSIAN_ENGINE
 
 
-Cpp.ignoretokens +=   ELYSIAN_LUA_PROXY_FIELDS_BEGIN \
-	ELYSIAN_LUA_PROXY_FIELD \
-	ELYSIAN_LUA_PROXY_FIELDS_END \
-	ELYSIAN_LUA_PROXY_ARRAY_FIELD \
-	ELYSIAN_LUA_PROXY_FIELD_EXPORT \
-	ELYSIAN_LUA_PROXY_VIRTUAL_TABLE_FIELD_BEGIN \
-	Q_SIGNALS \
+Cpp.ignoretokens += Q_SIGNALS \
 	Q_SLOTS \
 	Q_EMIT
 
@@ -61,7 +55,6 @@ headerdirs  += ../../AssetIO/include \
 	../../ESGamma/include \
 	./include \
 	../../libGyro/include \
-	../../OOLua/include \
 	../../Spine/include
 
 

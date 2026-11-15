@@ -62,7 +62,7 @@ public:
     virtual void                setCurrentSelection(const bool /*val*/, const Selectable*const other=nullptr);
     virtual bool                isTemporary(void) const;
     virtual QAbstractItemModel* getModel(void) const = 0;
-   // virtual LuaVariant          getLuaRef(void) const { return LuaVariant(); }
+   // virtual sol::object          getLuaRef(void) const { return elysian::lua::make(); }
 };
 
 

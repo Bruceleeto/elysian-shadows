@@ -10,9 +10,9 @@
 #include <ESToolkit/ESGamma/tk_lua_wrappers.h>
 
 void TkBlendMode::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     auto* typeDelegate = new EnumDropdownPropertyItemDelegate({
        "BLEND_ZERO", "BLEND_ONE", "BLEND_SRC_COLOR", "BLEND_ONE_MINUS_SRC_COLOR", "BLEND_DST_COLOR", "BLEND_ONE_MINUS_DST_COLOR",
@@ -21,13 +21,13 @@ void TkBlendMode::initializeDelegates(void) {
        "BLEND_SRC1_COLOR", "BLEND_ONE_MINUS_SRC1_COLOR", "BLEND_SRC1_ALPHA", "BLEND_ONE_MINUS_SRC1_ALPHA"
     });
 
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, "srcFactor");
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, "srcFactor");
 
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, "dstFactor");
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, "dstFactor");
 
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 
 }

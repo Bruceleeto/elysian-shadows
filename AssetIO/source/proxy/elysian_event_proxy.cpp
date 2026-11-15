@@ -63,11 +63,6 @@
  * \sa {EventTarget::TYPE}
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(EventTarget,
-                             getEventTargetType)
-OOLUA_EXPORT_FUNCTIONS(EventTarget)
-
-
 /*!
     \qmltype EventObserver
     \since 1.6.1
@@ -96,8 +91,6 @@ OOLUA_EXPORT_FUNCTIONS(EventTarget)
 
     \sa Event, LuaEvent, EventObserver, EventSystem
 */
-
-OOLUA_EXPORT_NO_FUNCTIONS(EventObserver)
 
 /*!
     \qmltype Event
@@ -322,16 +315,6 @@ OOLUA_EXPORT_NO_FUNCTIONS(EventObserver)
  * \sa {Event::STATE}
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Event,
-                             getEventType,
-                             getEventState)
-
-OOLUA_EXPORT_FUNCTIONS(Event,
-                       setEventState)
-
-
-
-
 /*!
     \qmltype LuaEvent
     \since 1.6.1
@@ -352,7 +335,7 @@ OOLUA_EXPORT_FUNCTIONS(Event,
     It's up to the user to implement any sort of additional typing used to
     differentiate between different types of LuaEvent objects.
     Any additional event subtyping is to be handled by the script itself
-    as part of the LuaVariant table information. For example, each
+    as part of the sol::object table information. For example, each
     LuaEvent table may contain an additional "subType" field that is
     accessed by the handler object to determine additional information
     about the event being processed, and a table of the diffrent supported
@@ -372,27 +355,61 @@ OOLUA_EXPORT_FUNCTIONS(Event,
  */
 
 /*!
- * \qmlmethod void LuaEvent::LuaEvent(LuaVariant v)
+ * \qmlmethod void LuaEvent::LuaEvent(sol::object v)
  *
  * Constructs a LuaEvent object containing the variant \a{v}.
  * \sa setVariant, getVariant
  */
 /*!
- * \qmlmethod LuaVariant LuaEvent::getVariant()
+ * \qmlmethod sol::object LuaEvent::getVariant()
  *
  * Returns the custom variant data stored within the LuaEvent.
  * \sa setVariant
  */
 /*!
- * \qmlmethod void LuaEvent::setVariant(LuaVariant v)
+ * \qmlmethod void LuaEvent::setVariant(sol::object v)
  *
  * Sets the custom variant data stored within the LuaEvent to \a{v}.
  * \sa getVariant
  */
 
-OOLUA_EXPORT_FUNCTIONS(LuaEvent,
-                       setVariant)
 
-OOLUA_EXPORT_FUNCTIONS_CONST(LuaEvent,
-                             getVariant)
+namespace elysian::lua {
+using namespace elysian;
+using EventTarget = elysian::EventTarget;
+using EventObserver = elysian::EventObserver;
+using Event = elysian::Event;
+using LuaEvent = elysian::LuaEvent;
 
+void registerEventTarget(sol::state_view state) {
+    if (state["EventTarget"].valid()) return;
+    using T = elysian::EventTarget;
+    auto type = registerType<T>(state, "EventTarget");
+    type["getEventTargetType"] = method<T>(&T::getEventTargetType);
+}
+
+void registerEventObserver(sol::state_view state) {
+    if (state["EventObserver"].valid()) return;
+    using T = elysian::EventObserver;
+    auto type = registerType<T>(state, "EventObserver");
+}
+
+void registerEvent(sol::state_view state) {
+    if (state["Event"].valid()) return;
+    using T = elysian::Event;
+    auto type = registerType<T>(state, "Event");
+    type["getEventType"] = method<T>(&T::getEventType);
+    type["getEventState"] = method<T>(&T::getEventState);
+    type["setEventState"] = method<T>(&T::setEventState);
+}
+
+void registerLuaEvent(sol::state_view state) {
+    if (state["LuaEvent"].valid()) return;
+    registerEvent(state);
+    using T = elysian::LuaEvent;
+    auto type = registerType<T, elysian::Event>(state, "LuaEvent");
+    type["new"] = sol::factories(factory<T>(), factory<T, sol::object>());
+    type["getVariant"] = method<T>(&T::getVariant);
+    type["setVariant"] = method<T>(&T::setVariant);
+}
+}

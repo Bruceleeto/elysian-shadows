@@ -11,7 +11,7 @@
 #include <libGyro/gyro_video_api.h>
 #include <AssetIO/crtp/elysian_component.hpp>
 #include <ESGamma/crtp/elysian_camera_system.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 
 #define ELYSIAN_LIGHT_SOURCE_ATTENUATION_EPSILON	0.1f
 
@@ -19,22 +19,17 @@ namespace elysian {
 
     class LightAttrib:
             private GYLightProperties,
-            public LuaTableProxy<LightAttrib>
+            public LuaObject<LightAttrib>
     {
+    public: using LuaObjectType = LuaObject<LightAttrib>;
+
 		friend class LightSystem;
         friend class LightSourceBase;
         friend LightSource;
 
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            //ELYSIAN_LUA_PROXY_FIELD(ambient,        getAmbient,         setAmbient)
-            ELYSIAN_LUA_PROXY_FIELD(diffuse,        getDiffuse,         setDiffuse)
-            ELYSIAN_LUA_PROXY_FIELD(specular,       getSpecular,        setSpecular)
-            ELYSIAN_LUA_PROXY_FIELD(attenuation,    getAttenuation,     setAttenuation)
-            ELYSIAN_LUA_PROXY_FIELD(spotExponent,   getSpotExponent,    setSpotExponent)
-            ELYSIAN_LUA_PROXY_FIELD(radius,         getRadius)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         LightAttrib(void):
             GYLightProperties(defaultProperties) {}
@@ -80,8 +75,10 @@ namespace elysian {
     class LightSourceBase:
             public Component,
             private GYLightSource,
-            public LuaTableProxy<LightSourceBase, LightSource>
+            public LuaObject<LightSourceBase, LightSource>
     {
+    public: using LuaObjectType = LuaObject<LightSourceBase, LightSource>;
+
         friend class    LightSystem;
         friend class    Engine;
         friend          LightSource;
@@ -91,14 +88,7 @@ namespace elysian {
         GYVector3                       _relPos         = { 0.0f, 0.0f, 0.0f };
         bool                            _shadowCaster   = false;
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(shadowCaster,       isShadowCaster,     setShadowCaster)
-            ELYSIAN_LUA_PROXY_FIELD(type,               getLightType,       setLightType)
-            ELYSIAN_LUA_PROXY_FIELD(attrib,             getAttrib,          setAttrib)
-            ELYSIAN_LUA_PROXY_FIELD(relPos,             getRelPos,          setRelPos)
-            ELYSIAN_LUA_PROXY_FIELD(dir,                getDir)
-            ELYSIAN_LUA_PROXY_FIELD(spotCutoffAngle,    getSpotCutoffAngle, setSpotCutoffAngle)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                             LightSourceBase(void) = default;
                             LightSourceBase(Entity& entity, LightSourceBase*const prefab=nullptr);

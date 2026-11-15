@@ -27,8 +27,6 @@ using namespace std;
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(AreaBase)
-
 unsigned AreaBase::getAuxOggTrackCount(void) const { return 2; }
 unsigned AreaBase::getBgmOggTrackCount(void) const { return 3; }
 
@@ -135,7 +133,7 @@ void AreaBase::removeEntity(Entity *entity) {
 
 /*
 Entity*     getInactiveEntityByIndex(const unsigned index) const;
-void        setInactiveEntityByIndex(const unsigned index, OOLUA::Lua_table_ref valueTable);
+void        setInactiveEntityByIndex(const unsigned index, sol::object valueTable);
 */
 /*
 AreaBase::AreaBase(void) {
@@ -260,7 +258,7 @@ bool AreaBase::load(const char *const dir) {
     assert(level);
 
     bool success = true;
-    OOLUA::Lua_table_ref ref;
+    sol::object ref;
 
     dbgprintf("Area::Load(%s)", dir);
     dbgpush();
@@ -286,7 +284,7 @@ bool AreaBase::load(const char *const dir) {
     dbgprintf("Deserializing area_table.lua");
     dbgpush();
     if(runScriptSandbox(buffer, nullptr, 1)) {
-        ref.pull(*_mainState);
+        ref = elysian::lua::fromStack();
         if(ref.valid()) {
             fromTable(ref);
         } else {
@@ -318,7 +316,7 @@ bool AreaBase::save(const char *const dir) {
     strcpy(buffer, dir);
     strcat(buffer, ELYSIAN_AREA_TABLE_PATH);
 
-    success &= LuaManager::saveTable(LuaVariant::fromWeakRef(getLuaTableRef()), buffer);
+    success &= LuaManager::saveTable(getLuaObject(), buffer);
 
     dbgpop();
     return success;

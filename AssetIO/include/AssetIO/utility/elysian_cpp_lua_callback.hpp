@@ -1,280 +1,63 @@
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
- * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
-
 #ifndef ELYSIAN_CPP_LUA_CALLBACK_HPP
 #define ELYSIAN_CPP_LUA_CALLBACK_HPP
-
-#include <functional>
-#include <AssetIO/utility/elysian_functional.hpp>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
+#include <cstdio>
+#include <variant>
 
 namespace elysian {
-
-template<typename Ret, typename... Args>
-class CppLuaCallback;
-
-template<typename Ret, typename... Args>
-bool operator==(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t);
-template<typename Ret, typename... Args>
-bool operator==(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v);
-template<typename Ret, typename... Args>
-bool operator!=(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t);
-template<typename Ret, typename... Args>
-bool operator!=(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v);
-
-    template<typename Ret, typename... Args>
-    class CppLuaCallback {
-
-        friend bool operator == <>(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t);
-        friend bool operator == <>(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v);
-        friend bool operator != <>(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t);
-        friend bool operator != <>(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v);
-    public:
-
-        using           StdCallback = std::function<Ret(Args...)>;
-
-        enum class Type {
-                        Null,
-                        Cpp,
-                        Lua
-        };
-
-                        CppLuaCallback(void);
-
-                        template<typename F,
-                                 typename = enable_if_t<!std::is_same<remove_reference_t<F>, LuaVariant>::value, void>,
-                                 typename = enable_if_t<is_callable<std::remove_reference_t<F>, Ret(Args...) const>::value, F>>
-                        CppLuaCallback(F&& f);
-
-                        template<typename F,
-                                 typename = enable_if_t<std::is_same<remove_reference_t<F>, LuaVariant>::value
-                                 /* || is_callable<std::remove_reference_t<F>, LuaVariant(Args...) const>::value*/, F>>
-                        CppLuaCallback(F&& f);
-
-                        CppLuaCallback(std::nullptr_t);
-
-                        CppLuaCallback(const CppLuaCallback& rhs);
-                        CppLuaCallback(CppLuaCallback&& rhs);
-
-                        ~CppLuaCallback(void);
-
-                        template<typename F>
-        CppLuaCallback& operator=(F&& rhs);
-
-        CppLuaCallback& operator=(std::nullptr_t);
-
-        explicit        operator bool(void) const;
-
-        template <typename... _Args>
-        Ret             operator()(_Args&&... args) const;
-
-        void            setValue(std::nullptr_t);
-        void            setValue(LuaVariant v);
-                        template<typename F,
-                                 typename meta::is_callable<F>::value,
-                                 typename std::enable_if_t<!std::is_same<F, CppLuaCallback&>::value, void>>
-        void            setValue(F&& f);
-
-        StdCallback     getCppCallback(void) const;
-        LuaVariant      getLuaCallback(void) const;
-
-        bool            isNull(void) const;
-        Type            getType(void) const;
-    private:
-
-        void            _setType(Type type);
-
-        union Union {
-        public:
-            Union(void): lua() {}
-            Union(const StdCallback& callback): cpp(callback) {}
-            Union(StdCallback&& callback):      cpp(callback) {}
-            Union(const LuaVariant& variant):   lua(variant) {}
-            Union(LuaVariant&& variant):        lua(variant) {}
-            ~Union(void)                                    {}
-            StdCallback cpp;
-            LuaVariant  lua;
-        }               _union;
-
-        Type            _type = Type::Null;
-
-    };
-
-
-
-
-
-
-
-    //=========INLINEZ=========
-
-    template<typename Ret, typename... Args>
-    CppLuaCallback<Ret, Args...>::CppLuaCallback(void):
-        _type(Type::Null)
-    {}
-
-    template<typename Ret, typename... Args>
-    template<typename F, typename, typename>
-    inline CppLuaCallback<Ret, Args...>::CppLuaCallback(F&& f):
-        _union(std::forward<F>(f)),
-        _type(Type::Cpp)
-    {}
-
-    template<typename Ret, typename... Args>
-    template<typename F, typename>
-    inline CppLuaCallback<Ret, Args...>::CppLuaCallback(F&& f):
-        _union(std::forward<F>(f)),
-        _type(Type::Lua) {}
-
-    template<typename Ret, typename... Args>
-    inline CppLuaCallback<Ret, Args...>::CppLuaCallback(nullptr_t):
-        CppLuaCallback()
-    {}
-
-    template<typename Ret, typename... Args>
-    CppLuaCallback<Ret, Args...>::~CppLuaCallback(void) {
-        _setType(Type::Null);
+template<class Ret, class... Args> class CppLuaCallback {
+public:
+    using StdCallback = std::function<Ret(Args...)>;
+    enum class Type { Null, Cpp, Lua };
+private:
+    std::variant<std::monostate, StdCallback, sol::protected_function> _callback;
+public:
+    CppLuaCallback() = default;
+    CppLuaCallback(std::nullptr_t) {}
+    CppLuaCallback(const sol::object& value) { setValue(value); }
+    template<class F, std::enable_if_t<std::is_invocable_r_v<Ret, F, Args...> && !std::is_same_v<std::decay_t<F>, CppLuaCallback>, int> = 0>
+    CppLuaCallback(F&& callback) : _callback(StdCallback(std::forward<F>(callback))) {}
+    void setValue(std::nullptr_t) { _callback = std::monostate(); }
+    void setValue(const sol::object& value) {
+        if (value.valid() && value.get_type() == sol::type::function) _callback = value.as<sol::protected_function>();
+        else setValue(nullptr);
     }
-
-    template<typename Ret, typename... Args>
-    CppLuaCallback<Ret, Args...>::CppLuaCallback(const CppLuaCallback<Ret, Args...>& rhs):
-        _type(rhs._type)
-    {
-        if(rhs._type == Type::Cpp) _union.cpp = rhs._union.cpp;
-        else if(rhs._type == Type::Lua) _union.lua = rhs._union.lua;
+    template<class F, std::enable_if_t<std::is_invocable_r_v<Ret, F, Args...> && !std::is_same_v<std::decay_t<F>, CppLuaCallback>, int> = 0>
+    void setValue(F&& callback) { _callback = StdCallback(std::forward<F>(callback)); }
+    template<class F, std::enable_if_t<!std::is_same_v<std::decay_t<F>, CppLuaCallback>, int> = 0> CppLuaCallback& operator=(F&& value) { setValue(std::forward<F>(value)); return *this; }
+    CppLuaCallback& operator=(std::nullptr_t) { setValue(nullptr); return *this; }
+    Type getType() const { return static_cast<Type>(_callback.index()); }
+    bool isNull() const { return !static_cast<bool>(*this); }
+    explicit operator bool() const {
+        if (auto* cpp = std::get_if<StdCallback>(&_callback)) return static_cast<bool>(*cpp);
+        if (auto* lua = std::get_if<sol::protected_function>(&_callback)) return lua->valid();
+        return false;
     }
-
-    template<typename Ret, typename... Args>
-    CppLuaCallback<Ret, Args...>::CppLuaCallback(CppLuaCallback&& rhs):
-        _type(rhs._type)
-    {
-        if(rhs._type == Type::Cpp) {
-            _union.cpp = rhs._union.cpp;
-        } else if(rhs._type == Type::Lua) {
-            _union.lua = rhs._union.lua;
-        }
-        rhs.setValue(nullptr);
-    }
-
-    template<typename Ret, typename... Args>
-    inline void CppLuaCallback<Ret, Args...>::_setType(Type type) {
-        if(_type != type) {
-            if(_type == Type::Cpp) {
-                _union.cpp.~StdCallback();
-            } else if(_type == Type::Lua) {
-                _union.lua.~LuaVariant();
+    StdCallback getCppCallback() const { return std::get<StdCallback>(_callback); }
+    sol::object getLuaCallback() const { return std::get<sol::protected_function>(_callback); }
+    template<class... A> Ret operator()(A&&... args) const {
+        if (auto* cpp = std::get_if<StdCallback>(&_callback)) return (*cpp)(std::forward<A>(args)...);
+        if (auto* lua = std::get_if<sol::protected_function>(&_callback)) {
+            auto result = (*lua)(std::forward<A>(args)...);
+            if (result.valid()) {
+                if constexpr (std::is_void_v<Ret>) return;
+                else return result.template get<Ret>();
             }
-
-            if(type == Type::Cpp) {
-                new (&_union.cpp) std::function<Ret(Args...)>();
-            } else if(type == Type::Lua) {
-                new (&_union.lua) LuaVariant();
-            }
-
-            _type = type;
-        }
-    }
-
-    template<typename Ret, typename... Args>
-    inline auto CppLuaCallback<Ret, Args...>::getType(void) const -> Type {
-        return _type;
-    }
-
-    template<typename Ret, typename... Args>
-    inline bool CppLuaCallback<Ret, Args...>::isNull(void) const {
-        return !static_cast<bool>(*this);
-    }
-/* Has to be partially specialized so void functions don't still try to pull a value from Lua!
- */
-    template<typename Ret, typename... Args>
-    template<typename... _Args>
-    inline Ret CppLuaCallback<Ret, Args...>::operator()(_Args&&... args) const {
-        switch(_type) {
-        case Type::Cpp:
-            return _union.cpp(std::forward<_Args>(args)...);
-        case Type::Lua:
-            return _union.lua(std::forward<_Args>(args)...).template getValue<Ret>();
-        default: GY_ASSERT(false);
+            sol::error error = result;
+            std::fprintf(stderr, "Lua callback failed: %s\n", error.what());
         }
         return Ret();
     }
-
-
-    template<typename Ret, typename... Args>
-    inline CppLuaCallback<Ret, Args...>::operator bool(void) const {
-        return (_type == Type::Cpp && _union.cpp) || (_type == Type::Lua && _union.lua.getType() == LUA_TFUNCTION);
+    friend bool operator==(const CppLuaCallback& callback, std::nullptr_t) { return callback.isNull(); }
+    friend bool operator!=(const CppLuaCallback& callback, std::nullptr_t) { return !callback.isNull(); }
+    friend bool operator==(const CppLuaCallback& callback, const sol::object& value) {
+        return callback.getType() == Type::Lua && callback.getLuaCallback() == value;
     }
-
-
-    template<typename Ret, typename... Args>
-    template<typename F>
-    inline CppLuaCallback<Ret, Args...>& CppLuaCallback<Ret, Args...>::operator=(F&& rhs) {
-        setValue(std::forward<Args>(rhs)...);
-    }
-
-    template<typename Ret, typename... Args>
-    inline CppLuaCallback<Ret, Args...>& CppLuaCallback<Ret, Args...>::operator=(std::nullptr_t) {
-        _setType(Type::Null);
-    }
-
-    template<typename Ret, typename... Args>
-    inline void CppLuaCallback<Ret, Args...>::setValue(std::nullptr_t) {
-        _setType(Type::Null);
-    }
-
-    template<typename Ret, typename... Args>
-    inline void CppLuaCallback<Ret, Args...>::setValue(LuaVariant v) {
-        _setType(Type::Lua);
-        _union.lua = std::move(v);
-    }
-
-    template<typename Ret, typename... Args>
-    template<typename F, typename meta::is_callable<F>::value, typename std::enable_if_t<!std::is_same<F, CppLuaCallback<Ret, Args...>&>::value, void>>
-    inline void CppLuaCallback<Ret, Args...>::setValue(F&& f) {
-        _setType(Type::Cpp);
-        _union.cpp = f;
-    }
-
-    template<typename Ret, typename... Args>
-    inline std::function<Ret(Args...)> CppLuaCallback<Ret, Args...>::getCppCallback(void) const {
-        GY_ASSERT(_type == Type::Cpp);
-        return _union.cpp;
-    }
-
-    template<typename Ret, typename... Args>
-    inline LuaVariant CppLuaCallback<Ret, Args...>::getLuaCallback(void) const {
-        GY_ASSERT(_type == Type::Lua);
-        return _union.lua;
-    }
-
-    //overloaded comparison operators
-    template<typename Ret, typename... Args>
-    inline bool operator==(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v) {
-        if(f.getType() == CppLuaCallback<Ret, Args...>::Type::Lua) {
-            return f._union.lua == v;
-        }
-        return false;
-    }
-
-    template<typename Ret, typename... Args>
-    inline bool operator==(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t) {
-         return (f.getType() == CppLuaCallback<Ret, Args...>::Type::Null);
-    }
-
-    template<typename Ret, typename... Args>
-    inline bool operator!=(const CppLuaCallback<Ret, Args...>& f, const LuaVariant& v) {
-        return !(f == v);
-    }
-
-    template<typename Ret, typename... Args>
-    inline bool operator!=(const CppLuaCallback<Ret, Args...>& f, std::nullptr_t) {
-        return !(f == nullptr);
-    }
-
-
+    friend bool operator!=(const CppLuaCallback& callback, const sol::object& value) { return !(callback == value); }
+};
 }
-
-#endif // ELYSIAN_CPP_LUA_Callback_HPP
+#endif

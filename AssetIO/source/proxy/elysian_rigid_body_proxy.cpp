@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_rigid_body_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -103,18 +104,6 @@ the Entity.
  * Sets the value of the \l{forceMask} property to \a{mask}.
  * \sa forceMask, getForceMask()
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(RigidBodyAttrib,
-                             getCanHold,
-                             isBreakable,
-                             getBaseDurability)
-OOLUA_EXPORT_FUNCTIONS(RigidBodyAttrib,
-                       setForceMask,
-                       setBreakable,
-                       setBaseDurability,
-                       setCanHold,
-                       getForceMask)
-
 
 /*!
     \qmltype ForceTarget
@@ -281,23 +270,6 @@ this value is converted into a change in angular acceleration and is cleared.
  * and rotational motion
  * \sa {Force Application}, applyForce()
  */
-OOLUA_EXPORT_FUNCTIONS(ForceTarget,
-                       applyForce,
-                       applyForceToPoint,
-                       clearKinetic,
-                       getVel,
-                       getAccel,
-                       getForceAccum,
-                       setRotation,
-                       setAngAccel,
-                       setTorqueAccum)
-OOLUA_EXPORT_FUNCTIONS_CONST(ForceTarget,
-                             getRotation,
-                             getAngAccel,
-                             getTorqueAccum)
-
-
-
 /*!
     \qmltype RigidBody
     \inherits Component
@@ -451,11 +423,79 @@ information required by the engine, or nil if one hasn't been set. It is nil by 
  * \sa attrib, getAttrib()
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(RigidBody,
-                             getDurability,
-                             getAttrib,
-                             getTileDamping)
-OOLUA_EXPORT_FUNCTIONS(RigidBody,
-                       setAttrib,
-                       setDurability)
 
+namespace elysian::lua {
+using namespace elysian;
+using RigidBodyAttrib = elysian::RigidBodyAttrib;
+using ForceTarget = elysian::ForceTarget;
+using RigidBody = elysian::RigidBody;
+
+void registerRigidBodyAttrib(sol::state_view state) {
+    if (state["RigidBodyAttrib"].valid()) return;
+    using T = elysian::RigidBodyAttrib;
+    auto type = registerType<T>(state, "RigidBodyAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setForceMask"] = method<T, void(const BitMask32)>(&T::setForceMask);
+    type["getForceMask"] = method<T, BitMask32&()>(&T::getForceMask);
+    type["setBreakable"] = method<T, void(bool)>(&T::setBreakable);
+    type["isBreakable"] = method<T, bool() const>(&T::isBreakable);
+    type["setBaseDurability"] = method<T, void(float)>(&T::setBaseDurability);
+    type["getBaseDurability"] = method<T, float() const>(&T::getBaseDurability);
+    type["setCanHold"] = method<T, void(const bool)>(&T::setCanHold);
+    type["getCanHold"] = method<T, bool() const>(&T::getCanHold);
+    property(type, "canHold", method<T, bool() const>(&T::getCanHold), method<T, void(const bool)>(&T::setCanHold));
+    property(type, "breakable", method<T, bool() const>(&T::isBreakable), method<T, void(bool)>(&T::setBreakable));
+    property(type, "durability", method<T, float() const>(&T::getBaseDurability), method<T, void(float)>(&T::setBaseDurability));
+    property(type, "forceMask", method<T, BitMask32&()>(&T::getForceMask), method<T, void(const BitMask32)>(&T::setForceMask));
+    inheritProperties<T>();
+    finish<T>(type, "RigidBodyAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerForceTarget(sol::state_view state) {
+    if (state["ForceTarget"].valid()) return;
+    using T = elysian::ForceTarget;
+    auto type = registerType<T>(state, "ForceTarget");
+    type["applyForce"] = method<T, void(const GYVector3&)>(&T::applyForce);
+    type["applyForceToPoint"] = method<T, void(const GYVector2&, const GYVector2&)>(&T::applyForceToPoint);
+    type["clearKinetic"] = method<T, void()>(&T::clearKinetic);
+    type["getVel"] = method<T, Vector3()>(&T::getVel);
+    type["getAccel"] = method<T, Vector3()>(&T::getAccel);
+    type["getForceAccum"] = method<T, Vector3()>(&T::getForceAccum);
+    type["setRotation"] = method<T, void(const float)>(&T::setRotation);
+    type["setAngAccel"] = method<T, void(const float)>(&T::setAngAccel);
+    type["setTorqueAccum"] = method<T, void(const float)>(&T::setTorqueAccum);
+    type["getRotation"] = method<T, float() const>(&T::getRotation);
+    type["getAngAccel"] = method<T, float() const>(&T::getAngAccel);
+    type["getTorqueAccum"] = method<T, float() const>(&T::getTorqueAccum);
+    property(type, "vel", method<T, Vector3()>(&T::getVel));
+    property(type, "accel", method<T, Vector3()>(&T::getAccel));
+    property(type, "forceAccum", method<T, Vector3()>(&T::getForceAccum));
+    property(type, "rotVel", method<T, float() const>(&T::getRotation), method<T, void(const float)>(&T::setRotation));
+    property(type, "angAccel", method<T, float() const>(&T::getAngAccel), method<T, void(const float)>(&T::setAngAccel));
+    property(type, "torqueAccum", method<T, float() const>(&T::getTorqueAccum), method<T, void(const float)>(&T::setTorqueAccum));
+    inheritProperties<T>();
+    finish<T>(type, "ForceTarget", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+
+void registerRigidBody(sol::state_view state) {
+    if (state["RigidBody"].valid()) return;
+    registerComponent(state);
+    registerForceTarget(state);
+    using T = elysian::RigidBody;
+    auto type = registerType<T, elysian::Component, elysian::ForceTarget>(state, "RigidBody");
+    type["setAttrib"] = method<T, void(std::shared_ptr<RigidBodyAttrib>)>(&T::setAttrib);
+    type["getAttrib"] = method<T, std::shared_ptr<RigidBodyAttrib>() const>(&T::getAttrib);
+    type["setDurability"] = method<T, void(float)>(&T::setDurability);
+    type["getDurability"] = method<T, float() const>(&T::getDurability);
+    type["getTileDamping"] = method<T, float() const>(&T::getTileDamping);
+    property(type, "tileDamping", method<T, float() const>(&T::getTileDamping));
+    property(type, "durability", method<T, float() const>(&T::getDurability), method<T, void(float)>(&T::setDurability));
+    property(type, "attrib", method<T, std::shared_ptr<RigidBodyAttrib>() const>(&T::getAttrib), method<T, void(std::shared_ptr<RigidBodyAttrib>)>(&T::setAttrib));
+    inheritProperties<T, elysian::Component, elysian::ForceTarget>();
+    finish<T>(type, "RigidBody", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

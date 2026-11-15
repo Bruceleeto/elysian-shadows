@@ -85,7 +85,7 @@ namespace QESTkUtils {
 
             auto* luaItem = modelIndexToLuaTableFieldItem(index);
             if(luaItem) {
-                auto* color = luaItem->getVariant().template getValue<ColorType*>();
+                auto* color = luaItem->getVariant().template as<ColorType*>();
                 if(color) {
                     QStyleOptionViewItem itemOption(option);
                     initStyleOption(&itemOption, index);
@@ -107,14 +107,14 @@ namespace QESTkUtils {
             static void onColorSwatchButtonClick(ESTkStandardItem* item) {
                 LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                 if(luaFieldItem) {
-                    ColorType* color = luaFieldItem->getVariant().getValue<ColorType*>();
+                    ColorType* color = luaFieldItem->getVariant().as<ColorType*>();
 
                     if(color) {
                         QColor qcolor = QColorDialog::getColor(QtColorConverter<ColorType>::toQColor(*color));
                         if(qcolor.isValid()) {
 
                             *color = QtColorConverter<ColorType>::fromQColor(qcolor);
-                            luaFieldItem->setVariant(color);
+                            luaFieldItem->setVariant(elysian::lua::make(color));
 
                             luaFieldItem->setDirty();
                             luaFieldItem->emitDataChanged();

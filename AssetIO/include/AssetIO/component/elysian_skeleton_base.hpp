@@ -8,7 +8,7 @@
 #define ELYSIAN_SKELETON_BASE_HPP
 
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <spine/Attachment.h>
 #include <spine/AnimationState.h>
 #include <initializer_list>
@@ -43,13 +43,9 @@ namespace elysian {
         static void dispose(spAttachment* attachment);
     };
 
-    struct AnimationTrackBase: LuaTableProxy<AnimationTrack> {
+    struct AnimationTrackBase: LuaObject<AnimationTrack> {
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(name,       getName,        setName)
-            ELYSIAN_LUA_PROXY_FIELD(timeScale,  getTimeScale,   setTimeScale)
-            ELYSIAN_LUA_PROXY_FIELD(looping,    getLooping,     setLooping)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         char        _name[ELYSIAN_ANIMATION_NAME_SIZE] = { 0 };
         float       _timeScale = 1.0f;
@@ -67,12 +63,11 @@ namespace elysian {
     };
 
 
-    struct AnimationBase: public LuaTableProxy<Animation> {
+    struct AnimationBase: public LuaObject<Animation> {
+    public: using LuaObjectType = LuaObject<Animation>;
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(name,           getName,    setName)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(tracks,   getTrack,   setTrack,   getTrackCount)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+
+        public:
 
         std::vector<AnimationTrack*> _tracks;
         char            _name[ELYSIAN_ANIMATION_NAME_SIZE] = { 0 };
@@ -89,16 +84,14 @@ namespace elysian {
 
 
     class SkeletonAttribBase:
-        public LuaTableProxy<SkeletonAttrib>
+        public LuaObject<SkeletonAttrib>
     {
+    public: using LuaObjectType = LuaObject<SkeletonAttrib>;
+
     friend class SkeletonBase;
     friend Skeleton;
 
-    ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-        ELYSIAN_LUA_PROXY_FIELD(atlasPath,         getAtlasPath,      setAtlasPath)
-        ELYSIAN_LUA_PROXY_FIELD(jsonPath,          getJsonPath,       setJsonPath)
-        ELYSIAN_LUA_PROXY_ARRAY_FIELD(animations,  getAnimation,      setAnimation,       getAnimationCount)
-    ELYSIAN_LUA_PROXY_FIELDS_END()
+    public:
 
         std::vector<Animation*> _animations;
         char                    _atlasPath[ELYSIAN_SKELETON_ATLAS_PATH_SIZE]    = { 0 };
@@ -141,13 +134,11 @@ namespace elysian {
 
     class SkeletonBase:
             public Component,
-            public LuaTableProxy<SkeletonBase, Skeleton>
+            public LuaObject<SkeletonBase, Skeleton>
     {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(attrib,     getAttrib,      setAttrib)
-            ELYSIAN_LUA_PROXY_FIELD(skin,       getSkin,        setSkin)
-            ELYSIAN_LUA_PROXY_FIELD(curAnim,    getAnimName,    playAnimNameBlocking)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    public: using LuaObjectType = LuaObject<SkeletonBase, Skeleton>;
+
+        public:
 
         using AnimListener = std::function<bool(int, spEventType, spEvent*, int)>;
 

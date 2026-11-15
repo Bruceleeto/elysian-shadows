@@ -89,17 +89,26 @@
  * If \a{entity} is valid party member and is not controlled by a human player, returns \a{UnassignedIndex}.
  * If \a{entity} a party member, returns \a{InvalidIndex}.
  */
-OOLUA_EXPORT_FUNCTIONS(PartySystem,
-                        addCharacterToParty,
-                        removeCharacterFromParty,
-                        setPartyLeader,
-                        addPlayable,
-                        setFollowLogicEnabled)
-OOLUA_EXPORT_FUNCTIONS_CONST(PartySystem,
-                                getPartyLeader,
-                                getCharacterPartyMember,
-                                getPartySize,
-                                getPartySlot,
-                                getPlayable,
-                                getPlayerIndexFromSlot,
-                                getPlayerIndexFromPartyMember)
+
+namespace elysian::lua {
+using namespace elysian;
+using PartySystem = elysian::PartySystem;
+
+void registerPartySystem(sol::state_view state) {
+    if (state["PartySystem"].valid()) return;
+    using T = elysian::PartySystem;
+    auto type = registerType<T>(state, "PartySystem");
+    type["addCharacterToParty"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(Entity*)>(&T::addCharacterToParty), self, take<Entity>(arg0)); };
+    type["removeCharacterFromParty"] = [](T& self, const Entity* arg0) { auto result = std::invoke(method<T, bool(const Entity*)>(&T::removeCharacterFromParty), self, arg0); return std::make_tuple(result, arg0); };
+    type["getPartyLeader"] = method<T, Entity*() const>(&T::getPartyLeader);
+    type["getCharacterPartyMember"] = method<T, Entity*(unsigned) const>(&T::getCharacterPartyMember);
+    type["getPartySize"] = method<T, unsigned() const>(&T::getPartySize);
+    type["setPartyLeader"] = method<T, void(Entity*const)>(&T::setPartyLeader);
+    type["getPartySlot"] = method<T, int(const Entity*) const>(&T::getPartySlot);
+    type["addPlayable"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(Entity*)>(&T::addPlayable), self, take<Entity>(arg0)); };
+    type["getPlayable"] = method<T, Entity*(const char*) const>(&T::getPlayable);
+    type["setFollowLogicEnabled"] = method<T, void(bool)>(&T::setFollowLogicEnabled);
+    type["getPlayerIndexFromSlot"] = method<T, int(int) const>(&T::getPlayerIndexFromSlot);
+    type["getPlayerIndexFromPartyMember"] = method<T, int(const Entity*) const>(&T::getPlayerIndexFromPartyMember);
+}
+}

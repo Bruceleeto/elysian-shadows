@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_BIT_MASK_HPP
 #define ELYSIAN_BIT_MASK_HPP
 
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 
 namespace elysian {
 
@@ -87,16 +87,15 @@ namespace elysian {
     template<typename T>
     struct LuaBitMask:
             public BitMask<T>,
-            public LuaTableProxy<LuaBitMask<T>>
+            public LuaObject<LuaBitMask<T>>
     {
+    public: using LuaObjectType = LuaObject<LuaBitMask<T>>;
+
 
         LuaBitMask(const T val);
         LuaBitMask(void) = default;
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(value, getValue)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(bitFields,    getBit, setBit, getBitCount)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
     };
 
@@ -178,11 +177,9 @@ namespace elysian {
     inline LuaBitMask<T>::LuaBitMask(const T val): BitMask<T>(val) {}
 
 
-    template<typename T>
-    bool                                    LuaBitMask<T>::_proxyRegistered = false;
 
-    template<typename T>
-    constexpr elysian::LuaTableFieldProxy	LuaBitMask<T>::_proxyFields[];
+
+
 
 }
 

@@ -15,8 +15,6 @@
 #include <test_level.h>
 #include <test_map_view.h>
 #include <test_libgyro_file_api.h>
-#include <test_lua_field_ref.h>
-#include <test_lua_variant.h>
 #include <test_dialog.h>
 #include <test_string.h>
 #include <test_functional.h>
@@ -34,7 +32,7 @@ UNIT TESTS TO WRITE
 2) Initialize all of libGyro
 3) Load shaders
 4) Switch areas via tabs (currently broken)
-6) LuaTableProxy? (serialize, deserialize, register, access complex types, etc)
+6) Native Lua properties? (serialize, deserialize, register, access complex types, etc)
 7) Setting up entities, adding and removing components, serialize, deserialize, etc.
 8) area/level load and save (fuck with attributes via lua first, basic map modification)
 9) mem pool shit
@@ -122,8 +120,6 @@ int main(QStringList args)
         ESTkTest::enqueueTest(new tktest::Vector2Test);
         ESTkTest::enqueueTest(new tktest::ESToolkitTest);
         ESTkTest::enqueueTest(new tktest::LevelTest);
-        ESTkTest::enqueueTest(new tktest::LuaVariantTest);
-        ESTkTest::enqueueTest(new tktest::LuaFieldRefTest);
         ESTkTest::enqueueTest(new tktest::CppLuaCallbackTest);
         ESTkTest::enqueueTest(new tktest::DialogLuaTest);
         ESTkTest::enqueueTest(new tktest::AssociativeAggregateArrayTest);

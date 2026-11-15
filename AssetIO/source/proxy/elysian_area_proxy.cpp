@@ -101,21 +101,6 @@
  * \sa getValue()
  */
 
-OOLUA_EXPORT_FUNCTIONS(TileEntry,
-                                    setIndex,
-                                    setNormal,
-                                    setPlane,
-                                   setValue,
-                                   setOrient,
-                                   setElev)
-OOLUA_EXPORT_FUNCTIONS_CONST(TileEntry,
-                                getIndex,
-                                getNormal,
-                                getPlane,
-                                 getValue,
-                                 getOrient,
-                                 getElev)
-
 /*!
     \qmltype Area
     \since 1.6.0
@@ -397,39 +382,94 @@ OOLUA_EXPORT_FUNCTIONS_CONST(TileEntry,
  * \sa getStartPosition
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Area,
-                                    getDirName,
-                                    getPath,
-                                    getTileEntry,
-                                    getMapWidth,
-                                    getMapHeight,
-                                    getActiveEntityByIndex,
-                                    getActiveEntityCount,
-                                    getInactiveEntityByIndex,
-                                    getInactiveEntityCount,
-                                    getNameString,
-                                    getUseSun,
-                                    getBgmOggByTrack,
-                                    getAuxOggByTrack,
-                                    getBgmOggTrackCount,
-                                    getAuxOggTrackCount,
-                                    getOggGain)
-OOLUA_EXPORT_FUNCTIONS(Area,
-                                setTileEntry,
-                                addEntity,
-                                removeEntity,
-                                findEntity,
-                                setActiveEntityByIndex,
-                                setInactiveEntityByIndex,
-                                setDirName,
-                                setNameString,
-                                setMapWidth,
-                                setMapHeight,
-                                setUseSun,
-                                getAmbientColor,
-                                setAmbientColor,
-                                setBgmOggByTrack,
-                                setAuxOggByTrack,
-                                getStartPosition,
-                                setStartPosition,
-                                setOggGain)
+
+namespace elysian::lua {
+using namespace elysian;
+using TileEntry = elysian::TileEntry;
+using Area = elysian::Area;
+
+void registerTileEntry(sol::state_view state) {
+    if (state["TileEntry"].valid()) return;
+    using T = elysian::TileEntry;
+    auto type = registerType<T>(state, "TileEntry");
+    type["new"] = sol::factories(factory<T>(), factory<T, uint32_t>());
+    type["getIndex"] = method<T, uint16_t() const>(&T::getIndex);
+    type["setIndex"] = method<T, void(uint16_t)>(&T::setIndex);
+    type["setNormal"] = method<T, void(bool)>(&T::setNormal);
+    type["getNormal"] = method<T, bool() const>(&T::getNormal);
+    type["getPlane"] = method<T, GY_RECT_PLANE_TYPE() const>(&T::getPlane);
+    type["setPlane"] = method<T, void(GY_RECT_PLANE_TYPE)>(&T::setPlane);
+    type["getValue"] = method<T, uint32_t() const>(&T::getValue);
+    type["setValue"] = method<T, void(uint32_t)>(&T::setValue);
+    type["getOrient"] = method<T, GY_RECT_TEX_ORIENT() const>(&T::getOrient);
+    type["setOrient"] = method<T, void(GY_RECT_TEX_ORIENT)>(&T::setOrient);
+    type["getElev"] = method<T, unsigned char() const>(&T::getElev);
+    type["setElev"] = method<T, void(unsigned char)>(&T::setElev);
+}
+
+void registerArea(sol::state_view state) {
+    if (state["Area"].valid()) return;
+    using T = elysian::Area;
+    auto type = registerType<T>(state, "Area");
+    type["getDirName"] = method<T, const char*() const>(&T::getDirName);
+    type["getPath"] = method<T, const char*() const>(&T::getPath);
+    type["setDirName"] = method<T, void(const char*)>(&T::setDirName);
+    type["setNameString"] = method<T, void(const char*)>(&T::setNameString);
+    type["getStartPosition"] = method<T, Vector3&()>(&T::getStartPosition);
+    type["setStartPosition"] = method<T, void(const Vector3&)>(&T::setStartPosition);
+    type["getNameString"] = method<T, const char*() const>(&T::getNameString);
+    type["getTileEntry"] = method<T, TileEntry(const unsigned, const unsigned, const unsigned) const>(&T::getTileEntry);
+    type["setTileEntry"] = method<T, void(unsigned, unsigned, unsigned, TileEntry)>(&T::setTileEntry);
+    type["addEntity"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(Entity*)>(&T::addEntity), self, take<Entity>(arg0)); };
+    type["removeEntity"] = method<T, void(Entity*)>(&T::removeEntity);
+    type["findEntity"] = method<T, Entity*(const char*)>(&T::findEntity);
+    type["getMapWidth"] = method<T, unsigned short() const>(&T::getMapWidth);
+    type["getMapHeight"] = method<T, unsigned short() const>(&T::getMapHeight);
+    type["setMapHeight"] = method<T, void(const unsigned short)>(&T::setMapHeight);
+    type["setMapWidth"] = method<T, void(const unsigned short)>(&T::setMapWidth);
+    type["setActiveEntityByIndex"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Entity*)>(&T::setActiveEntityByIndex), self, arg0, take<Entity>(arg1)); };
+    type["getActiveEntityByIndex"] = method<T, Entity*(unsigned) const>(&T::getActiveEntityByIndex);
+    type["getActiveEntityCount"] = method<T, unsigned() const>(&T::getActiveEntityCount);
+    type["setInactiveEntityByIndex"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Entity*)>(&T::setInactiveEntityByIndex), self, arg0, take<Entity>(arg1)); };
+    type["getInactiveEntityByIndex"] = method<T, Entity*(unsigned) const>(&T::getInactiveEntityByIndex);
+    type["getInactiveEntityCount"] = method<T, unsigned() const>(&T::getInactiveEntityCount);
+    type["getUseSun"] = method<T, bool() const>(&T::getUseSun);
+    type["setUseSun"] = method<T, void(bool)>(&T::setUseSun);
+    type["getAmbientColor"] = method<T, Vector4()>(&T::getAmbientColor);
+    type["setAmbientColor"] = method<T, void(const Vector4&)>(&T::setAmbientColor);
+    type["getBgmOggByTrack"] = method<T, const char*(unsigned) const>(&T::getBgmOggByTrack);
+    type["getAuxOggByTrack"] = method<T, const char*(unsigned) const>(&T::getAuxOggByTrack);
+    type["getBgmOggTrackCount"] = method<T, unsigned() const>(&T::getBgmOggTrackCount);
+    type["getAuxOggTrackCount"] = method<T, unsigned() const>(&T::getAuxOggTrackCount);
+    type["setBgmOggByTrack"] = method<T, void(unsigned, const char*)>(&T::setBgmOggByTrack);
+    type["setAuxOggByTrack"] = method<T, void(unsigned, const char*)>(&T::setAuxOggByTrack);
+    type["setOggGain"] = method<T>(&T::setOggGain);
+    type["getOggGain"] = method<T>(&T::getOggGain);
+    property(type, "dirName", method<T, const char*() const>(&T::getDirName), method<T, void(const char*)>(&T::setDirName));
+    property(type, "nameString", method<T, const char*() const>(&T::getNameString), method<T, void(const char*)>(&T::setNameString));
+    property(type, "path", method<T, const char*() const>(&T::getPath));
+    viewProperty(type, group("size", {
+            field<T>("width", method<T, unsigned short() const>(&T::getMapWidth), method<T, void(const unsigned short)>(&T::setMapWidth)),
+            field<T>("height", method<T, unsigned short() const>(&T::getMapHeight), method<T, void(const unsigned short)>(&T::setMapHeight))
+        }, [] { return LuaManager::isSerializing(); }));
+    property(type, "useSun", method<T, bool() const>(&T::getUseSun), method<T, void(bool)>(&T::setUseSun));
+    property(type, "ambientColor", method<T, Vector4()>(&T::getAmbientColor), method<T, void(const Vector4&)>(&T::setAmbientColor));
+    viewProperty(type, group("music", {
+            array<T>("bgm", method<T, const char*(unsigned) const>(&T::getBgmOggByTrack), method<T, void(unsigned, const char*)>(&T::setBgmOggByTrack), method<T, unsigned() const>(&T::getBgmOggTrackCount)),
+            array<T>("aux", method<T, const char*(unsigned) const>(&T::getAuxOggByTrack), method<T, void(unsigned, const char*)>(&T::setAuxOggByTrack), method<T, unsigned() const>(&T::getAuxOggTrackCount)),
+            field<T>("gain", method<T>(&T::getOggGain), method<T>(&T::setOggGain))
+        }, [] { return LuaManager::isSerializing(); }));
+    property(type, "startPosition", method<T, Vector3&()>(&T::getStartPosition), method<T, void(const Vector3&)>(&T::setStartPosition));
+    viewProperty(type, array<T>("activeEntities", method<T, Entity*(unsigned) const>(&T::getActiveEntityByIndex), [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Entity*)>(&T::setActiveEntityByIndex), self, arg0, take<Entity>(arg1)); }, method<T, unsigned() const>(&T::getActiveEntityCount)));
+    viewProperty(type, array<T>("inactiveEntities", method<T, Entity*(unsigned) const>(&T::getInactiveEntityByIndex), [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Entity*)>(&T::setInactiveEntityByIndex), self, arg0, take<Entity>(arg1)); }, method<T, unsigned() const>(&T::getInactiveEntityCount)));
+    #ifndef ELYSIAN_ENGINE
+    eraseProperty<T>("dirName");
+    eraseProperty<T>("startPosition");
+    property(type, "dirName", method<T, const char*() const>(&T::getDirName));
+    property(type, "startPosition", method<T, Vector3&()>(&T::getStartPosition), method<T, void(const Vector3&)>(&T::setStartPosition));
+    #endif
+    inheritProperties<T>();
+    finish<T>(type, "Area", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

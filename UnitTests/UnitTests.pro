@@ -31,7 +31,6 @@ INCLUDEPATH +=  \
     ../ESGamma/include \
     ../QESTkUtils/include \
     $${GLOBAL_INCLUDE_PATH} \
-    ../OOLua/include/oolua \
     ../Spine/include \
 
 CONFIG   += staticlib
@@ -60,10 +59,8 @@ HEADERS += \
     include/UnitTests/test_project_assets.h \
     include/UnitTests/test_level_assets.h \
     include/UnitTests/test_area_assets.h \
-    include/UnitTests/test_lua_variant.h \
     include/UnitTests/test_dialog.h \
     include/UnitTests/test_instance_transform.h \
-    include/UnitTests/test_lua_field_ref.h \
     include/UnitTests/test_functional.h \
     include/UnitTests/test_cpp_lua_callback.h \
     include/UnitTests/test_associative_aggregate_array.h \

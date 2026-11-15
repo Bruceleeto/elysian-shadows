@@ -9,7 +9,7 @@
 
 #include <vector>
 #include <AssetIO/utility/elysian_asset_typedefs.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/crtp/elysian_dialog_screen.hpp>
 
 #define ELYSIAN_DIALOG_PROMPT_OPTION_TEXT_BUFFER_SIZE	100
@@ -23,10 +23,10 @@ ELYSIAN_ASSET_TYPEDEF(Dialog)
 
 namespace elysian {
 
-    class DialogTextBase: public LuaTableProxy<DialogTextBase, DialogText, DialogScreen>, public DialogScreen {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(nextIndex,  getNextIndex,   setNextIndex)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    class DialogTextBase: public LuaObject<DialogTextBase, DialogText, DialogScreen>, public DialogScreen {
+    public: using LuaObjectType = LuaObject<DialogTextBase, DialogText, DialogScreen>;
+
+        public:
     public:
        enum INPUT_TYPE { INPUT_MODAL, INPUT_ADVANCE, INPUT_NONE };
     private:
@@ -36,9 +36,8 @@ namespace elysian {
         int             _nextIndex = -1;
     public:
 
-        using           LuaTableProxy<DialogTextBase, DialogText, DialogScreen>::registerProxyMetaTable;
-        using           LuaTableProxy<DialogTextBase, DialogText, DialogScreen>::fromTable;
-        using           LuaTableProxy<DialogTextBase, DialogText, DialogScreen>::lua_downCast;
+        using           LuaObject<DialogTextBase, DialogText, DialogScreen>::fromTable;
+        using           LuaObject<DialogTextBase, DialogText, DialogScreen>::lua_downCast;
 
                         DialogTextBase(void);
                         DialogTextBase(const char*const text);
@@ -53,11 +52,10 @@ namespace elysian {
 
 
 
-    class DialogOptionBase: public LuaTableProxy<DialogOptionBase, DialogOption> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(text,       getText,        setText)
-            ELYSIAN_LUA_PROXY_FIELD(nextIndex,  getNextIndex,   setNextIndex)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    class DialogOptionBase: public LuaObject<DialogOptionBase, DialogOption> {
+    public: using LuaObjectType = LuaObject<DialogOptionBase, DialogOption>;
+
+        public:
     private:
         char                _text[ELYSIAN_DIALOG_PROMPT_OPTION_TEXT_BUFFER_SIZE] = {0};
         int                 _nextIndex = -1;
@@ -76,18 +74,17 @@ namespace elysian {
     };
 
 
-    class DialogPromptBase: public LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>, public DialogScreen {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(options,      getOption,          setOption,          getOptionCount)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    class DialogPromptBase: public LuaObject<DialogPromptBase, DialogPrompt, DialogScreen>, public DialogScreen {
+    public: using LuaObjectType = LuaObject<DialogPromptBase, DialogPrompt, DialogScreen>;
+
+        public:
     private:
         std::vector<DialogOption*>  _options;
 
     public:
 
-        using                       LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>::registerProxyMetaTable;
-        using                       LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>::fromTable;
-        using                       LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>::lua_downCast;
+        using                       LuaObject<DialogPromptBase, DialogPrompt, DialogScreen>::fromTable;
+        using                       LuaObject<DialogPromptBase, DialogPrompt, DialogScreen>::lua_downCast;
 
                                     DialogPromptBase(void);
                                     DialogPromptBase(const char*const text);
@@ -103,11 +100,10 @@ namespace elysian {
 
     };
 
-    class DialogBase: public LuaTableProxy<DialogBase, Dialog> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(startScreen,        getStartScreen,     setStartScreen)
-            ELYSIAN_LUA_PROXY_ARRAY_FIELD(screens,      getScreen,          setScreen,          getScreenCount)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    class DialogBase: public LuaObject<DialogBase, Dialog> {
+    public: using LuaObjectType = LuaObject<DialogBase, Dialog>;
+
+        public:
     private:
         std::vector<DialogScreen*>	_screens;
         Entity*						_triggerEntity  = nullptr;
@@ -125,7 +121,7 @@ namespace elysian {
 
         unsigned                    getScreenCount(void) const;
         DialogScreen*               getScreen(const unsigned index) const;
-        LuaVariant                  getScreenLua(const unsigned index) const;
+        sol::object                  getScreenLua(const unsigned index) const;
         void                        setScreen(const unsigned index, DialogScreen*const screen);
 
         void                        setTriggerEntity(Entity*const entity);
@@ -147,7 +143,7 @@ namespace elysian {
     inline DialogTextBase::DialogTextBase(const char*const text):
         DialogScreen(DialogScreenBase::SCREEN_TEXT, text) {}
     inline DialogTextBase::DialogTextBase(const DialogTextBase &rhs):
-        LuaTableProxy<DialogTextBase, DialogText, DialogScreen>(),
+        LuaObject<DialogTextBase, DialogText, DialogScreen>(),
         DialogScreen(rhs) {
         *this = rhs;
     }
@@ -168,7 +164,7 @@ namespace elysian {
         strcpy(_text, string);
     }
     inline DialogOptionBase::DialogOptionBase(const DialogOptionBase &rhs):
-        LuaTableProxy<DialogOptionBase, DialogOption>() {
+        LuaObject<DialogOptionBase, DialogOption>() {
         *this = rhs;
     }
     inline const char* DialogOptionBase::getText(void) const { return _text; }
@@ -187,7 +183,7 @@ namespace elysian {
     inline DialogPromptBase::DialogPromptBase(void):
         DialogScreen(DialogScreenBase::SCREEN_PROMPT) {}
     inline DialogPromptBase::DialogPromptBase(const DialogPromptBase &rhs):
-        LuaTableProxy<DialogPromptBase, DialogPrompt, DialogScreen>(),
+        LuaObject<DialogPromptBase, DialogPrompt, DialogScreen>(),
         DialogScreen(rhs) {
         *this = rhs;
     }
@@ -200,7 +196,7 @@ namespace elysian {
     //==== DIALOG INLINEZ =====
 
     inline DialogBase::DialogBase(const DialogBase &rhs):
-        LuaTableProxy<DialogBase, Dialog>() {
+        LuaObject<DialogBase, Dialog>() {
         *this = rhs;
     }
     inline int DialogBase::getStartScreen(void) const { return _startScreen; }

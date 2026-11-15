@@ -361,8 +361,8 @@ namespace elysian {
         return (channel == ELYSIAN_AUDIO_SFX_CHANNEL_INVALID)? false : gyAudSourceIsPlaying(_channels[channel].src);
 	}
 
-    void AudioSystem::playSfxChannelLua(const int channel, const GYWav &wav, LuaVariant v) {
-        EventMonitor* m = v.getValue<EventMonitor*>();
+    void AudioSystem::playSfxChannelLua(const int channel, const GYWav &wav, sol::object v) {
+        EventMonitor* m = v.as<EventMonitor*>();
         playSfxChannel(channel, wav, m);
     }
 

@@ -12,17 +12,16 @@
 void TkColor4::initializeDelegates(void) {
     auto* typeDelegate = new QESTkUtils::ColorSwatchPropertyItemDelegate<Color4>();
 
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
     auto* spinBox = new SpinboxPropertyItemDelegate(0, 255);
-    LuaVariant fieldDelegate = {
-        { "r", spinBox },
-        { "g", spinBox },
-        { "b", spinBox },
-        { "a", spinBox }
-    };
+    sol::table fieldDelegate = elysian::lua::table();
+    fieldDelegate.set("r", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("g", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("b", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("a", static_cast<PropertyItemDelegate*>(spinBox));
     fieldDelegate.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
 }

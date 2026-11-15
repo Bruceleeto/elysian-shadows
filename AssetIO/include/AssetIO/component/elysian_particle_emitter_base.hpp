@@ -12,7 +12,7 @@
 #include <AssetIO/utility/elysian_mem_pool.hpp>
 #include <AssetIO/crtp/elysian_sprite_attrib.hpp>
 #include <AssetIO/crtp/elysian_collidable.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/crtp/elysian_rigid_body.hpp>
 
 #define ELYSIAN_PARTICLE_SYSTEM_INTERNAL_EMITTER_POOL_SIZE	1000
@@ -30,8 +30,10 @@ namespace elysian {
     class ParticleEmitterAttribBase:
             public SpriteAttrib,
             public CollidableStaticAttrib,
-            public LuaTableProxy<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>
+            public LuaObject<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>
     {
+    public: using LuaObjectType = LuaObject<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>;
+
         friend class ParticleEmitterInternals;
     private:
         int         _animGrid[ELYSIAN_PARTICLE_EMITTER_ANIM_GRID_HEIGHT][ELYSIAN_PARTICLE_EMITTER_ANIM_GRID_WIDTH] = { {-1} };
@@ -54,22 +56,10 @@ namespace elysian {
 
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(maxLifeTime,        getMaxLifeTime,         setMaxLifeTime)
-            ELYSIAN_LUA_PROXY_FIELD(startSize,          getStartSize,           setStartSize)
-            ELYSIAN_LUA_PROXY_FIELD(endSize,            getEndSize,             setEndSize)
-            ELYSIAN_LUA_PROXY_FIELD(endColor,           getEndColor,            setEndColor)
-            ELYSIAN_LUA_PROXY_FIELD(intensityFactor,    getIntensityFactor,     setIntensityFactor)
-            ELYSIAN_LUA_PROXY_FIELD(randomStartFrame,   getRandomStartFrame,    setRandomStartFrame)
-            ELYSIAN_LUA_PROXY_FIELD(forceMask,          getForceMask,           setForceMask)
-            ELYSIAN_LUA_PROXY_FIELD(animFrameDuration,  getAnimFrameDuration,   setAnimFrameDuration)
-            ELYSIAN_LUA_PROXY_FIELD(shadowVolume,       getShadowVolume,        setShadowVolume)
-            ELYSIAN_LUA_PROXY_FIELD(stick,              getStick,               setStick)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
-        using       LuaTableProxy<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>::registerProxyMetaTable;
-        using       LuaTableProxy<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>::fromTable;
-        using       LuaTableProxy<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>::lua_downCast;
+        using       LuaObject<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>::fromTable;
+        using       LuaObject<ParticleEmitterAttribBase, ParticleEmitterAttrib, CollidableStaticAttrib, SpriteAttrib>::lua_downCast;
 
                     ParticleEmitterAttribBase(void);
         virtual     ~ParticleEmitterAttribBase(void) override;
@@ -134,9 +124,7 @@ namespace elysian {
 
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(attrib,     getAttrib,      setAttrib)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         ParticleEmitterInternals&   operator=(ParticleEmitterInternals& rhs);
 
@@ -163,14 +151,14 @@ namespace elysian {
     class ParticleEmitterBase:
         public Component,
         public ParticleEmitterInternals,
-        public LuaTableProxy<ParticleEmitterBase, ParticleEmitter>
+        public LuaObject<ParticleEmitterBase, ParticleEmitter>
     {
+    public: using LuaObjectType = LuaObject<ParticleEmitterBase, ParticleEmitter>;
+
 	public:
         friend ParticleEmitter;
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(attrib,     getAttrib,      setAttrib)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                                 ParticleEmitterBase(void) = default;
                                 ParticleEmitterBase(Entity& entity, ParticleEmitterBase*const prefab=nullptr);

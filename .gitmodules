@@ -1,0 +1,4 @@
+[submodule "sol2"]
+	path = sol2
+	url = https://github.com/Bruceleeto/sol2.git
+	branch = solpp

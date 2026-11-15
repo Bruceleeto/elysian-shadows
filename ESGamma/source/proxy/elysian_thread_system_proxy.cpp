@@ -23,5 +23,14 @@
     \sa Engine
 */
 
-OOLUA_EXPORT_FUNCTIONS(ThreadSystem)
-OOLUA_EXPORT_FUNCTIONS_CONST(ThreadSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using ThreadSystem = elysian::ThreadSystem;
+
+void registerThreadSystem(sol::state_view state) {
+    if (state["ThreadSystem"].valid()) return;
+    using T = elysian::ThreadSystem;
+    auto type = registerType<T>(state, "ThreadSystem");
+}
+}

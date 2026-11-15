@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_COMBAT_SYSTEM_HPP
 #define ELYSIAN_COMBAT_SYSTEM_HPP
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/system/elysian_system.hpp>
 #include <ESGamma/crtp/elysian_lua_manager.hpp>
 #include <AssetIO/utility/elysian_mem_pool.hpp>
@@ -100,7 +100,7 @@ namespace elysian {
         void                    removeCombatant(Entity& entity);
         void                    clearCombatants(void);
         void                    killCombatant(Entity& entity);
-        LuaVariant              getCombatants(void) const;
+        sol::object              getCombatants(void) const;
 
         void                    setBgmDynamic(const bool enabled=true);
         void                    setBgmCombatTrack(const unsigned track);
@@ -112,7 +112,7 @@ namespace elysian {
         void                    setCombatEnabled(bool value=true);
         void                    setCombatMgmtType(COMBAT_MGMT_TYPE type);
 
-        /*void                  resolveCombatAction(OOLUA::Lua_table_ref action,
+        /*void                  resolveCombatAction(sol::object action,
                                     Combat*const src,
                                     Combat*const target);*/
 

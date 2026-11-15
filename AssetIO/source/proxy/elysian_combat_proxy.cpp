@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_combat_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -64,14 +65,6 @@
  * This can be used to emit blood or some other type of particle when the Entity takes damage. Ownership of
  * \a{attrib} is transferred from Lua to the engine.
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(CombatAttrib)
-OOLUA_EXPORT_FUNCTIONS(CombatAttrib,
-                       setTypeFlags,
-                       setTypeAgainstFlags,
-                       setParticleAttrib,
-                       getTypeFlags,
-                       getTypeAgainstFlags)
 
 /*!
     \qmltype CombatStatus
@@ -159,18 +152,6 @@ OOLUA_EXPORT_FUNCTIONS(CombatAttrib,
  * \sa getMp(), mp
  */
 
-OOLUA_EXPORT_FUNCTIONS_CONST(CombatStatus,
-                             getMp,
-                             getHp,
-                             getMaxHp,
-                             getMaxMp,
-                             hasStatusEffect)
-OOLUA_EXPORT_FUNCTIONS(CombatStatus,
-                       setHp,
-                       setMaxHp,
-                       setMaxMp,
-                       setMp)
-
 /*!
     \qmltype CombatStatusModifier
     \inherits CombatStatus
@@ -204,12 +185,6 @@ OOLUA_EXPORT_FUNCTIONS(CombatStatus,
  *  recipient's emnity table.
  * \sa AggroManager
  */
-
-OOLUA_EXPORT_FUNCTIONS_CONST(CombatStatusModifier)
-OOLUA_EXPORT_FUNCTIONS(CombatStatusModifier,
-                       addStatusEffect,
-                       removeStatusEffect,
-                       setSourceEntityEmnity)
 
 /*!
     \qmltype AggroManager
@@ -312,16 +287,6 @@ OOLUA_EXPORT_FUNCTIONS(CombatStatusModifier,
  */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(AggroManager,
-                             getEntityAtEmnityPriority,
-                             getEntityEmnity,
-                             getEmnityTableSize,
-                             //getEmnityTableEntry,
-                             getAggroedCount,
-                             getAggroedEntity)
-OOLUA_EXPORT_FUNCTIONS(AggroManager,
-                       addEntityEmnity,
-                       setEntityEmnity)
 /*!
     \qmltype Combat
     \inherits Component
@@ -557,23 +522,114 @@ The following is a list of the valid values for Combat::TARGET_TYPE.
 
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Combat,
-                             getAttrib,
-                             getTargetType,
-                             getDmgActive,
-                             getDmgType,
-                             getAggroDist,
-                             getDeaggroDist,
-                             isInCombat)
-OOLUA_EXPORT_FUNCTIONS(Combat,
-                       setAttrib,
-                       setDmgType,
-                       setDmgActive,
-                       setCollisionFlags,
-                       setStatus,
-                       setTargetType,
-                       setAggroDist,
-                       setDeaggroDist,
-                       getCollisionFlags,
-                       getStatus,
-                       getAggroManager)
+
+namespace elysian::lua {
+using namespace elysian;
+using CombatAttrib = elysian::CombatAttrib;
+using CombatStatus = elysian::CombatStatus;
+using CombatStatusModifier = elysian::CombatStatusModifier;
+using AggroManager = elysian::AggroManager;
+using Combat = elysian::Combat;
+
+void registerCombatAttrib(sol::state_view state) {
+    if (state["CombatAttrib"].valid()) return;
+    using T = elysian::CombatAttrib;
+    auto type = registerType<T>(state, "CombatAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setTypeFlags"] = method<T, void(BitMask32)>(&T::setTypeFlags);
+    type["setTypeAgainstFlags"] = method<T, void(BitMask32)>(&T::setTypeAgainstFlags);
+    type["setParticleAttrib"] = method<T, void(std::shared_ptr<ParticleEmitterAttrib>)>(&T::setParticleAttrib);
+    type["getTypeFlags"] = method<T, BitMask32&()>(&T::getTypeFlags);
+    type["getTypeAgainstFlags"] = method<T, BitMask32&()>(&T::getTypeAgainstFlags);
+    property(type, "type", method<T, BitMask32&()>(&T::getTypeFlags), method<T, void(BitMask32)>(&T::setTypeFlags));
+    property(type, "typeAgainst", method<T, BitMask32&()>(&T::getTypeAgainstFlags), method<T, void(BitMask32)>(&T::setTypeAgainstFlags));
+    inheritProperties<T>();
+    finish<T>(type, "CombatAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerCombatStatus(sol::state_view state) {
+    if (state["CombatStatus"].valid()) return;
+    using T = elysian::CombatStatus;
+    auto type = registerType<T>(state, "CombatStatus");
+    type["new"] = sol::factories(factory<T>());
+    type["setHp"] = method<T, void(int)>(&T::setHp);
+    type["setMp"] = method<T, void(int)>(&T::setMp);
+    type["setMaxHp"] = method<T, void(int)>(&T::setMaxHp);
+    type["setMaxMp"] = method<T, void(int)>(&T::setMaxMp);
+    type["getHp"] = method<T, int() const>(&T::getHp);
+    type["getMp"] = method<T, int() const>(&T::getMp);
+    type["getMaxHp"] = method<T, int() const>(&T::getMaxHp);
+    type["getMaxMp"] = method<T, int() const>(&T::getMaxMp);
+    type["hasStatusEffect"] = method<T, bool(const CombatStatus::STATUS_EFFECT) const>(&T::hasStatusEffect);
+    property(type, "maxHp", method<T, int() const>(&T::getMaxHp), method<T, void(int)>(&T::setMaxHp));
+    property(type, "hp", method<T, int() const>(&T::getHp), method<T, void(int)>(&T::setHp));
+    property(type, "maxMp", method<T, int() const>(&T::getMaxMp), method<T, void(int)>(&T::setMaxMp));
+    property(type, "mp", method<T, int() const>(&T::getMp), method<T, void(int)>(&T::setMp));
+    inheritProperties<T>();
+    finish<T>(type, "CombatStatus", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerCombatStatusModifier(sol::state_view state) {
+    if (state["CombatStatusModifier"].valid()) return;
+    registerCombatStatus(state);
+    using T = elysian::CombatStatusModifier;
+    auto type = registerType<T, elysian::CombatStatus>(state, "CombatStatusModifier");
+    type["new"] = sol::factories(factory<T>());
+    type["addStatusEffect"] = method<T, void(const uint32_t)>(&T::addStatusEffect);
+    type["removeStatusEffect"] = method<T, void(const uint32_t)>(&T::removeStatusEffect);
+    type["setSourceEntityEmnity"] = method<T>(&T::setSourceEntityEmnity);
+}
+
+void registerAggroManager(sol::state_view state) {
+    if (state["AggroManager"].valid()) return;
+    using T = elysian::AggroManager;
+    auto type = registerType<T>(state, "AggroManager");
+    type["getEntityAtEmnityPriority"] = method<T, Entity*(unsigned) const>(&T::getEntityAtEmnityPriority);
+    type["getEntityEmnity"] = method<T>(&T::getEntityEmnity);
+    type["addEntityEmnity"] = method<T>(&T::addEntityEmnity);
+    type["setEntityEmnity"] = method<T>(&T::setEntityEmnity);
+    type["getEmnityTableSize"] = method<T>(&T::getEmnityTableSize);
+    type["getAggroedCount"] = method<T>(&T::getAggroedCount);
+    type["getAggroedEntity"] = method<T, Entity*(unsigned) const>(&T::getAggroedEntity);
+}
+
+void registerCombat(sol::state_view state) {
+    if (state["Combat"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Combat;
+    auto type = registerType<T, elysian::Component>(state, "Combat");
+    type["setAttrib"] = method<T, void(std::shared_ptr<CombatAttrib>)>(&T::setAttrib);
+    type["setDmgType"] = method<T, void(Combat::DMG_TYPE)>(&T::setDmgType);
+    type["setDmgActive"] = method<T, void(bool)>(&T::setDmgActive);
+    type["setCollisionFlags"] = method<T, void(BitMask32)>(&T::setCollisionFlags);
+    type["getStatus"] = method<T, CombatStatus&()>(&T::getStatus);
+    type["getAggroManager"] = method<T, AggroManager&()>(&T::getAggroManager);
+    type["setStatus"] = method<T, void(const CombatStatus&)>(&T::setStatus);
+    type["setTargetType"] = method<T, void(const Combat::TARGET_TYPE)>(&T::setTargetType);
+    type["getTargetType"] = method<T, Combat::TARGET_TYPE() const>(&T::getTargetType);
+    type["getCollisionFlags"] = method<T, BitMask32&()>(&T::getCollisionFlags);
+    type["getDmgActive"] = method<T, bool() const>(&T::getDmgActive);
+    type["getDmgType"] = method<T, Combat::DMG_TYPE() const>(&T::getDmgType);
+    type["getAttrib"] = method<T, std::shared_ptr<CombatAttrib>() const>(&T::getAttrib);
+    type["getAggroDist"] = method<T, float() const>(&T::getAggroDist);
+    type["getDeaggroDist"] = method<T, float() const>(&T::getDeaggroDist);
+    type["setAggroDist"] = method<T, void(const float)>(&T::setAggroDist);
+    type["setDeaggroDist"] = method<T, void(const float)>(&T::setDeaggroDist);
+    type["isInCombat"] = method<T, bool() const>(&T::isInCombat);
+    property(type, "dmgType", method<T, Combat::DMG_TYPE() const>(&T::getDmgType), method<T, void(Combat::DMG_TYPE)>(&T::setDmgType));
+    property(type, "collisionFlags", method<T, BitMask32&()>(&T::getCollisionFlags), method<T, void(BitMask32)>(&T::setCollisionFlags));
+    property(type, "aggroDist", method<T, float() const>(&T::getAggroDist), method<T, void(const float)>(&T::setAggroDist));
+    property(type, "deaggroDist", method<T, float() const>(&T::getDeaggroDist), method<T, void(const float)>(&T::setDeaggroDist));
+    property(type, "targetType", method<T, Combat::TARGET_TYPE() const>(&T::getTargetType), method<T, void(const Combat::TARGET_TYPE)>(&T::setTargetType));
+    property(type, "inCombat", method<T, bool() const>(&T::isInCombat));
+    property(type, "status", method<T, CombatStatus&()>(&T::getStatus), method<T, void(const CombatStatus&)>(&T::setStatus));
+    property(type, "attrib", method<T, std::shared_ptr<CombatAttrib>() const>(&T::getAttrib), method<T, void(std::shared_ptr<CombatAttrib>)>(&T::setAttrib));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Combat", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

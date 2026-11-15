@@ -11,7 +11,7 @@
 #include <AssetIO/crtp/elysian_entity.hpp>
 #include <AssetIO/crtp/elysian_area.hpp>
 #include <AssetIO/crtp/elysian_skeleton.hpp>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/lua/elysian_lua_singleton.hpp>
 #include <ESGamma/system/elysian_collision_system.hpp>
 #if 1
@@ -33,8 +33,6 @@
 #endif
 
 namespace elysian {
-
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(CharacterBase)
 
 float CharacterBase::_deltaTime = 0.0f;
 
@@ -407,25 +405,25 @@ const char* CharacterBase::getAnimNameFromStates(const Direction::DIR4 dir) cons
     static char buffer[200] = { 0 };
 
 
-    if(_getAnimNameFromStatesRef.isNil()) {
+    if(!_getAnimNameFromStatesRef.valid()) {
 #if 0
         LuaManager::getGlobal("Character");
-        lua_getfield(*_mainState, -1, "getAnimNameFromStates");
-        assert(_getAnimNameFromStatesRef.pull());
-        lua_pop(*_mainState, 1);
+        lua_getfield(_mainState, -1, "getAnimNameFromStates");
+        assert(_getAnimNameFromStatesRef = elysian::lua::fromStack();
+        lua_pop(_mainState, 1);
 #endif
-        LuaVariant v(static_cast<const Character*>(this));
-        _getAnimNameFromStatesRef = v["getAnimNameFromStates"].getVariant();
-        GY_ASSERT(_getAnimNameFromStatesRef.getType() == LUA_TFUNCTION);
+        sol::object v = lua::make(static_cast<const Character*>(this));
+        _getAnimNameFromStatesRef = elysian::lua::get(v, "getAnimNameFromStates");
+        GY_ASSERT(elysian::lua::type(_getAnimNameFromStatesRef) == LUA_TFUNCTION);
     }
 
     const char* string = nullptr;
-    LuaVariant r = _getAnimNameFromStatesRef(static_cast<const Character*>(this), dir);
+    sol::object r = lua::call(_getAnimNameFromStatesRef, static_cast<const Character*>(this), dir);
 
-    if(r.getType() == LUA_TSTRING) {
-        if(r != "") {
-            GY_ASSERT(r.getValue<const char*>());
-            strcpy(buffer, r.getValue<const char*>());
+    if(elysian::lua::type(r) == LUA_TSTRING) {
+        if(r.as<std::string>() != "") {
+            GY_ASSERT(r.as<const char*>());
+            strcpy(buffer, r.as<const char*>());
             string = buffer;
         }
     }
@@ -443,7 +441,7 @@ void CharacterBase::applyKnockbackForce(const GYVector3 &force) {
 
 }
 
-void CharacterBase::addTempState(const ANIM_STATE state, const int track, OOLUA::Lua_func_ref ref) {
+void CharacterBase::addTempState(const ANIM_STATE state, const int track, sol::protected_function ref) {
     _tempStateActive    = true;
     _luaCallback        = ref;
     _callbackTrack      = track;
@@ -455,15 +453,15 @@ void CharacterBase::addTempState(const ANIM_STATE state, const int track, OOLUA:
         getEntity()->getSkeleton()->setAnimName(name, [=](int trackIndex, spEventType eventType, spEvent* /*event*/, int /*loopCount*/) {
 
             if(_callbackTrack == trackIndex || _callbackTrack == -1) {
-                LuaVariant v;
+                sol::object v;
 
                 switch(eventType) {
                 case SP_ANIMATION_END:
                 case SP_ANIMATION_COMPLETE:
 
-                    OOLUA::push(*_mainState, _luaCallback);
-                    v.pull();
-                    (void)v();
+                    sol::stack::push(_mainState, _luaCallback);
+                    v = elysian::lua::fromStack();
+                    (void)lua::call(v);
                     _tempStateActive = false;
                     removeState(state);
                     return true;

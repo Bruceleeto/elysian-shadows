@@ -7,7 +7,8 @@
 #pragma once
 
 #include <cstring>
-#include <stdexcept>
+#include <cstdio>
+#include <cstdlib>
 
 namespace elysian {
 
@@ -40,34 +41,9 @@ class RingBuffer {
   }
 
   void validateRingBuffer() {
-    if (mReadIdx < 0) {
-#ifdef ELYSIAN_ENGINE
-        assert(0);
-#else
-        throw std::runtime_error("Bad ring buffer read pointer.");
-#endif
-    }
-    if (mReadIdx > SIZE - 1) {
-#ifdef ELYSIAN_ENGINE
-        assert(0);
-#else
-      throw std::runtime_error("Bad ring buffer read pointer.");
-#endif
-    }
-    if (mWriteIdx < 0) {
-#ifdef ELYSIAN_ENGINE
-    assert(0);
-#else
-    throw std::runtime_error("Bad ring buffer write pointer.");
-
-#endif
-    }
-    if (mWriteIdx > SIZE - 1) {
-#ifdef ELYSIAN_ENGINE
-        assert(0);
-#else
-      throw std::runtime_error("Bad ring buffer write pointer.");
-#endif
+    if (mReadIdx < 0 || mReadIdx >= SIZE || mWriteIdx < 0 || mWriteIdx >= SIZE) {
+      std::fputs("Invalid ring buffer index.\n", stderr);
+      std::abort();
     }
   }
 

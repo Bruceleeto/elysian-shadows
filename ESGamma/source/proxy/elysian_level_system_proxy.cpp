@@ -48,7 +48,16 @@
  * \sa Level, getPrevAreaPath
  */
 
-OOLUA_EXPORT_FUNCTIONS(LevelSystem)
-OOLUA_EXPORT_FUNCTIONS_CONST(LevelSystem,
-                                getPrevAreaPath,
-                                getPrevLevelPath)
+
+namespace elysian::lua {
+using namespace elysian;
+using LevelSystem = elysian::LevelSystem;
+
+void registerLevelSystem(sol::state_view state) {
+    if (state["LevelSystem"].valid()) return;
+    using T = elysian::LevelSystem;
+    auto type = registerType<T>(state, "LevelSystem");
+    type["getPrevAreaPath"] = method<T>(&T::getPrevAreaPath);
+    type["getPrevLevelPath"] = method<T>(&T::getPrevLevelPath);
+}
+}

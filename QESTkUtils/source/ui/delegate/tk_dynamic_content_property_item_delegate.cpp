@@ -131,8 +131,8 @@ bool DynamicContentPropertyItemDelegate::editorEvent(QEvent *event, QAbstractIte
 
 void DynamicContentPropertyItemDelegate::_luaArraySizeTextCallback(ESTkStandardItem *item, QStyleOptionViewItem& option, bool emptyInvalid) {
     LuaTableFieldItem* luaItem = static_cast<LuaTableFieldItem*>(item);
-    LuaVariant v = luaItem->getVariant();
-    const int length = v.getLength();
+    sol::object v = luaItem->getVariant();
+    const int length = elysian::lua::length(v);
     option.text = QString::asprintf("[%d items]", length);
     QPalette palette = option.palette;
     if(!length && emptyInvalid) {

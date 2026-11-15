@@ -39,7 +39,7 @@ std::shared_ptr<elysian::CollidableAttrib> TkEntity::_selColliderAttrib;
 //elysian::Material* TkEntity::_selMaterial;
 bool TkEntity::_staticInit = false;
 
-TkEntity* TkEntity::create(const OOLUA::Lua_table_ref valTable) {
+TkEntity* TkEntity::create(const sol::object valTable) {
     TkEntity* entity = new TkEntity;
     entity->fromTable(valTable);
     return entity;
@@ -47,7 +47,7 @@ TkEntity* TkEntity::create(const OOLUA::Lua_table_ref valTable) {
 
 TkEntity::TkEntity(void): TkEntity(true) {}
 
-TkEntity::TkEntity(const OOLUA::Lua_table_ref /*valTable*/): TkEntity(true) {
+TkEntity::TkEntity(const sol::object /*valTable*/): TkEntity(true) {
     //fromTable(valTable);
 }
 
@@ -88,12 +88,12 @@ TkEntity::TkEntity(const bool selectable, TkEntity* prefab):
     setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
     setTreeWidgetItemState(TreeItemState::Inactive);
     if(prefab) {
-        LuaVariant parent = LuaManager::getParent(prefab);
-        const char* prefName = LuaManager::getPrefabName(prefab);
-        if(!parent.isNil()) {
-            LuaManager::setParent(this, parent);
+        sol::object parent = LuaManager::getParent(elysian::lua::make(prefab));
+        const char* prefName = LuaManager::getPrefabName(elysian::lua::make(prefab));
+        if(!!parent.valid()) {
+            LuaManager::setParent(elysian::lua::make(this), parent);
         } else if(prefName) {
-            LuaManager::setParent(this, LuaManager::getPrefab(prefName));
+            LuaManager::setParent(elysian::lua::make(this), LuaManager::getPrefab(prefName));
         }
         setSaveFlag(prefab->getSaveFlag());
     } else {
@@ -134,7 +134,7 @@ void TkEntity::setSaveFlag(const bool val) {
 
 QAbstractItemModel* TkEntity::getModel(void) const {
     if(!_luaModel) {
-        _luaModel = new LuaTableStackModel(this);
+        _luaModel = new LuaTableStackModel(elysian::lua::make(this));
         _luaModel->populateModel();
     }
     return _luaModel;
@@ -281,7 +281,7 @@ QMenu* TkEntity::createContextMenu(void) {
         [&](bool checked) {
             if(checked) addRenderable();
             else removeRenderable();
-            emitFieldChanged("renderable");
+            emitFieldChanged(elysian::lua::make("renderable"));
         },
         getRenderable(),
         canAddTo(elysian::Renderable()) && !isActive()
@@ -459,9 +459,9 @@ QString TkEntity::getTexturePath(void) const {
 
 
 void TkEntity::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     auto* planeDelegate = new EnumDropdownPropertyItemDelegate({
        "RECT_PLANE_BOTTOM",
@@ -472,12 +472,12 @@ void TkEntity::initializeDelegates(void) {
        "RECT_PLANE_LEFT_SLOPE_45",
        "RECT_PLANE_RIGHT_SLOPE_45"
     });
-    OOLUA::push(*_mainState, planeDelegate);
-    lua_setfield(*_mainState, -2, "planeType");
+    sol::stack::push(_mainState, planeDelegate);
+    lua_setfield(_mainState, -2, "planeType");
 
     auto* elevDelegate = new SpinboxPropertyItemDelegate(0, ELYSIAN_TILE_ENTRY_ELEV_MAX);
-    OOLUA::push(*_mainState, elevDelegate);
-    lua_setfield(*_mainState, -2, "elev");
+    sol::stack::push(_mainState, elevDelegate);
+    lua_setfield(_mainState, -2, "elev");
 
     DynamicContentPropertyItemDelegate* behavDelegate = new DynamicContentPropertyItemDelegate(DynamicContentPropertyItemDelegate::luaArraySizeTextCallback<false>);
     behavDelegate->setMimeDropManager(new MimeDropManager(QVector<MimeDropManager::Handler> {
@@ -488,11 +488,11 @@ void TkEntity::initializeDelegates(void) {
                 if(luaItem) {
                     auto* entityItem = luaItem->getAncestorSiblingLuaItem({"*"}, 1);
                     if(entityItem) {
-                        Entity* entity = entityItem->getVariant().getValue<Entity*>();
+                        Entity* entity = entityItem->getVariant().as<Entity*>();
                         if(entity) {
                             for(auto&& url : data->urls()) {
                                 QString assetPath = FileUtilities::getAssetRelativePath(url.toLocalFile());
-                                auto* behav = entity->addLuaBehavior(Q_CSTR(assetPath), LuaVariant());
+                                auto* behav = entity->addLuaBehavior(Q_CSTR(assetPath), elysian::lua::make());
                                 if(!behav) QMessageBox::critical(nullptr, "Error!", "The Lua Behavior could not be attached, because there was a problem with the script. View the console for more details.");
                             }
                             luaItem->setDirty(true);
@@ -518,26 +518,26 @@ void TkEntity::initializeDelegates(void) {
             }
         }
     }));
-    OOLUA::push(*_mainState, behavDelegate);
-    lua_setfield(*_mainState, -2, "behaviors");
+    sol::stack::push(_mainState, behavDelegate);
+    lua_setfield(_mainState, -2, "behaviors");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }
 
 void TkEntity::initializeVirtualTableDelegates(QString property) {
     if(property == "behaviors") {
-        LuaVariant delegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            TkEntity* entity = t["__ud"]->getValue<TkEntity*>();
-            if(entity && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            TkEntity* entity = elysian::lua::get(t, "__ud").as<TkEntity*>();
+            if(entity && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if(index <= entity->getBehaviorCount()) {
 
                     DynamicContentPropertyItemDelegate* delegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            Entity* self = luaFieldItem->getTableRef()["__ud"]->getValue<TkEntity*>();
+                            Entity* self = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkEntity*>();
                             if(self) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 Behavior* behav = static_cast<LuaBehavior*>(self->getBehaviorByIndex(index));
                                 if(behav) {
                                     QColor color(Qt::gray);
@@ -558,9 +558,9 @@ void TkEntity::initializeVirtualTableDelegates(QString property) {
                     delegate->setContextMenuCallback([](ESTkStandardItem* item) -> QMenu* {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            Entity* entity = luaFieldItem->getTableRef()["__ud"]->getValue<Entity*>();
+                            Entity* entity = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<Entity*>();
                             if(entity) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
 
                                 MenuStack stack("Behavior");
                                 stack.insertAction("Delete", [=](bool) {
@@ -579,9 +579,9 @@ void TkEntity::initializeVirtualTableDelegates(QString property) {
                     delegate->setDeleteCallback([](ESTkStandardItem* item) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            Entity* entity = luaFieldItem->getTableRef()["__ud"]->getValue<Entity*>();
+                            Entity* entity = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<Entity*>();
                             if(entity) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
 
                                 entity->removeBehavior(entity->getBehaviorByIndex(index)->getBehavName());
                                 auto* parent = luaFieldItem->getAncestorSiblingLuaItem({"behaviors"}, 1);
@@ -596,8 +596,8 @@ void TkEntity::initializeVirtualTableDelegates(QString property) {
             return nullptr;
         };
 
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     }
 }

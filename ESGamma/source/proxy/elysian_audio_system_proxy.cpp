@@ -671,50 +671,58 @@
  * given by \a{trackNum} in seconds. Valid values for \a{trackNum} are 0 and 1.
  */
 
-OOLUA_EXPORT_FUNCTIONS(AudioSystem,
-                       playSfxChannel,
-                       loadBgmTrack,
-                       setBgmTrack,
-                       fadeOutBgmTrack,
-                       fadeInBgmTrack,
-                       morphIntoBgmTrack,
-                       setBgmTrackLooping,
-                       setBgmTrackGain,
-                       fadeIntoBgmTrack,
-                       morphIntoNewBgmTrack,
-                       fadeIntoNewBgmTrack,
-                       loadAuxTrack,
-                       fadeOutAuxTrack,
-                       fadeInAuxTrack,
-                       morphIntoNewAuxTrack,
-                       fadeIntoNewAuxTrack,
-                       setAuxTrackLooping,
-                       setAuxTrackGain)
 
+namespace elysian::lua {
+using namespace elysian;
+using AudioSystem = elysian::AudioSystem;
 
-OOLUA_EXPORT_FUNCTIONS_CONST(AudioSystem,
-                             stopSfxChannel,
-                             setSfxChannelGain,
-                             setSfxChannelPitch,
-                             setSfxChannelLooping,
-                             setSfxChannelRolloffFactor,
-                             setSfxChannelPos,
-                             playBgmTrack,
-                             stopBgmTrack,
-                             pauseBgmTrack,
-                             isBgmTrackPlaying,
-                             getBgmTrack,
-                             getBgmTrackPath,
-                             setBgmTrackPitch,
-                             setBgmTrackPos,
-                             setBgmTrackRolloffFactor,
-                             playAuxTrack,
-                             stopAuxTrack,
-                             pauseAuxTrack,
-                             isAuxTrackPlaying,
-                             getAuxTrackPath,
-                             setAuxTrackPitch,
-                             setAuxTrackPos,
-                             setAuxTrackRolloffFactor,
-                             getBgmTrackTime,
-                             getAuxTrackTime)
+void registerAudioSystem(sol::state_view state) {
+    if (state["AudioSystem"].valid()) return;
+    using T = elysian::AudioSystem;
+    auto type = registerType<T>(state, "AudioSystem");
+    type["playSfxChannelLua"] = method<T, void(int, const GYWav&, sol::object)>(&T::playSfxChannelLua);
+    type["stopSfxChannel"] = method<T>(&T::stopSfxChannel);
+    type["setSfxChannelGain"] = method<T>(&T::setSfxChannelGain);
+    type["setSfxChannelPitch"] = method<T>(&T::setSfxChannelPitch);
+    type["setSfxChannelLooping"] = method<T>(&T::setSfxChannelLooping);
+    type["setSfxChannelRolloffFactor"] = method<T>(&T::setSfxChannelRolloffFactor);
+    type["setSfxChannelPos"] = method<T>(&T::setSfxChannelPos);
+    type["loadBgmTrack"] = method<T>(&T::loadBgmTrack);
+    type["playBgmTrack"] = method<T>(&T::playBgmTrack);
+    type["stopBgmTrack"] = method<T>(&T::stopBgmTrack);
+    type["pauseBgmTrack"] = method<T>(&T::pauseBgmTrack);
+    type["isBgmTrackPlaying"] = method<T>(&T::isBgmTrackPlaying);
+    type["getBgmTrack"] = method<T>(&T::getBgmTrack);
+    type["setBgmTrack"] = method<T>(&T::setBgmTrack);
+    type["getBgmTrackPath"] = method<T>(&T::getBgmTrackPath);
+    type["fadeOutBgmTrack"] = method<T>(&T::fadeOutBgmTrack);
+    type["fadeInBgmTrack"] = method<T>(&T::fadeInBgmTrack);
+    type["morphIntoBgmTrack"] = method<T>(&T::morphIntoBgmTrack);
+    type["setBgmTrackLooping"] = method<T>(&T::setBgmTrackLooping);
+    type["setBgmTrackGain"] = method<T>(&T::setBgmTrackGain);
+    type["setBgmTrackPitch"] = method<T>(&T::setBgmTrackPitch);
+    type["setBgmTrackPos"] = method<T>(&T::setBgmTrackPos);
+    type["setBgmTrackRolloffFactor"] = method<T>(&T::setBgmTrackRolloffFactor);
+    type["fadeIntoBgmTrack"] = method<T>(&T::fadeIntoBgmTrack);
+    type["morphIntoNewBgmTrack"] = method<T>(&T::morphIntoNewBgmTrack);
+    type["fadeIntoNewBgmTrack"] = method<T>(&T::fadeIntoNewBgmTrack);
+    type["getBgmTrackTime"] = method<T>(&T::getBgmTrackTime);
+    type["loadAuxTrack"] = method<T>(&T::loadAuxTrack);
+    type["playAuxTrack"] = method<T>(&T::playAuxTrack);
+    type["stopAuxTrack"] = method<T>(&T::stopAuxTrack);
+    type["pauseAuxTrack"] = method<T>(&T::pauseAuxTrack);
+    type["isAuxTrackPlaying"] = method<T>(&T::isAuxTrackPlaying);
+    type["getAuxTrackPath"] = method<T>(&T::getAuxTrackPath);
+    type["fadeOutAuxTrack"] = method<T>(&T::fadeOutAuxTrack);
+    type["fadeInAuxTrack"] = method<T>(&T::fadeInAuxTrack);
+    type["morphIntoNewAuxTrack"] = method<T>(&T::morphIntoNewAuxTrack);
+    type["fadeIntoNewAuxTrack"] = method<T>(&T::fadeIntoNewAuxTrack);
+    type["setAuxTrackLooping"] = method<T>(&T::setAuxTrackLooping);
+    type["setAuxTrackGain"] = method<T>(&T::setAuxTrackGain);
+    type["setAuxTrackPitch"] = method<T>(&T::setAuxTrackPitch);
+    type["setAuxTrackPos"] = method<T>(&T::setAuxTrackPos);
+    type["setAuxTrackRolloffFactor"] = method<T>(&T::setAuxTrackRolloffFactor);
+    type["getAuxTrackTime"] = method<T>(&T::getAuxTrackTime);
+    type["playSfxChannel"] = method<T, void(int, const GYWav&, sol::object)>(&T::playSfxChannelLua);
+}
+}

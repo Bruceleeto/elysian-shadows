@@ -12,7 +12,7 @@
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
 
 EntitySelectable::EntitySelectable(void) {
-    _tableRef = LuaVariant::newTable();
+    _tableRef = elysian::lua::table();
 }
 
 
@@ -63,14 +63,14 @@ void EntitySelectable::addEntity(const EntityEntry entry) {
     _entities.push_back(entry);
     //insertSourceModel(entry->getModel());
 
-    _tableRef[(int)_entities.size()] = entry.entity;
+    elysian::lua::set(_tableRef, (int)_entities.size(), entry.entity);
 
 #if 0
-    lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, _luaTableRef);
-    lua_pushinteger(*_mainState, _entities.size());
-    OOLUA::push(*_mainState, entry.entity);
-    lua_settable(*_mainState, -3);
-    lua_pop(*_mainState, 1);
+    lua_rawgeti(_mainState, LUA_REGISTRYINDEX, _luaTableRef);
+    lua_pushinteger(_mainState, _entities.size());
+    sol::stack::push(_mainState, entry.entity);
+    lua_settable(_mainState, -3);
+    lua_pop(_mainState, 1);
 #endif
 
     //if(!_baseEntity) _baseEntity = entry.entity;
@@ -89,13 +89,13 @@ void EntitySelectable::removeEntity(TkEntity * const entity) {
             _entities.erase(_entities.begin()+i);
             //removeSourceModel(entity->getModel());
 #if 0
-            lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, _luaTableRef);
-            lua_pushinteger(*_mainState, i);
-            lua_pushnil(*_mainState);
-            lua_settable(*_mainState, -3);
-            lua_pop(*_mainState, 1);
+            lua_rawgeti(_mainState, LUA_REGISTRYINDEX, _luaTableRef);
+            lua_pushinteger(_mainState, i);
+            lua_pushnil(_mainState);
+            lua_settable(_mainState, -3);
+            lua_pop(_mainState, 1);
 #else
-            _tableRef[i] = nullptr;
+            elysian::lua::set(_tableRef, i, nullptr);
 #endif
             break;
 		}

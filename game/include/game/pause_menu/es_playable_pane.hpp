@@ -38,7 +38,7 @@ namespace ElysianShadows {
     class PlayablePane: public elysian::EntityWidget, public elysian::LuaManager {
     private:
         Entity*             _playable         = nullptr;
-        LuaVariant          _combatTable;
+        sol::object          _combatTable;
 
         VerticalLayout*     _vLayoutLeft;
         VerticalLayout*     _vLayoutRight;

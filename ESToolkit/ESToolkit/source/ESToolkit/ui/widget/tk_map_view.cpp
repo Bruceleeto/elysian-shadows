@@ -795,10 +795,10 @@ void MapView::_registerDropEventCallbacks(void) {
         [=](const QMimeData* data, Qt::DropAction, QDropEvent* event, int, int, const QModelIndex&) {
             DbgEvent dbg("[MapView] Drop Event: Instantiating from Entity Prefab.");
             auto* tkMimeData = qobject_cast<const TkMimeData*>(data);
-            Entity* prefabEntity = tkMimeData->getVariant().getValue<Entity*>();
+            Entity* prefabEntity = tkMimeData->getVariant().as<Entity*>();
 
             if(!prefabEntity) {
-                errprintf("[MapView]: Could not instantiate [%s] type prefab!", tkMimeData->getVariant().getTypeString());
+                errprintf("[MapView]: Could not instantiate [%s] type prefab!", elysian::lua::typeName(tkMimeData->getVariant()).c_str());
                 return false;
             }
 
@@ -831,7 +831,7 @@ void MapView::_registerDropEventCallbacks(void) {
         },
        [=](const QMimeData* data, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&) {
            auto* tkMimeData = qobject_cast<const TkMimeData*>(data);
-            return (tkMimeData->isPrefab() && QString(tkMimeData->getVariant().getTypeString()) == QString("Entity"));
+            return (tkMimeData->isPrefab() && QString(elysian::lua::typeName(tkMimeData->getVariant()).c_str()) == QString("Entity"));
        }
 
    },

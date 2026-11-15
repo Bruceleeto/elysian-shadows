@@ -18,7 +18,7 @@
 #include <AssetIO/crtp/elysian_component.hpp>
 #include <ESGamma/utility/elysian_sort_sweep.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/utility/elysian_bit_mask.hpp>
 #include <memory>
 
@@ -32,12 +32,11 @@ namespace elysian {
 
     class CollisionSystem;
 
-    struct CollisionFlags: public LuaTableProxy<CollisionFlags> {
+    struct CollisionFlags: public LuaObject<CollisionFlags> {
+    public: using LuaObjectType = LuaObject<CollisionFlags>;
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(type,           getType,        setType)
-            ELYSIAN_LUA_PROXY_FIELD(typeAgainst,    getTypeAgainst, setTypeAgainst)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+
+        public:
 
         enum TYPE {
             TILE		= 1u,
@@ -68,17 +67,12 @@ namespace elysian {
 
     class CollidableStaticAttrib:
             public GYStatic,
-            public LuaTableProxy<CollidableStaticAttrib>
+            public LuaObject<CollidableStaticAttrib>
     {
+    public: using LuaObjectType = LuaObject<CollidableStaticAttrib>;
+
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(invMass,            getInverseMass,         setInverseMass)
-            ELYSIAN_LUA_PROXY_FIELD(coeffOfRest,        getCoeffOfRest,         setCoeffOfRest)
-            ELYSIAN_LUA_PROXY_FIELD(invMomOfInertia,    getInvMomOfInertia,     setInvMomOfInertia)
-            ELYSIAN_LUA_PROXY_FIELD(angDamping,         getAngDamping,          setAngDamping)
-            ELYSIAN_LUA_PROXY_FIELD(zCoeffOfRest,       getZCoeffOfRest,        setZCoeffOfRest)
-            ELYSIAN_LUA_PROXY_FIELD(damping,            getDampingVec,          setDampingVec)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                     CollidableStaticAttrib(void);
         void        setDamping(const float xy);
@@ -101,18 +95,14 @@ namespace elysian {
 
 
 
-    class CollidableAttribBase: public LuaTableProxy<CollidableAttribBase, CollidableAttrib> {
+    class CollidableAttribBase: public LuaObject<CollidableAttribBase, CollidableAttrib> {
+    public: using LuaObjectType = LuaObject<CollidableAttribBase, CollidableAttrib>;
+
     friend Collidable;
     friend class CollidableBase;
     public:
 
-    ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-        ELYSIAN_LUA_PROXY_FIELD(colliderType,       getColliderType,       setColliderType)
-        ELYSIAN_LUA_PROXY_FIELD(relPos,             getRelPosVec,          setRelPosVec)
-        ELYSIAN_LUA_PROXY_FIELD(relSize,            getRelSizeVec,         setRelSizeVec)
-        ELYSIAN_LUA_PROXY_FIELD(staticAttrib,       getStaticAttrib,       setStaticAttrib)
-        ELYSIAN_LUA_PROXY_FIELD(flags,              getFlags,              setFlags)
-    ELYSIAN_LUA_PROXY_FIELDS_END()
+    public:
 
         CollisionFlags          flags;
 
@@ -127,9 +117,9 @@ namespace elysian {
         void                    setRelSizeVec(const Vector3& size);
         void                    setRelPosVec(const Vector3& pos);
         CollidableStaticAttrib* getStaticAttrib(void);
-        void                    setStaticAttrib(const OOLUA::Lua_table_ref valTable);
+        void                    setStaticAttrib(const sol::object valTable);
         CollisionFlags*         getFlags(void);
-        void                    setFlags(const OOLUA::Lua_table_ref valTable);
+        void                    setFlags(const sol::object valTable);
 
     private:
         CollidableStaticAttrib  _staticAttrib;
@@ -142,23 +132,17 @@ namespace elysian {
 
     class CollidableBase:
         public Component,
-        public LuaTableProxy<CollidableBase, Collidable>
+        public LuaObject<CollidableBase, Collidable>
     {
+    public: using LuaObjectType = LuaObject<CollidableBase, Collidable>;
+
         friend Entity;
         friend class EntityBase;
         friend class CollisionSystem;
         friend class RigidBodySystem;
 
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(active,             isActive,               setActive)
-            ELYSIAN_LUA_PROXY_FIELD(contactCount,       getContactCount)
-            ELYSIAN_LUA_PROXY_FIELD(stackedOnGround,    getStackedOnGround)
-            ELYSIAN_LUA_PROXY_FIELD(restingOnBody,      getRestingOnBody)
-            ELYSIAN_LUA_PROXY_FIELD(worldSpace,         getWorldSpace,          setWorldSpace)
-            ELYSIAN_LUA_PROXY_FIELD(resolvePen,         getResolvePenetration,  setResolvePenetration)
-            ELYSIAN_LUA_PROXY_FIELD(attrib,             getAttrib,              setAttrib)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
     protected:
         static CollisionSystem* _colSys;
 

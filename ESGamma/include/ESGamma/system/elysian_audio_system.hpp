@@ -13,7 +13,7 @@
 #include <libGyro/gyro_matrix_api.h>
 #include <ESGamma/system/elysian_system.hpp>
 #include <ESGamma/utility/elysian_subprocess_manager.hpp>
-#include <AssetIO/utility/elysian_lua_variant_base.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 #define ELYSIAN_AUDIO_CHANNELS              32
 #define ELYSIAN_AUDIO_REFERENCE_DIST        32
@@ -73,7 +73,7 @@ namespace elysian {
     //WAV SFX API
     //accept -1 for dynamic channel
     void            playSfxChannel(const int channel, const GYWav& wav, EventMonitor* monitor=nullptr);
-    void            playSfxChannelLua(const int channel, const GYWav& wav, LuaVariant v=LuaVariant());
+    void            playSfxChannelLua(const int channel, const GYWav& wav, sol::object v=elysian::lua::make());
     void            stopSfxChannel(const int channel) const;
     bool            isSfxChannelPlaying(const int channel) const;
     void            setSfxChannelGain(const int channel, const float val) const;

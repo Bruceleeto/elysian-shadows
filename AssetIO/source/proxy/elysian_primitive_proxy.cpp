@@ -6,10 +6,6 @@
 
 #include <AssetIO/proxy/elysian_primitive_proxy.hpp>
 
-OOLUA_EXPORT_FUNCTIONS(GYColor4, setA, setR, setG, setB)
-OOLUA_EXPORT_FUNCTIONS_CONST(GYColor4, getA, getR, getG, getB)
-
-
 /*!
     \qmltype Color4
     \since 1.6.0
@@ -91,11 +87,6 @@ Value of the 8-bit alpha channel. 0 fully transparent, 255 is fully opaque.
  * \sa b, getB()
  */
 
-OOLUA_EXPORT_FUNCTIONS(Color4)
-OOLUA_EXPORT_FUNCTIONS_CONST(Color4, getA, getR, getG, getB, setA, setR, setG, setB)
-
-
-
 /*!
     \qmltype PrimAttrib
     \since 1.6.0
@@ -104,8 +95,8 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Color4, getA, getR, getG, getB, setA, setR, setG, s
 
     PrimAttrib is an abstract base class inherited by all primitive attributes.
 */
-EXPORT_OOLUA_FUNCTIONS_0_NON_CONST(PrimAttrib)
-EXPORT_OOLUA_FUNCTIONS_0_CONST(PrimAttrib)
+
+
 
 
 /*!
@@ -287,29 +278,6 @@ alpha value.
  * Returns the value of the alpha component of the \a{color} property.
  * \sa getAlpha(), color, setColor()
  */
-OOLUA_EXPORT_FUNCTIONS(SpriteAttrib,
-                        setFrame,
-                        setColor,
-                        setAlpha,
-                        loadTexture,
-                        loadSheet,
-                        setTexCoord,
-                        getColor4,
-                        setColor4,
-                        setTexPath,
-                        setSpecularMapPath,
-                        setNormalMapPath,
-                        setMaterial,
-                        getBlendMode,
-                        setBlendMode)
-OOLUA_EXPORT_FUNCTIONS_CONST(SpriteAttrib,
-                            getAlpha,
-                            getTexPath,
-                            getFrame,
-                            getNormalMapPath,
-                            getSpecularMapPath,
-                            getMaterial)
-
 /*!
     \qmltype QuadSpriteAttrib
     \inherits SpriteAttrib
@@ -345,13 +313,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(SpriteAttrib,
  * Sets the alpha values of all four vertices to the values given by \a{a0}, \a{a1}, \a{a2}, and \a{a3}.
  * Valid values are 0-255 where 0 is fully transparent and 255 is fully opaque.
  */
-OOLUA_EXPORT_FUNCTIONS_CONST(QuadSpriteAttrib)
-OOLUA_EXPORT_FUNCTIONS(QuadSpriteAttrib,
-                        setVertexColor4,
-                        setVerticesAlpha,
-                        getVertexColor4)
-
-
 /*!
     \qmltype Material
     \since 1.6.0
@@ -460,25 +421,6 @@ equations.
  * Sets the value of the \l{shininess} property to \a{factor}.
  * \sa shininess, getShininess()
  */
-OOLUA_EXPORT_FUNCTIONS(Material,
-                       setShininess,
-                       setAmbientColor,
-                       setDiffuseColor,
-                       setSpecularColor,
-                       setEmissiveColor,
-                       getAmbient,
-                       getDiffuse,
-                       getEmissive,
-                       getSpecular)
-OOLUA_EXPORT_FUNCTIONS_CONST(Material,
-                             getAmbientColor,
-                             getDiffuseColor,
-                             getSpecularColor,
-                             getEmissiveColor,
-                             getShininess)
-
-
-
 /*!
     \qmltype BlendMode
     \since 1.6.1
@@ -670,25 +612,182 @@ Optional constant color to be used in blend equation.
  * \sa constColor, getConstColor()
  */
 
-OOLUA_EXPORT_FUNCTIONS(BlendMode,
-                       setSrcFactor,
-                       setDstFactor,
-                       setConstColor,
-                       getConstColor)
-OOLUA_EXPORT_FUNCTIONS_CONST(BlendMode,
-                       getSrcFactor,
-                       getDstFactor)
 
+namespace elysian::lua {
+using namespace elysian;
+using Color4 = elysian::Color4;
+using Material = elysian::Material;
+using BlendMode = elysian::BlendMode;
+using PrimAttrib = elysian::PrimAttrib;
+using SpriteAttrib = elysian::SpriteAttrib;
+using QuadSpriteAttrib = elysian::QuadSpriteAttrib;
+using Recti = elysian::Recti;
 
-OOLUA_EXPORT_FUNCTIONS(Recti,
-                       setTop,
-                       setBottom,
-                       setLeft,
-                       setRight)
+void registerGYColor4(sol::state_view state) {
+    if (state["GYColor4"].valid()) return;
+    using T = GYColor4;
+    auto type = registerType<T>(state, "GYColor4");
+    type["new"] = sol::factories(factory<T>());
+    type["getA"] = [](const T& self) { return self.a; };
+    type["setA"] = [](T& self, decltype(T::a) value) { self.a = value; };
+    type["getR"] = [](const T& self) { return self.r; };
+    type["setR"] = [](T& self, decltype(T::r) value) { self.r = value; };
+    type["getG"] = [](const T& self) { return self.g; };
+    type["setG"] = [](T& self, decltype(T::g) value) { self.g = value; };
+    type["getB"] = [](const T& self) { return self.b; };
+    type["setB"] = [](T& self, decltype(T::b) value) { self.b = value; };
+}
 
-OOLUA_EXPORT_FUNCTIONS_CONST(Recti,
-                       getTop,
-                       getBottom,
-                       getLeft,
-                       getRight)
+void registerColor4(sol::state_view state) {
+    if (state["Color4"].valid()) return;
+    using T = elysian::Color4;
+    auto type = registerType<T>(state, "Color4");
+    type["new"] = sol::factories(factory<T>());
+    type["getR"] = method<T, unsigned char() const>(&T::getR);
+    type["getG"] = method<T, unsigned char() const>(&T::getG);
+    type["getB"] = method<T, unsigned char() const>(&T::getB);
+    type["getA"] = method<T, unsigned char() const>(&T::getA);
+    type["setR"] = method<T, void(const unsigned char) const>(&T::setR);
+    type["setG"] = method<T, void(const unsigned char) const>(&T::setG);
+    type["setB"] = method<T, void(const unsigned char) const>(&T::setB);
+    type["setA"] = method<T, void(const unsigned char) const>(&T::setA);
+    property(type, "r", method<T, unsigned char() const>(&T::getR), method<T, void(const unsigned char) const>(&T::setR));
+    property(type, "g", method<T, unsigned char() const>(&T::getG), method<T, void(const unsigned char) const>(&T::setG));
+    property(type, "b", method<T, unsigned char() const>(&T::getB), method<T, void(const unsigned char) const>(&T::setB));
+    property(type, "a", method<T, unsigned char() const>(&T::getA), method<T, void(const unsigned char) const>(&T::setA));
+    inheritProperties<T>();
+    finish<T>(type, "Color4", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
 
+void registerMaterial(sol::state_view state) {
+    if (state["Material"].valid()) return;
+    using T = elysian::Material;
+    auto type = registerType<T>(state, "Material");
+    type["new"] = sol::factories(factory<T>());
+    type["setAmbientColor"] = method<T, void(const GYVector4&)>(&T::setAmbientColor);
+    type["setDiffuseColor"] = method<T, void(const GYVector4&)>(&T::setDiffuseColor);
+    type["setSpecularColor"] = method<T, void(const GYVector4&)>(&T::setSpecularColor);
+    type["setEmissiveColor"] = method<T, void(const GYVector4&)>(&T::setEmissiveColor);
+    type["setShininess"] = method<T, void(float)>(&T::setShininess);
+    type["getAmbientColor"] = method<T, void(GYVector4&) const>(&T::getAmbientColor);
+    type["getDiffuseColor"] = method<T, void(GYVector4&) const>(&T::getDiffuseColor);
+    type["getSpecularColor"] = method<T, void(GYVector4&) const>(&T::getSpecularColor);
+    type["getEmissiveColor"] = method<T, void(GYVector4&) const>(&T::getEmissiveColor);
+    type["getShininess"] = method<T, float() const>(&T::getShininess);
+    type["getEmissive"] = method<T, Vector4()>(&T::getEmissive);
+    type["getDiffuse"] = method<T, Vector4()>(&T::getDiffuse);
+    type["getAmbient"] = method<T, Vector4()>(&T::getAmbient);
+    type["getSpecular"] = method<T, Vector4()>(&T::getSpecular);
+    property(type, "ambient", method<T, Vector4()>(&T::getAmbient));
+    property(type, "diffuse", method<T, Vector4()>(&T::getDiffuse));
+    property(type, "specular", method<T, Vector4()>(&T::getSpecular));
+    property(type, "emissive", method<T, Vector4()>(&T::getEmissive));
+    property(type, "shininess", method<T, float() const>(&T::getShininess), method<T, void(float)>(&T::setShininess));
+    inheritProperties<T>();
+    finish<T>(type, "Material", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerBlendMode(sol::state_view state) {
+    if (state["BlendMode"].valid()) return;
+    using T = elysian::BlendMode;
+    auto type = registerType<T>(state, "BlendMode");
+    type["new"] = sol::factories(factory<T>());
+    type["getConstColor"] = method<T, Color4()>(&T::getConstColor);
+    type["setConstColor"] = method<T>(&T::setConstColor);
+    type["getSrcFactor"] = method<T>(&T::getSrcFactor);
+    type["setSrcFactor"] = method<T>(&T::setSrcFactor);
+    type["getDstFactor"] = method<T>(&T::getDstFactor);
+    type["setDstFactor"] = method<T>(&T::setDstFactor);
+    property(type, "constColor", method<T, Color4()>(&T::getConstColor), method<T>(&T::setConstColor));
+    property(type, "srcFactor", method<T>(&T::getSrcFactor), method<T>(&T::setSrcFactor));
+    property(type, "dstFactor", method<T>(&T::getDstFactor), method<T>(&T::setDstFactor));
+    inheritProperties<T>();
+    finish<T>(type, "BlendMode", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerPrimAttrib(sol::state_view state) {
+    if (state["PrimAttrib"].valid()) return;
+    using T = elysian::PrimAttrib;
+    auto type = registerType<T>(state, "PrimAttrib");
+}
+
+void registerSpriteAttrib(sol::state_view state) {
+    if (state["SpriteAttrib"].valid()) return;
+    registerPrimAttrib(state);
+    using T = elysian::SpriteAttrib;
+    auto type = registerType<T, elysian::PrimAttrib>(state, "SpriteAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setFrame"] = method<T, void(unsigned)>(&T::setFrame);
+    type["getFrame"] = method<T, int() const>(&T::getFrame);
+    type["setColor"] = method<T, void(unsigned char, unsigned char, unsigned char, unsigned char)>(&T::setColor);
+    type["getAlpha"] = method<T, unsigned char() const>(&T::getAlpha);
+    type["getTexPath"] = method<T, const char*() const>(&T::getTexPath);
+    type["setTexPath"] = method<T, void(char const*)>(&T::setTexPath);
+    type["getColor4"] = method<T, Color4()>(&T::getColor4);
+    type["setColor4"] = method<T, void(const Color4&)>(&T::setColor4);
+    type["setAlpha"] = method<T, void(unsigned char)>(&T::setAlpha);
+    type["loadTexture"] = method<T, void(const char *, unsigned, unsigned, unsigned, unsigned)>(&T::loadTexture);
+    type["loadSheet"] = method<T, void(const char *, unsigned, unsigned)>(&T::loadSheet);
+    type["setTexCoord"] = method<T, void(unsigned, float, float)>(&T::setTexCoord);
+    type["setMaterial"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(Material*)>(&T::setMaterial), self, take<Material>(arg0)); };
+    type["getMaterial"] = method<T, Material*() const>(&T::getMaterial);
+    type["getNormalMapPath"] = method<T, const char*() const>(&T::getNormalMapPath);
+    type["getSpecularMapPath"] = method<T, const char*() const>(&T::getSpecularMapPath);
+    type["setNormalMapPath"] = method<T, void(const char*)>(&T::setNormalMapPath);
+    type["setSpecularMapPath"] = method<T, void(const char*)>(&T::setSpecularMapPath);
+    type["getBlendMode"] = method<T, BlendMode&()>(&T::getBlendMode);
+    type["setBlendMode"] = method<T, void(const BlendMode&)>(&T::setBlendMode);
+    property(type, "texture", method<T, const char*() const>(&T::getTexPath), method<T, void(char const*)>(&T::setTexPath));
+    property(type, "normalMap", method<T, const char*() const>(&T::getNormalMapPath), method<T, void(const char*)>(&T::setNormalMapPath));
+    property(type, "specularMap", method<T, const char*() const>(&T::getSpecularMapPath), method<T, void(const char*)>(&T::setSpecularMapPath));
+    property(type, "material", method<T, Material*() const>(&T::getMaterial), [](T& self, sol::object arg0) { return std::invoke(method<T, void(Material*)>(&T::setMaterial), self, take<Material>(arg0)); });
+    property(type, "color", method<T, Color4()>(&T::getColor4), method<T, void(const Color4&)>(&T::setColor4));
+    property(type, "blendMode", method<T, BlendMode&()>(&T::getBlendMode), method<T, void(const BlendMode&)>(&T::setBlendMode));
+    property(type, "frame", method<T, int() const>(&T::getFrame), method<T, void(unsigned)>(&T::setFrame));
+    inheritProperties<T, elysian::PrimAttrib>();
+    finish<T>(type, "SpriteAttrib", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+
+void registerQuadSpriteAttrib(sol::state_view state) {
+    if (state["QuadSpriteAttrib"].valid()) return;
+    registerSpriteAttrib(state);
+    registerPrimAttrib(state);
+    using T = elysian::QuadSpriteAttrib;
+    auto type = registerType<T, elysian::SpriteAttrib, elysian::PrimAttrib>(state, "QuadSpriteAttrib");
+    type["new"] = sol::factories(sharedFactory<T>());
+    type["setVertexColor4"] = method<T, void(const unsigned short, const Color4&)>(&T::setVertexColor4);
+    type["getVertexColor4"] = method<T, Color4(const unsigned short)>(&T::getVertexColor4);
+    type["setVerticesAlpha"] = method<T, void(const unsigned char, const unsigned char, const unsigned char, const unsigned char)>(&T::setVerticesAlpha);
+}
+
+void registerRecti(sol::state_view state) {
+    if (state["Recti"].valid()) return;
+    using T = elysian::Recti;
+    auto type = registerType<T>(state, "Recti");
+    type["new"] = sol::factories(factory<T>());
+    type["setTop"] = method<T>(&T::setTop);
+    type["setBottom"] = method<T>(&T::setBottom);
+    type["setLeft"] = method<T>(&T::setLeft);
+    type["setRight"] = method<T>(&T::setRight);
+    type["getTop"] = method<T>(&T::getTop);
+    type["getBottom"] = method<T>(&T::getBottom);
+    type["getLeft"] = method<T>(&T::getLeft);
+    type["getRight"] = method<T>(&T::getRight);
+    property(type, "top", method<T>(&T::getTop), method<T>(&T::setTop));
+    property(type, "bottom", method<T>(&T::getBottom), method<T>(&T::setBottom));
+    property(type, "left", method<T>(&T::getLeft), method<T>(&T::setLeft));
+    property(type, "right", method<T>(&T::getRight), method<T>(&T::setRight));
+    inheritProperties<T>();
+    finish<T>(type, "Recti", [] { return LuaManager::isSerializing(); });
+    tableConstructor(type);
+    initializeEditor<T>(type);
+}
+}

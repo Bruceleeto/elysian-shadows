@@ -19,9 +19,6 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(ParticleEmitterBase)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(ParticleEmitterAttribBase)
-
 ParticleEmitterAttribBase::~ParticleEmitterAttribBase(void) {
     delete _material;
 

@@ -19,11 +19,6 @@
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(AnimationTrackBase)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(AnimationBase)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(SkeletonBase)
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(SkeletonAttribBase)
-
 AnimationBase::~AnimationBase(void) { for(auto* it : _tracks) delete it; }
 
 void AnimationBase::setTrack(const unsigned index, AnimationTrack* track) {

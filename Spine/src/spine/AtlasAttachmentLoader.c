@@ -35,6 +35,7 @@
 spAttachment* _spAtlasAttachmentLoader_newAttachment (spAttachmentLoader* loader, spSkin* skin, spAttachmentType type,
 		const char* name, const char* path) {
 	spAtlasAttachmentLoader* self = SUB_CAST(spAtlasAttachmentLoader, loader);
+	(void)skin; /* Atlas regions are selected by path, independent of the skin. */
 	switch (type) {
 	case SP_ATTACHMENT_REGION: {
 		spRegionAttachment* attachment;

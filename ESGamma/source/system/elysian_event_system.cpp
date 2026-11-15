@@ -22,18 +22,18 @@ void EventSystem::removeEventObserver(EventObserver* monitor, EventType type, Ev
     } else errprintf("EventSystem::removeEventObserver() - Tried to remove monitor for invalid event type: %d", type);
 }
 
-void EventSystem::addEventObserverLua(EventObserver* monitor, EventType type, LuaVariant target) {
+void EventSystem::addEventObserverLua(EventObserver* monitor, EventType type, sol::object target) {
     EventTarget* targetPtr = nullptr;
-    if(!target.isNil()) {
-        targetPtr = target.getValue<EventTarget*>();
+    if(!!target.valid()) {
+        targetPtr = target.as<EventTarget*>();
     }
     addEventObserver(monitor, type, targetPtr);
 }
 
-void EventSystem::removeEventObserverLua(EventObserver* monitor, EventType type, LuaVariant target) {
+void EventSystem::removeEventObserverLua(EventObserver* monitor, EventType type, sol::object target) {
     EventTarget* targetPtr = nullptr;
-    if(!target.isNil()) {
-        targetPtr = target.getValue<EventTarget*>();
+    if(!!target.valid()) {
+        targetPtr = target.as<EventTarget*>();
     }
     removeEventObserver(monitor, type, targetPtr);
 

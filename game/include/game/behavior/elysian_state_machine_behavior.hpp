@@ -8,7 +8,7 @@
 #define ELYSIAN_STATE_MACHINE_BEHAVIOR_HPP
 
 #include <AssetIO/crtp/elysian_behavior.hpp>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <AssetIO/utility/elysian_cpp_lua_callback.hpp>
 
 #define ELYSIAN_STATE_MACHINE_DEBUG         1
@@ -65,12 +65,12 @@ enum TRIGGER_INDEX {
             const char* getName(void) const;
             void        setName(const char* name);
 
-            void        setOnStateEnter(LuaVariant v);
-            void        setOnStateExit(LuaVariant v);
-            void        setOnUpdate(LuaVariant v);
-            void        setOnCombatEnter(LuaVariant v);
-            void        setOnCombatExit(LuaVariant v);
-            void        setOnCombatDeath(LuaVariant v);
+            void        setOnStateEnter(sol::object v);
+            void        setOnStateExit(sol::object v);
+            void        setOnUpdate(sol::object v);
+            void        setOnCombatEnter(sol::object v);
+            void        setOnCombatExit(sol::object v);
+            void        setOnCombatDeath(sol::object v);
 
 
         private:
@@ -94,8 +94,8 @@ enum TRIGGER_INDEX {
             void                setCurrentState(State* state);
             void                setCurrentStateByName(const char* name);
             const char*         getCurrentStateName(void) const;
-            LuaVariant          getStateTable(void) const;
-            void                setStateTable(LuaVariant t);
+            sol::object          getStateTable(void) const;
+            void                setStateTable(sol::object t);
 
             virtual const char* getBehavName(void) const override;
             virtual void		onUpdate(void) override;
@@ -124,7 +124,7 @@ enum TRIGGER_INDEX {
 
         private:
             char                _name[ELYSIAN_STATE_MACHINE_NAME_SIZE] = { 0 };
-            LuaVariant          _stateTable;
+            sol::object          _stateTable;
             State*              _curState   = nullptr;
         };
 
@@ -148,7 +148,7 @@ enum TRIGGER_INDEX {
             return _curState;
         }
 
-        LuaVariant StateMachineBehavior::getStateTable(void) const {
+        sol::object StateMachineBehavior::getStateTable(void) const {
             return _stateTable;
         }
 

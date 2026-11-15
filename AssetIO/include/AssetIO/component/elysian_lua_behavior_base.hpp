@@ -8,7 +8,7 @@
 #define ELYSIAN_LUA_BEHAVIOR_BASE_HPP
 
 #include <AssetIO/crtp/elysian_behavior.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 
 #define ELYSIAN_LUA_BEHAVIOR_NAME				"LuaBehavior"
 #define ELYSIAN_LUA_BEHAVIOR_INHERITANCE_DEPTH	5
@@ -23,20 +23,16 @@ namespace elysian {
 
     class LuaBehaviorBase:
             public Behavior,
-            public LuaTableProxy<LuaBehaviorBase, LuaBehavior>  {
+            public LuaObject<LuaBehaviorBase, LuaBehavior>  {
+    public: using LuaObjectType = LuaObject<LuaBehaviorBase, LuaBehavior>;
+
     friend LuaBehavior;
     friend class BaseEntity;
     friend Entity;
 
     public:
 
-    ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-        ELYSIAN_LUA_PROXY_FIELD(path,                   getBehavName,       setBehavName)
-        ELYSIAN_LUA_PROXY_FIELD(paramTable,             getParamTable,      setParamTable)
-        ELYSIAN_LUA_PROXY_FIELD(triggers,               getTriggers,        setTriggers)
-        ELYSIAN_LUA_PROXY_FIELD(selfTable,              getSelfTable)
-        ELYSIAN_LUA_PROXY_FIELD(script,                 getScript)
-    ELYSIAN_LUA_PROXY_FIELDS_END()
+    public:
 
 
     protected:
@@ -47,17 +43,17 @@ namespace elysian {
 
         unsigned                _hierarchyDepth = 0;
 
-        OOLUA::Lua_table_ref    _ooSelfTableRefHierarchy[ELYSIAN_LUA_BEHAVIOR_INHERITANCE_DEPTH];
-        OOLUA::Lua_table_ref*   _ooSelfTableRef = nullptr;
-        OOLUA::Lua_table_ref    _paramTableRef;
+        sol::object    _ooSelfTableRefHierarchy[ELYSIAN_LUA_BEHAVIOR_INHERITANCE_DEPTH];
+        sol::object*   _ooSelfTableRef = nullptr;
+        sol::object    _paramTableRef;
 
         template<typename RType, typename... PTypes>
         RType _callTriggerByIndex(const uint32_t trigger, PTypes&&... parameters) {
-            lua_rawgeti(*LuaManager::_mainState, LUA_REGISTRYINDEX, _script->getEnvironRef());
-            lua_pushinteger(*LuaManager::_mainState, trigger);
-            lua_gettable(*LuaManager::_mainState, -2);      //must invoke metamethods for behavior inheritance
-            //lua_rawgeti(*_mainState, -1, trigger);
-            lua_remove(*LuaManager::_mainState, -2);
+            lua_rawgeti(LuaManager::_mainState, LUA_REGISTRYINDEX, _script->getEnvironRef());
+            lua_pushinteger(LuaManager::_mainState, trigger);
+            lua_gettable(LuaManager::_mainState, -2);      //must invoke metamethods for behavior inheritance
+            //lua_rawgeti(_mainState, -1, trigger);
+            lua_remove(LuaManager::_mainState, -2);
             return LuaManager::_callFunction<RType>(_script, std::forward<PTypes>(parameters)...);
         }
 
@@ -71,7 +67,7 @@ namespace elysian {
 
                             LuaBehaviorBase(Entity& entity);
                             LuaBehaviorBase(Entity& entity, const LuaBehavior* rhs);
-                            LuaBehaviorBase(Entity& entity, const char *script, const OOLUA::Lua_table_ref paramTable);
+                            LuaBehaviorBase(Entity& entity, const char *script, const sol::object paramTable);
                             ~LuaBehaviorBase(void);
 
         bool				loadScript(void);
@@ -124,11 +120,11 @@ namespace elysian {
         void                setBehavName(const char*const path);
 
 		int					getSelfTableRef(void) const;
-        void                setParamTable(OOLUA::Lua_table_ref ref);
+        void                setParamTable(sol::object ref);
         LuaBehaviorScript*  getScript(void) const;
 
-        OOLUA::Lua_table_ref getSelfTable(void);
-        OOLUA::Lua_table_ref getParamTable(void);
+        sol::object getSelfTable(void);
+        sol::object getParamTable(void);
 
     };
 
@@ -141,11 +137,11 @@ namespace elysian {
 
     inline LuaBehaviorScript* LuaBehaviorBase::getScript(void) const { return _script; }
 
-    inline OOLUA::Lua_table_ref LuaBehaviorBase::getSelfTable(void) { return _ooSelfTableRef? *_ooSelfTableRef : OOLUA::Lua_table_ref(); }
+    inline sol::object LuaBehaviorBase::getSelfTable(void) { return _ooSelfTableRef? *_ooSelfTableRef : sol::object(); }
 
-    inline OOLUA::Lua_table_ref LuaBehaviorBase::getParamTable(void) { return _paramTableRef; }
+    inline sol::object LuaBehaviorBase::getParamTable(void) { return _paramTableRef; }
 
-    inline int LuaBehaviorBase::getSelfTableRef(void) const { return _ooSelfTableRef->ref(); }
+    inline int LuaBehaviorBase::getSelfTableRef(void) const { return _ooSelfTableRef->registry_index(); }
 
 
 }

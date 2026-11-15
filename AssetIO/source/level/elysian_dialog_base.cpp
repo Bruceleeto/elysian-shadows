@@ -10,12 +10,7 @@
 
 namespace elysian {
 
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(DialogTextBase)
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(DialogOptionBase)
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(DialogPromptBase)
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(DialogBase)
-
-// ====== DIALOG SCREEN ======
+    // ====== DIALOG SCREEN ======
 
 
 
@@ -66,18 +61,18 @@ void DialogBase::setScreen(const unsigned index, DialogScreen*const screen) {
     }
 }
 
-LuaVariant DialogBase::getScreenLua(const unsigned index) const {
-    LuaVariant v;
+sol::object DialogBase::getScreenLua(const unsigned index) const {
+    sol::object v;
 
     if(index < _screens.size()) {
         auto* screen = getScreen(index);
         if(screen) {
             switch(screen->getScreenType()) {
             case DialogScreen::SCREEN_TEXT:
-                v.setValue<DialogText>(static_cast<DialogText*>(screen));
+                v = lua::make(static_cast<DialogText*>(screen));
                 break;
             case DialogScreen::SCREEN_PROMPT:
-                v.setValue<DialogPrompt>(static_cast<DialogPrompt*>(screen));
+                v = lua::make(static_cast<DialogPrompt*>(screen));
                 break;
             default:
             GY_ASSERT(0);

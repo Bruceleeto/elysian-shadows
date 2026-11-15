@@ -13,8 +13,7 @@ CONFIG += console
 SUBDIRS += \
     libGyro/qtcreator/libGyro \
     Spine/qtcreator/Spine \
-    libGyro-Kinetic \
-    OOLua/qtcreator/OOLua
+    libGyro-Kinetic
 
 tests {
     SUBDIRS += UnitTests
@@ -30,7 +29,6 @@ libGyro.depends = Spine \
     LibGyro-Kinetic
 
 ESToolkit.depends += libGyro \
-    OOLua \
     Spine \
     LibGyro-Kinetic
 

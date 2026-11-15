@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_LUA_SCRIPT_HPP
 #define ELYSIAN_LUA_SCRIPT_HPP
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_binding.hpp>
 #include <cstring>
 
 
@@ -74,41 +74,13 @@ namespace elysian {
 	};
 }
 
-namespace OOLUA
-{
-    typedef elysian::LuaBehaviorScriptAttrib    LuaBehaviorScriptAttrib;
-    typedef elysian::LuaScript                  LuaScript;
-    typedef elysian::LuaBehaviorScript          LuaBehaviorScript;
-}
 
-OOLUA_PROXY(LuaBehaviorScriptAttrib)
-    OOLUA_TAGS (
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MFUNC(inheritFromBehavior)
-    OOLUA_MFUNC(addSupportedTrigger)
-OOLUA_PROXY_END
 
-OOLUA_PROXY(LuaScript)
-    OOLUA_TAGS (
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MEM_FUNC_CONST(const char*, getPath)
-    OOLUA_MEM_FUNC_CONST(unsigned, getRefCount)
-    OOLUA_MEM_FUNC_CONST(bool, getError)
-    //OOLUA_MEM_FUNC(Lua_table_ref&, getEnvironTable)
-OOLUA_PROXY_END
 
-OOLUA_PROXY(LuaBehaviorScript, LuaScript)
-    OOLUA_TAGS (
-        No_public_constructors,
-        No_public_destructor
-    )
-    OOLUA_MEM_FUNC_CONST(maybe_null<LuaBehaviorScript*>, getParent)
-    OOLUA_MEM_FUNC(LuaBehaviorScriptAttrib*, getAttrib)
-OOLUA_PROXY_END
+
+
+
+
 
 
 
@@ -142,5 +114,12 @@ namespace elysian {
     inline auto LuaScript::getType(void) const -> TYPE { return TYPE_SCRIPT; }
 }
 
+
+
+namespace elysian::lua {
+void registerLuaBehaviorScriptAttrib(sol::state_view state);
+void registerLuaScript(sol::state_view state);
+void registerLuaBehaviorScript(sol::state_view state);
+}
 
 #endif

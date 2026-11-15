@@ -7,8 +7,8 @@
 #include <ESGamma/crtp/elysian_lua_manager.hpp>
 #include <AssetIO/crtp/elysian_behavior.hpp>
 #include <ESGamma/crtp/elysian_debug.hpp>
-#include <AssetIO/utility/elysian_lua_variant_base.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <libGyro/gyro_file_api.h>
 
 namespace elysian {
@@ -16,7 +16,7 @@ namespace elysian {
 //static members
 std::map<const char*, LuaScript*, ltstr>	LuaManagerBase::_scripts;
 bool                                        LuaManagerBase::_serializing                                                = false;
-OOLUA::Script*								LuaManagerBase::_mainState                                                  = nullptr;
+sol::state LuaManagerBase::_mainState;
 int											LuaManagerBase::_errorCode                                                  = 0;
 int                                         LuaManagerBase::_printSeverity                                              = Debug::LOG_VERBOSE;
 int                                         LuaManagerBase::_stackBalanceTop[ELYSIAN_LUA_STACK_BALANCE_RECURSIVE_DEPTH] = { 0 };
@@ -46,29 +46,29 @@ void LuaManagerBase::luaPrint(const char * const string, const int severity) {
 
 const char* LuaManagerBase::getVariadicStringFromStack(void) {
     static char string[GYRO_PRINTF_BUFFER_SIZE] = {0};
-    unsigned n = lua_gettop(*_mainState);
+    unsigned n = lua_gettop(_mainState);
     const char *curString;
 
     string[0] = 0;
     for(unsigned i = 1; i <= n; ++i) {
 
-        int t = lua_type(*_mainState, i);
+        int t = lua_type(_mainState, i);
 
         switch(t) {
             case LUA_TSTRING:
             case LUA_TNUMBER:
             //case LUA_TBOOLEAN:
-                curString = lua_tostring(*_mainState, i);
+                curString = lua_tostring(_mainState, i);
                 strcat(string, curString);
                 break;
             case LUA_TBOOLEAN:
-                curString = (lua_toboolean(*_mainState, i))? "true" : "false";
+                curString = (lua_toboolean(_mainState, i))? "true" : "false";
                 strcat(string, curString);
                 break;
             default: {
-                elysian::LuaVariant v = elysian::LuaVariant::fromStack(i, false);
+                sol::object v = elysian::lua::fromStack(i, false);
                 //curString = lua_typename(l, t);
-                strcat(string, v.asString().getValue<const char*>());
+                strcat(string, elysian::lua::string(v).c_str());
             }
         }
 
@@ -95,39 +95,39 @@ void LuaManagerBase::_errorprintf(const char *const string, ...) {
 
 void LuaManagerBase::_showError(void) {
     if(_errorCode == 0) return;
-    const char *errorMsg = luaL_checkstring(*_mainState, -1);
+    const char *errorMsg = luaL_checkstring(_mainState, -1);
     Debug::luaPrint("Error Message");
     Debug::push();
     _errorprintf((errorMsg)? errorMsg : "Lua error message not available");
     Debug::pop();
-    lua_pop(*_mainState, 1); //pop error string off the stack
+    lua_pop(_mainState, 1); //pop error string off the stack
 }
 
 void LuaManagerBase::rPrintByIndex(const int index, const unsigned depth, const char* name) {
-    //int oldTop = lua_gettop(*_mainState);
-    lua_pushvalue(*_mainState, index);							//push table to print
+    //int oldTop = lua_gettop(_mainState);
+    lua_pushvalue(_mainState, index);							//push table to print
     LuaManager::pushGlobalField("rPrint");                      //push function
-    lua_pushvalue(*_mainState, -2);                             //push table to print
-    if(depth) lua_pushnumber(*_mainState, depth);				//push depth if given
-    else lua_pushnil(*_mainState);								//push nil for default depth if not
-    lua_pushstring(*_mainState, name);							//push name of table
-    lua_call(*_mainState, 3, 1);								//call rPrint
-    lua_pop(*_mainState, 2);
+    lua_pushvalue(_mainState, -2);                             //push table to print
+    if(depth) lua_pushinteger(_mainState, depth);				//push depth if given
+    else lua_pushnil(_mainState);								//push nil for default depth if not
+    lua_pushstring(_mainState, name);							//push name of table
+    lua_call(_mainState, 3, 1);								//call rPrint
+    lua_pop(_mainState, 2);
 
-   // oldTop = lua_gettop(*_mainState);
+   // oldTop = lua_gettop(_mainState);
 
-    //lua_pop(*_mainState, lua_gettop(*_mainState)-oldTop);									//pop return value
+    //lua_pop(_mainState, lua_gettop(_mainState)-oldTop);									//pop return value
 }
 
 void LuaManagerBase::rPrintByRef(const int ref, const unsigned depth, const char* name) {
-    lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, ref);			//push ref onto stack
-    //int index = lua_gettop(*_mainState);						//get index of ref
+    lua_rawgeti(_mainState, LUA_REGISTRYINDEX, ref);			//push ref onto stack
+    //int index = lua_gettop(_mainState);						//get index of ref
     rPrintByIndex(-1, depth, name);							//invoke by ref
-    lua_pop(*_mainState, 1);									//pop ref from stack
+    lua_pop(_mainState, 1);									//pop ref from stack
 }
 
 bool LuaManagerBase::runString(const char *const string) {
-    if((_errorCode = luaL_dostring(*_mainState, string)) != 0) {
+    if((_errorCode = luaL_dostring(_mainState, string)) != 0) {
         _showError();
         return false;
     }
@@ -164,14 +164,14 @@ int LuaManagerBase::_traceBack(lua_State *L) {
     //++_traceBackDbgPushes;
 
     _showError();
-    lua_pop(*_mainState, 2); //remove debug table and original error from stack
+    lua_pop(_mainState, 2); //remove debug table and original error from stack
     _runtimeStackDump();
     return 1;
 }
 
 void LuaManagerBase::_cStackDump(void) {
     int i;
-    int top = lua_gettop(*_mainState);
+    int top = lua_gettop(_mainState);
     char varDisplayString[200];
 
     luaPrint("C Stack Dump");
@@ -203,12 +203,12 @@ unsigned LuaManagerBase::_envDump(LuaScript *scr) {
     }
 
     LuaManager::pushGlobalField("rPrint");
-    lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, scr->getEnvironRef());
-    lua_pushnumber(*_mainState, 3);
+    lua_rawgeti(_mainState, LUA_REGISTRYINDEX, scr->getEnvironRef());
+    lua_pushinteger(_mainState, 3);
     sprintf(envString, "_env[%d]", envCount-1);
-    lua_pushstring(*_mainState, envString);
+    lua_pushstring(_mainState, envString);
     ELYSIAN_LUA_MANAGER_PROTECTED_CALL(3, 1, nullptr);
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 
 
     if(instance == 0) {
@@ -234,23 +234,23 @@ void LuaManagerBase::_runtimeStackDump(void) {
     //Walk up the stack
     while(true) {
 
-        validStackLevel = lua_getstack(*_mainState, stackLevel, &luaDebug);
+        validStackLevel = lua_getstack(_mainState, stackLevel, &luaDebug);
         if(!validStackLevel) break;
 
         //Walk local variables and arguments
         while(true) {
 
-            localVarName = lua_getlocal(*_mainState, &luaDebug, localIndex);
+            localVarName = lua_getlocal(_mainState, &luaDebug, localIndex);
             if(!localVarName) break;
 
-            int stackIndex = lua_gettop(*_mainState);
-            LuaVariant v = LuaVariant::fromStack(stackIndex);
-            LuaVariant s = v.asString();
-            snprintf(displayName, sizeof(displayName), "_local[%d][%d] %s = %s (%s)", stackLevel, localIndex, localVarName, s.getValue<const char*>(), v.getTypeString());
+            int stackIndex = lua_gettop(_mainState);
+            sol::object v = elysian::lua::fromStack(stackIndex);
+            sol::object s = elysian::lua::make(elysian::lua::string(v));
+            snprintf(displayName, sizeof(displayName), "_local[%d][%d] %s = %s (%s)", stackLevel, localIndex, localVarName, s.as<const char*>(), elysian::lua::typeName(v).c_str());
             dbgprintf("%s", displayName);
            // rPrintByIndex(stackIndex, 1, displayName);
 
-            lua_pop(*_mainState, 1);
+            lua_pop(_mainState, 1);
 
             ++localIndex;
 
@@ -294,17 +294,17 @@ LuaBehaviorScript* LuaManagerBase::loadBehaviorScript(const char* const file) {
     } else {
 
         callGlobalFunction<void>("setScriptAttrib", behav, behav->getAttrib());
-        behav->cacheTriggers(*_mainState);
+        behav->cacheTriggers(_mainState);
 
         if(behav->getAttrib()->hasParent()) {
             behav->setParent(loadBehaviorScript(behav->getAttrib()->getParentPath()));
 
             //Make _ENV inherit from parent._ENV
-            lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, behav->getEnvironRef());					//_ENV
-            lua_newtable(*_mainState);																//metatable
-            lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, behav->getParent()->getEnvironRef());		//parent._ENV
-            lua_setfield(*_mainState, -2, "__index");												//metatable[__index] = parent._ENV;
-            lua_setmetatable(*_mainState, -2);														//setmetatable(_ENV, metatable);
+            lua_rawgeti(_mainState, LUA_REGISTRYINDEX, behav->getEnvironRef());					//_ENV
+            lua_newtable(_mainState);																//metatable
+            lua_rawgeti(_mainState, LUA_REGISTRYINDEX, behav->getParent()->getEnvironRef());		//parent._ENV
+            lua_setfield(_mainState, -2, "__index");												//metatable[__index] = parent._ENV;
+            lua_setmetatable(_mainState, -2);														//setmetatable(_ENV, metatable);
         }
 
         if(behav->getAttrib()->getSupportedTriggers() & Behavior::ON_SCRIPT_CREATE) {
@@ -347,30 +347,30 @@ bool LuaManagerBase::runScriptSandbox(const char *const file, LuaScript* const s
     const char *const path = file;
 #endif
 
-    if((_errorCode = luaL_loadfile(*_mainState, path)) != 0) {
+    if((_errorCode = luaL_loadfile(_mainState, path)) != 0) {
         if(_errorCode == LUA_ERRFILE) {
             Debug::printf(Debug::LOG_WARNING, "Could not load script file [%s]!", file);
         } else _showError(); //DO NOT LOG_ERROR OUT IF FILE ISN'T FOUND!!!
         /*else {
-            lua_remove(*_mainState, 1);					//take loaded chunk off of stack
+            lua_remove(_mainState, 1);					//take loaded chunk off of stack
         }*/
-        lua_pop(*_mainState, lua_gettop(*_mainState));
+        lua_pop(_mainState, lua_gettop(_mainState));
         if(script) script->setError();
         return false;
 
     } else {
 
-        lua_newtable(*_mainState);                                      //ENV
-        lua_newtable(*_mainState);                                      //metatable
-        lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);  //globals table
-        lua_setfield(*_mainState, -2, "__index");                       //metatable[__index] = _G;
-        lua_setmetatable(*_mainState, -2);                              //setmetatable(ENV, metatable);
+        lua_newtable(_mainState);                                      //ENV
+        lua_newtable(_mainState);                                      //metatable
+        lua_rawgeti(_mainState, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);  //globals table
+        lua_setfield(_mainState, -2, "__index");                       //metatable[__index] = _G;
+        lua_setmetatable(_mainState, -2);                              //setmetatable(ENV, metatable);
         if(script) {
-            lua_pushvalue(*_mainState, -1);                             //duplicate ENV
-            ref = luaL_ref(*_mainState,	LUA_REGISTRYINDEX);             //store reference to ENV in Lua registry
+            lua_pushvalue(_mainState, -1);                             //duplicate ENV
+            ref = luaL_ref(_mainState,	LUA_REGISTRYINDEX);             //store reference to ENV in Lua registry
             script->setEnvironRef(ref);                                 //and save key in LuaScript
         }
-        lua_setupvalue(*_mainState, -2, 1);
+        lua_setupvalue(_mainState, -2, 1);
         ELYSIAN_LUA_MANAGER_PROTECTED_CALL(0, retCount, script);
     }
 
@@ -409,14 +409,14 @@ bool LuaManagerBase::unloadScript(LuaScript &script) {
                 if(it->second->getType() == LuaScript::TYPE_BEHAVIOR) {
                     auto behav = static_cast<LuaBehaviorScript*>(it->second);
                     if(behav->getAttrib()->getSupportedTriggers() & Behavior::ON_SCRIPT_DESTROY) {
-                        lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, behav->getEnvironRef());		//push _ENV
-                        lua_getfield(*_mainState, -1, "onScriptDestroy");							//get _ENV.onScriptDestroy()
-                        lua_remove(*_mainState, -2);												//remove _ENV
+                        lua_rawgeti(_mainState, LUA_REGISTRYINDEX, behav->getEnvironRef());		//push _ENV
+                        lua_getfield(_mainState, -1, "onScriptDestroy");							//get _ENV.onScriptDestroy()
+                        lua_remove(_mainState, -2);												//remove _ENV
                         ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 0, behav);												//call _ENV.onScriptDestroy()
                     }
                 }
                 //remove reference to script's ENV from Lua registry
-                luaL_unref(*_mainState, LUA_REGISTRYINDEX, it->second->getEnvironRef());
+                luaL_unref(_mainState, LUA_REGISTRYINDEX, it->second->getEnvironRef());
                 //delete script
 
                 //FUCKING FIX ME!!!
@@ -426,7 +426,7 @@ bool LuaManagerBase::unloadScript(LuaScript &script) {
                 //remove script from cache
                 _scripts.erase(it);
                 //do a gc sweep
-                _mainState->gc();
+                _mainState.collect_garbage();
             }
             return true;
         }
@@ -477,13 +477,14 @@ static const char _assetPathShim[] =
 bool LuaManagerBase::initialize(void) {
     bool success = true;
     DbgEvent event("Initializing Lua virtual machine.");
-    _mainState = new OOLUA::Script;
+    lua::activeState = _mainState.lua_state();
+    lua::registerView(_mainState);
 
     Debug::printf(Debug::LOG_VERBOSE, "Opening standard libs");
-    luaL_openlibs(*_mainState);
+    luaL_openlibs(_mainState);
 
-    lua_pushcfunction(*_mainState, &_luaResolveAssetPath);
-    lua_setglobal(*_mainState, "__esResolveAssetPath");
+    lua_pushcfunction(_mainState, &_luaResolveAssetPath);
+    lua_setglobal(_mainState, "__esResolveAssetPath");
     success &= runString(_assetPathShim);
 
     Debug::printf(Debug::LOG_VERBOSE, "Loading utility functions.");
@@ -497,7 +498,7 @@ bool LuaManagerBase::initialize(void) {
 }
 
 bool LuaManagerBase::uninitialize(void) {
-    delete _mainState;
+    _mainState.collect_garbage();
     _scripts.clear();
     return true;
 }
@@ -515,7 +516,7 @@ unsigned LuaManagerBase::getScriptInstances(void) {
 }
 
 unsigned LuaManagerBase::getKbytesUsed(void) {
-    return lua_gc(*_mainState, LUA_GCCOUNT, 0);
+    return lua_gc(_mainState, LUA_GCCOUNT, 0);
 }
 
 
@@ -527,7 +528,7 @@ void LuaManagerBase::dumpStats(void) {
     uint32_t triggers;
     int kbytes;
 
-    kbytes = lua_gc(*_mainState, LUA_GCCOUNT, 0);
+    kbytes = lua_gc(_mainState, LUA_GCCOUNT, 0);
 
 
     Debug::luaPrint("Virtual Machine Status Dump");
@@ -588,61 +589,61 @@ void LuaManagerBase::dumpStats(void) {
 }
 
 void LuaManagerBase::runGarbageCollector(void) {
-    _mainState->gc();
+    _mainState.collect_garbage();
 }
 
 bool LuaManagerBase::genericIterate(const int index, std::function<void(void)> lambda) {
     //bool firstPass = true;
     stackBalanceBegin();
 
-    int beginStack = lua_gettop(*_mainState);
+    int beginStack = lua_gettop(_mainState);
 
-    lua_pushvalue(*_mainState, index);
+    lua_pushvalue(_mainState, index);
 
     pushGlobalField("pairs");
-    lua_pushvalue(*_mainState, -2);
+    lua_pushvalue(_mainState, -2);
     ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 3, nullptr);
 
-    lua_pushvalue(*_mainState, -3);
-    lua_insert(*_mainState, -4);
+    lua_pushvalue(_mainState, -3);
+    lua_insert(_mainState, -4);
 
-    lua_pushvalue(*_mainState, -2);
-    lua_insert(*_mainState, -4);
+    lua_pushvalue(_mainState, -2);
+    lua_insert(_mainState, -4);
 
     do {
         if(!ELYSIAN_LUA_MANAGER_PROTECTED_CALL(2, 2, nullptr)) {
             break;
         }
-         if(lua_isnil(*_mainState, -2)) {
+         if(lua_isnil(_mainState, -2)) {
              break;
          }
 
-        lua_pushvalue(*_mainState, -4);
-        lua_insert(*_mainState, -5);
-        lua_pushvalue(*_mainState, -3);
-        lua_insert(*_mainState, -5);
+        lua_pushvalue(_mainState, -4);
+        lua_insert(_mainState, -5);
+        lua_pushvalue(_mainState, -3);
+        lua_insert(_mainState, -5);
 
         lambda();
 
         //STACK[-2] = KEY
         //STACK[-1] = VALUE
-        lua_pop(*_mainState, 1);
+        lua_pop(_mainState, 1);
         //firstPass = false;
 
         //Pop value, leave key
     } while(true);
 
     //pop key + table
-    //lua_pop(*_mainState, 5);
+    //lua_pop(_mainState, 5);
 
-    lua_pop(*_mainState, lua_gettop(*_mainState)-beginStack);
+    lua_pop(_mainState, lua_gettop(_mainState)-beginStack);
 
     stackBalanceEnd();
     return true;
 }
 
 
-LuaVariant LuaManagerBase::exec(const char * const str, ...) {
+sol::object LuaManagerBase::exec(const char * const str, ...) {
     static char buffer[GYRO_PRINTF_BUFFER_SIZE];
     va_list argptr;
 
@@ -651,18 +652,18 @@ LuaVariant LuaManagerBase::exec(const char * const str, ...) {
     va_end(argptr);
 
     runString(buffer);
-    return LuaVariant::fromStack();
+    return elysian::lua::fromStack();
 }
 
-LuaVariant LuaManagerBase::getPrefab(const char* const name) {
+sol::object LuaManagerBase::getPrefab(const char* const name) {
     return exec("return prefab(\"%s\")", name);
 }
 
-const char* LuaManagerBase::getPrefabName(const LuaVariant& ref) {
+const char* LuaManagerBase::getPrefabName(const sol::object& ref) {
     return callGlobalFunction<const char*>("getPrefabName", nullptr, ref);
 }
 
-bool LuaManagerBase::saveTable(const LuaVariant& v, const char * const filename) {
+bool LuaManagerBase::saveTable(const sol::object& v, const char * const filename) {
     bool success = true;
 
     dbgprintf("Serializing Lua table: [%s]", filename);
@@ -687,9 +688,9 @@ bool LuaManagerBase::saveTable(const LuaVariant& v, const char * const filename)
     return success;
 }
 
-LuaVariant LuaManagerBase::getGlobalsTable(void) {
-    lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
-    return LuaVariant::fromStack();
+sol::object LuaManagerBase::getGlobalsTable(void) {
+    lua_rawgeti(_mainState, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
+    return elysian::lua::fromStack();
 }
 
 void LuaManagerBase::updateFrameStats(void) {
@@ -697,23 +698,6 @@ void LuaManagerBase::updateFrameStats(void) {
 }
 
 
-
-
-
-//newfangled stack API
-void LuaManagerBase::push(const LuaVariant& variant) {
-    variant.push();
-}
-
-
-void LuaManagerBase::push(const std::initializer_list<LuaPair>& pairs) {
-    lua_newtable(*_mainState);
-    for(auto it : pairs) {
-        it.first.push();
-        it.second.push();
-        lua_settable(*_mainState, -3);
-    }
-}
 
 
 

@@ -87,7 +87,7 @@ inline void CppLuaCallbackTest::createCFunctionCallTest(void) {
 
 inline void CppLuaCallbackTest::createLuaFunctionTypeTest(void) {
     std::function<int(int, int)> func = &CFunction;
-    LuaVariant v(func);
+    sol::object v = elysian::lua::make(sol::as_function(func));
     elysian::CppLuaCallback<int, int, int> cb(v);
 
     QVERIFY(cb.getType() == elysian::CppLuaCallback<int ELYSIAN_COMMA int ELYSIAN_COMMA int>::Type::Lua);
@@ -95,14 +95,14 @@ inline void CppLuaCallbackTest::createLuaFunctionTypeTest(void) {
 
 inline void CppLuaCallbackTest::createLuaFunctionBoolTest(void) {
     std::function<int(int, int)> func = &CFunction;
-    LuaVariant v(func);
+    sol::object v = elysian::lua::make(sol::as_function(func));
     elysian::CppLuaCallback<int, int, int> cb(v);
     QVERIFY((bool)cb);
 }
 
 inline void CppLuaCallbackTest::createLuaFunctionCallTest(void) {
     std::function<int(int, int)> func = &CFunction;
-    LuaVariant v(func);
+    sol::object v = elysian::lua::make(sol::as_function(func));
     elysian::CppLuaCallback<int, int, int> cb(v);
     int retVal = cb(3, 4);
     QVERIFY(retVal == 7);
@@ -110,7 +110,7 @@ inline void CppLuaCallbackTest::createLuaFunctionCallTest(void) {
 
 inline void CppLuaCallbackTest::createLuaFunctionComparisonTest(void) {
     std::function<int(int, int)> func = &CFunction;
-    LuaVariant v(func);
+    sol::object v = elysian::lua::make(sol::as_function(func));
     elysian::CppLuaCallback<int, int, int> cb(v);
     QVERIFY(cb == v);
 }

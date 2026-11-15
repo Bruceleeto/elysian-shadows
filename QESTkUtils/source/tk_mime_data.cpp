@@ -16,9 +16,9 @@ const QStringList TkMimeData::_formatsList = {
 TkMimeData::~TkMimeData(void) {
     //we need to delete each individual element of QMimeData for array types.
     if(_type == TYPE_MIME_DATA_ARRAY) {
-        const int length = _variant.getLength();
+        const int length = elysian::lua::length(_variant);
         for(int i = 1; i <= length; ++i) {
-            QMimeData* data = static_cast<QMimeData*>(_variant.getValue(i).getValue<void*>());
+            QMimeData* data = static_cast<QMimeData*>(elysian::lua::get(_variant, i).as<void*>());
             delete data;
         }
     }
@@ -33,10 +33,10 @@ QVariant TkMimeData::retrieveData(const QString& mimeType, QMetaType /*preferred
 
 QStringList TkMimeData::formats(void) const {
     QStringList formats = _formatsList;
-    if(strcmp(_variant.getTypeString(), "Entity") == 0) {
-        //Entity* entity = _variant.getValue<Entity*>();
+    if(strcmp(elysian::lua::typeName(_variant).c_str(), "Entity") == 0) {
+        //Entity* entity = _variant.as<Entity*>();
         //if(!entity->getTexturePath().isNull()) formats << QString("");
-    } else if(strcmp(_variant.getTypeString(), "Color4") == 0) {
+    } else if(strcmp(elysian::lua::typeName(_variant).c_str(), "Color4") == 0) {
         //formats << QString("");
     }
 

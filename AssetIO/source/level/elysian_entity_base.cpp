@@ -15,8 +15,6 @@ using namespace std;
 
 namespace elysian {
 
-ELYSIAN_LUA_PROXY_FIELDS_EXPORT(EntityBase)
-
 float EntityBase::_oldZ;
 
 EntityBase::EntityBase(void): EntityBase(nullptr) {  }
@@ -47,7 +45,7 @@ EntityBase::EntityBase(EntityBase *other) {
             LuaBehavior* newbehav = new LuaBehavior(*static_cast<Entity*>(this));
             //newbehav->setBehavName(luaBehav->getBehavName());
 
-            newbehav->fromTable(luaBehav);
+            newbehav->fromTable(lua::make(luaBehav));
             newbehav->loadScript();
             //if(behav->loadScript()) { //sitl allow it to be attached if it's invalid, so it can be dereested.
             attachBehavior(newbehav);
@@ -70,7 +68,7 @@ EntityBase::EntityBase(EntityBase &&) {
 }
 
 
-void EntityBase::setTransform(LuaVariant valTable) { _transform.fromTable(std::move(valTable)); }
+void EntityBase::setTransform(sol::object valTable) { _transform.fromTable(std::move(valTable)); }
 
 Entity* EntityBase::getTopParentEntity(void) {
     Entity* it = static_cast<Entity*>(this);
@@ -517,7 +515,7 @@ Behavior* EntityBase::addBehavior(Behavior* behavior) {
     return attachBehavior(behavior);
 }
 
-LuaBehavior* EntityBase::addLuaBehavior(const char *name, const OOLUA::Lua_table_ref paramTable) {
+LuaBehavior* EntityBase::addLuaBehavior(const char *name, const sol::object paramTable) {
     return static_cast<LuaBehavior*>(attachBehavior(new LuaBehavior(*static_cast<Entity*>(this), name, paramTable)));
 }
 
@@ -555,7 +553,7 @@ LuaBehavior* EntityBase::getLuaBehavior(const char*script) const {
     return static_cast<LuaBehavior*>(getBehavior(script));
 }
 
-void EntityBase::setBehaviorByIndex(const unsigned index, LuaVariant valueTable) {
+void EntityBase::setBehaviorByIndex(const unsigned index, sol::object valueTable) {
     if(index == _behaviors.size()) { //allocate new entity
         //Entity* entity = Entity::create(valueTable);
         LuaBehavior* behav = new LuaBehavior(*static_cast<Entity*>(this));
@@ -726,60 +724,60 @@ void EntityBase::removeSkeleton(void) {
 }
 
 template<typename T>
-void EntityBase::_setComponent(T*& comp, LuaVariant valTable, std::vector<T*>* container) {
-    if(valTable.getType() == LUA_TTABLE || valTable.getType() == LUA_TUSERDATA) {
+void EntityBase::_setComponent(T*& comp, sol::object valTable, std::vector<T*>* container) {
+    if(elysian::lua::type(valTable) == LUA_TTABLE || elysian::lua::type(valTable) == LUA_TUSERDATA) {
         if(!comp) {
             comp = _addComponent<T>(comp, container);
         }
         comp->fromTable(std::move(valTable));
-    } else if(valTable.isNil()) {
+    } else if(!valTable.valid()) {
         _removeComponent(comp, container);
     } else {
-        errprintf("Entity::_setCompoonent(LuaVariant) - Invalid type provided for variant[%s]!", valTable.getTypeString());
+        errprintf("Entity::_setCompoonent(sol::object) - Invalid type provided for variant[%s]!", elysian::lua::typeName(valTable).c_str());
     }
 }
 
-void EntityBase::setRenderable(LuaVariant valTable) {
+void EntityBase::setRenderable(sol::object valTable) {
     _setComponent<Renderable>(_renderable, std::move(valTable), _active? &_area->renderables : nullptr);
 }
 
-void EntityBase::setCollidable(LuaVariant valTable) {
+void EntityBase::setCollidable(sol::object valTable) {
     _setComponent<Collidable>(_collidable, std::move(valTable), _active? &_area->collidables : nullptr);
 }
 
-void EntityBase::setRigidBody(LuaVariant valTable) {
+void EntityBase::setRigidBody(sol::object valTable) {
     _setComponent<RigidBody>(_rigidBody, std::move(valTable), _active? &_area->rigidBodies : nullptr);
 }
 
-void EntityBase::setCharacter(LuaVariant valTable) {
+void EntityBase::setCharacter(sol::object valTable) {
     _setComponent<Character>(_character, std::move(valTable), _active? &_area->characters : nullptr);
 }
 
-void EntityBase::setWarp(LuaVariant valTable) {
+void EntityBase::setWarp(sol::object valTable) {
     _setComponent<Warp>(_warp, std::move(valTable), _active? &_area->warps : nullptr);
 }
 
-void EntityBase::setExaminable(LuaVariant valTable) {
+void EntityBase::setExaminable(sol::object valTable) {
     _setComponent<Examinable>(_examinable, std::move(valTable), _active? &_area->examinables : nullptr);
 }
 
-void EntityBase::setLightSource(LuaVariant valTable) {
+void EntityBase::setLightSource(sol::object valTable) {
     _setComponent<LightSource>(_lightSource, std::move(valTable), _active? &_area->lightSources : nullptr);
 }
 
-void EntityBase::setAudioSource(LuaVariant valTable) {
+void EntityBase::setAudioSource(sol::object valTable) {
     _setComponent<AudioSource>(_audioSource, std::move(valTable), _active? &_area->audioSources : nullptr);
 }
 
-void EntityBase::setParticleEmitter(LuaVariant valTable) {
+void EntityBase::setParticleEmitter(sol::object valTable) {
     _setComponent<ParticleEmitter>(_particleEmitter, std::move(valTable), _active? &_area->particleEmitters : nullptr);
 }
 
-void EntityBase::setCombat(LuaVariant valTable) {
+void EntityBase::setCombat(sol::object valTable) {
     _setComponent<Combat>(_combat, std::move(valTable), _active? &_area->combats : nullptr);
 }
 
-void EntityBase::setSkeleton(LuaVariant valTable) {
+void EntityBase::setSkeleton(sol::object valTable) {
     _setComponent<Skeleton>(_skeleton, std::move(valTable), _active? &_area->skeletons : nullptr);
 }
 

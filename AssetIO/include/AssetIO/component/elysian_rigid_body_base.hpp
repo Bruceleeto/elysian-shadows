@@ -11,7 +11,7 @@
 #include <libGyro-Kinetic/gyro_kinetic_kinetic.h>
 #include <libGyro-Kinetic/gyro_kinetic_static.h>
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/primitive/elysian_instance_transform.hpp>
 #include <AssetIO/utility/elysian_bit_mask.hpp>
 
@@ -19,7 +19,9 @@ namespace elysian {
 
     class CollisionContact;
 
-    class RigidBodyAttrib: public LuaTableProxy<RigidBodyAttrib> {	//later separate GYStatic attrib
+    class RigidBodyAttrib: public LuaObject<RigidBodyAttrib> {
+    public: using LuaObjectType = LuaObject<RigidBodyAttrib>;
+	//later separate GYStatic attrib
     private:
         BitMask32	_forceMask		= ~0x0;
         bool		_breakable		= false;
@@ -27,12 +29,7 @@ namespace elysian {
         bool        _canHold        = true;
 
     public:
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(canHold,    getCanHold,         setCanHold)
-            ELYSIAN_LUA_PROXY_FIELD(breakable,  isBreakable,        setBreakable)
-            ELYSIAN_LUA_PROXY_FIELD(durability, getBaseDurability,  setBaseDurability)
-            ELYSIAN_LUA_PROXY_FIELD(forceMask,  getForceMask,       setForceMask)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         BitMask32&	getForceMask(void);
         void		setForceMask(const BitMask32 mask);
@@ -47,18 +44,13 @@ namespace elysian {
     //Abstraction for particles and rigidBodies to share force generators
     class ForceTarget:
             protected GYKinetic,
-            public LuaTableProxy<ForceTarget>
+            public LuaObject<ForceTarget>
     {
+    public: using LuaObjectType = LuaObject<ForceTarget>;
+
 	public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(vel,            getVel)
-            ELYSIAN_LUA_PROXY_FIELD(accel,          getAccel)
-            ELYSIAN_LUA_PROXY_FIELD(forceAccum,     getForceAccum)
-            ELYSIAN_LUA_PROXY_FIELD(rotVel,         getRotation,    setRotation)
-            ELYSIAN_LUA_PROXY_FIELD(angAccel,       getAngAccel,    setAngAccel)
-            ELYSIAN_LUA_PROXY_FIELD(torqueAccum,    getTorqueAccum, setTorqueAccum)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
 		enum TARGET_TYPE { TARGET_PARTICLE, TARGET_RIGID_BODY };
 
@@ -94,8 +86,10 @@ namespace elysian {
     class RigidBodyBase:
         public Component,
         public ForceTarget,
-        public LuaTableProxy<RigidBodyBase, RigidBody, ForceTarget>
+        public LuaObject<RigidBodyBase, RigidBody, ForceTarget>
     {
+    public: using LuaObjectType = LuaObject<RigidBodyBase, RigidBody, ForceTarget>;
+
         friend class RigidBodySystem;
         friend class CollisionSystem;
         friend RigidBody;
@@ -108,15 +102,10 @@ namespace elysian {
         CollisionContact*                   _breakContact	= nullptr;
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(tileDamping,    getTileDamping)
-            ELYSIAN_LUA_PROXY_FIELD(durability,     getDurability,  setDurability)
-            ELYSIAN_LUA_PROXY_FIELD(attrib,         getAttrib,      setAttrib)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
-        using                       LuaTableProxy<RigidBodyBase, RigidBody, ForceTarget>::registerProxyMetaTable;
-        using                       LuaTableProxy<RigidBodyBase, RigidBody, ForceTarget>::fromTable;
-        using                       LuaTableProxy<RigidBodyBase, RigidBody, ForceTarget>::lua_downCast;
+        using                       LuaObject<RigidBodyBase, RigidBody, ForceTarget>::fromTable;
+        using                       LuaObject<RigidBodyBase, RigidBody, ForceTarget>::lua_downCast;
 
                                     RigidBodyBase(Entity& entity, RigidBodyBase*const prefab=nullptr);
                                     RigidBodyBase(void) = default;

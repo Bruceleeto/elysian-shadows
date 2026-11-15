@@ -42,7 +42,16 @@
  * \sa walkToWayPoint()
  */
 
-OOLUA_EXPORT_FUNCTIONS(CharacterSystem,
-                       walkToWayPoint,
-                       moveToWayPoint)
-OOLUA_EXPORT_FUNCTIONS_CONST(CharacterSystem)
+
+namespace elysian::lua {
+using namespace elysian;
+using CharacterSystem = elysian::CharacterSystem;
+
+void registerCharacterSystem(sol::state_view state) {
+    if (state["CharacterSystem"].valid()) return;
+    using T = elysian::CharacterSystem;
+    auto type = registerType<T>(state, "CharacterSystem");
+    type["walkToWayPoint"] = [](T& self, Entity* arg0, float arg1, float arg2, sol::object arg3) { return std::invoke(method<T, void(Entity*, float, float, EventMonitor*)>(&T::walkToWayPoint), self, arg0, arg1, arg2, take<EventMonitor>(arg3)); };
+    type["moveToWayPoint"] = [](T& self, Entity* arg0, float arg1, float arg2, float arg3, sol::object arg4) { return std::invoke(method<T, void(Entity*, float, float, float, EventMonitor*)>(&T::moveToWayPoint), self, arg0, arg1, arg2, arg3, take<EventMonitor>(arg4)); };
+}
+}

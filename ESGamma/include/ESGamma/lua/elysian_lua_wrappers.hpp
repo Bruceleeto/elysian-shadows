@@ -7,7 +7,7 @@
 #ifndef ELYSIAN_LUA_WRAPPERS_HPP
 #define ELYSIAN_LUA_WRAPPERS_HPP
 
-#include <oolua.h>
+#include <AssetIO/utility/elysian_lua_binding.hpp>
 #include <ESGamma/utility/elysian_event_monitor.hpp>
 #include <ESGamma/crtp/elysian_gui_system.hpp>
 #include <ESGamma/lua/elysian_lua_singleton.hpp>
@@ -37,29 +37,16 @@
 
 // ====== C/++ CLASS/STRUCT WRAPPERS ======
 
-namespace OOLUA
-{
-    typedef elysian::Engine     Engine;
-}
 
 
 
 
-OOLUA_PROXY(Engine)
-	OOLUA_TAGS (
-		No_public_constructors,
-		No_public_destructor
-	)
-OOLUA_PROXY_END
+
+
 
 //dummy class for encapsulating libGyro within its own namespace
 class gyro {};
-OOLUA_PROXY(gyro)
-	OOLUA_TAGS (
-		No_public_constructors,
-		No_public_destructor
-	)
-OOLUA_PROXY_END
+
 
 
 
@@ -72,10 +59,10 @@ static inline int dbgPush(lua_State* const /*l*/) {
 
 static inline int dbgPop(lua_State* const /*l*/) {
     int count = 1;
-    LuaVariant arg = LuaVariant::fromStack(-1);
+    sol::object arg = elysian::lua::fromStack(-1);
 
-    if(arg.getType() == LUA_TNUMBER) {
-        const auto val = arg.getValue<int>();
+    if(elysian::lua::type(arg) == LUA_TNUMBER) {
+        const auto val = arg.as<int>();
         if(val >= 0) {
             count = val;
         }
@@ -106,185 +93,191 @@ static inline int printAdvLog(lua_State* const /*l*/) {
 }
 
 static inline int Singletons_getLevelSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::LevelSystem*, elysian::Singletons::getLevelSys)
+	return sol::stack::push(vm, elysian::Singletons::getLevelSys());
 }
 
 static inline int Singletons_getCurArea(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::Area*, elysian::Singletons::getCurrentArea)
+    return sol::stack::push(vm, elysian::Singletons::getCurrentArea());
 }
 
 static inline int Singletons_getCurLevel(lua_State* const vm) {
-    OOLUA_C_FUNCTION_0(elysian::Level*, elysian::Singletons::getCurrentLevel)
+    return sol::stack::push(vm, elysian::Singletons::getCurrentLevel());
 }
 
 static inline int Singletons_setProcessInput(lua_State* const vm) {
-	OOLUA_C_FUNCTION(void, elysian::Singletons::setProcessInput, bool)
+	(void)vm; elysian::Singletons::setProcessInput(sol::stack::get<bool>(vm, 1)); return 0;
 }
 
 static inline int Singletons_getPartySystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::PartySystem*, elysian::Singletons::getPartySys)
+	return sol::stack::push(vm, elysian::Singletons::getPartySys());
 }
 
 static inline int Singletons_getInputSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::InputSystem*, elysian::Singletons::getInputSys)
+    return sol::stack::push(vm, elysian::Singletons::getInputSys());
 }
 
 static inline int Singletons_getAudioSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::AudioSystem*, elysian::Singletons::getAudioSys)
+	return sol::stack::push(vm, elysian::Singletons::getAudioSys());
 }
 
 static inline int Singletons_getLightSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::LightSystem*, elysian::Singletons::getLightSys)
+	return sol::stack::push(vm, elysian::Singletons::getLightSys());
 }
 
 static inline int Singletons_getParticleSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::ParticleSystem*, elysian::Singletons::getPartSys)
+	return sol::stack::push(vm, elysian::Singletons::getPartSys());
 }
 
 static inline int Singletons_getDaySystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::DaySystem*, elysian::Singletons::getDaySys)
+	return sol::stack::push(vm, elysian::Singletons::getDaySys());
 }
 
 static inline int Singletons_getDialogSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::DialogSystem*, elysian::Singletons::getDialogSys)
+	return sol::stack::push(vm, elysian::Singletons::getDialogSys());
 }
 
 static inline int Singletons_getGuiSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::GuiSystem*, elysian::Singletons::getGuiSys)
+	return sol::stack::push(vm, elysian::Singletons::getGuiSys());
 }
 
 static inline int Singletons_getTimerSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::TimerSystem*, elysian::Singletons::getTimerSys)
+	return sol::stack::push(vm, elysian::Singletons::getTimerSys());
 }
 
 static inline int Singletons_getCollisionSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::CollisionSystem*, elysian::Singletons::getCollisionSys)
+    return sol::stack::push(vm, elysian::Singletons::getCollisionSys());
 }
 
 static inline int Singletons_getRigidBodySystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::RigidBodySystem*, elysian::Singletons::getRigidBodySys)
+	return sol::stack::push(vm, elysian::Singletons::getRigidBodySys());
 }
 
 static inline int Singletons_getCombatSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::CombatSystem*, elysian::Singletons::getCombatSys)
+	return sol::stack::push(vm, elysian::Singletons::getCombatSys());
 }
 
 static inline int Singletons_getCameraSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::CameraSystem*, elysian::Singletons::getCameraSys)
+	return sol::stack::push(vm, elysian::Singletons::getCameraSys());
 }
 
 static inline int Singletons_getCharacterSystem(lua_State* const vm) {
-	OOLUA_C_FUNCTION(elysian::CharacterSystem*, elysian::Singletons::getCharSys)
+	return sol::stack::push(vm, elysian::Singletons::getCharSys());
 }
 
 static inline int Singletons_getExaminableSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::ExaminableSystem*, elysian::Singletons::getExamSys)
+    return sol::stack::push(vm, elysian::Singletons::getExamSys());
 }
 
 static inline int Singletons_getEventSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::EventSystem*, elysian::Singletons::getEventSys)
+    return sol::stack::push(vm, elysian::Singletons::getEventSys());
 }
 
 static inline int Singletons_getThreadSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::ThreadSystem*, elysian::Singletons::getThreadSystem)
+    return sol::stack::push(vm, elysian::Singletons::getThreadSystem());
 }
 
 static inline int Singletons_getRenderSystem(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::RenderSystem*, elysian::Singletons::getRenderSystem)
+    return sol::stack::push(vm, elysian::Singletons::getRenderSystem());
 }
 
 static inline int InputSystem_importControllerButtonMappings(lua_State* const vm) {
-    OOLUA_C_FUNCTION(bool, elysian::InputSystem::importControllerButtonMappings, const char*);
+    return sol::stack::push(vm, elysian::InputSystem::importControllerButtonMappings(sol::stack::get<const char*>(vm, 1)));;
 }
 
 static inline int Direction_fromVector2(lua_State* const vm) {
-    OOLUA_C_FUNCTION(elysian::Direction::DIR4, elysian::Direction::fromVector2, const GYVector2&)
+    return sol::stack::push(vm, elysian::Direction::fromVector2(sol::stack::get<const GYVector2&>(vm, 1)));
 }
 
 static inline int Direction_toVector2(lua_State* const vm) {
-    OOLUA_C_FUNCTION(GYVector2, elysian::Direction::toVector2, elysian::Direction::DIR4)
+    return sol::stack::push(vm, elysian::Direction::toVector2(sol::stack::get<elysian::Direction::DIR4>(vm, 1)));
 }
 
 static inline int Direction_toVector3(lua_State* const vm) {
-    OOLUA_C_FUNCTION(GYVector3, elysian::Direction::toVector3, elysian::Direction::DIR4, float)
+    return sol::stack::push(vm, elysian::Direction::toVector3(sol::stack::get<elysian::Direction::DIR4>(vm, 1), sol::stack::get<float>(vm, 2)));
 }
 
 static inline int EventMonitor_null(lua_State *const vm) {
-	OOLUA_C_FUNCTION(elysian::EventMonitor*, elysian::EventMonitor::null)
+	return sol::stack::push(vm, elysian::EventMonitor::null());
 }
 
 static inline int gyroWavCreate(lua_State *const vm) {
-	OOLUA_C_FUNCTION(GYWav*, gyAudWavCreate, const char*)
+	return sol::stack::push(vm, gyAudWavCreate(sol::stack::get<const char*>(vm, 1)));
 }
 
 static inline int gyroWavDestroy(lua_State *const vm) {
-	OOLUA_C_FUNCTION(int, gyAudWavDestroy, GYWav*)
+	return sol::stack::push(vm, gyAudWavDestroy(sol::stack::get<GYWav*>(vm, 1)));
 }
 
 static inline int gyroMatPush(lua_State *const vm) {
-    OOLUA_C_FUNCTION(void, gyMatPush)
+    (void)vm; gyMatPush(); return 0;
 }
 
 //===== GYRO MATRIX STACK ====
 
 static inline int gyroMatPop(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatPop)
+    (void)vm; gyMatPop(); return 0;
 }
 
 static inline int gyroMatLoadIdentity(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatLoadIdentity)
+    (void)vm; gyMatLoadIdentity(); return 0;
 }
 
 static inline int gyroMatTranslate(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatTranslate, const float, const float, const float)
+    (void)vm; gyMatTranslate(sol::stack::get<const float>(vm, 1), sol::stack::get<const float>(vm, 2), sol::stack::get<const float>(vm, 3)); return 0;
 }
 
 static inline int gyroMatRotateZ(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatRotateZ, const float)
+    (void)vm; gyMatRotateZ(sol::stack::get<const float>(vm, 1)); return 0;
 }
 
 static inline int gyroMatScale(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatScale, const float, const float, const float)
+    (void)vm; gyMatScale(sol::stack::get<const float>(vm, 1), sol::stack::get<const float>(vm, 2), sol::stack::get<const float>(vm, 3)); return 0;
 }
 
 static inline int gyroMatTranslateScale(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatTranslateScale, const float, const float, const float, const float, const float, const float)
+    (void)vm; gyMatTranslateScale(sol::stack::get<const float>(vm, 1), sol::stack::get<const float>(vm, 2), sol::stack::get<const float>(vm, 3), sol::stack::get<const float>(vm, 4), sol::stack::get<const float>(vm, 5), sol::stack::get<const float>(vm, 6)); return 0;
 }
 
 /*
 static inline int gyroMatInstance(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatInstance, const GYInstMat *const)
+    (void)vm; gyMatInstance(sol::stack::get<const GYInstMat *const>(vm, 1)); return 0;
 }
 */
 
 static inline int gyroMatRotate(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatRotate, const float, const float, const float, const float)
+    (void)vm; gyMatRotate(sol::stack::get<const float>(vm, 1), sol::stack::get<const float>(vm, 2), sol::stack::get<const float>(vm, 3), sol::stack::get<const float>(vm, 4)); return 0;
 }
 
 static inline int gyroMatShearZ(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatShearZ, const float, const float)
+    (void)vm; gyMatShearZ(sol::stack::get<const float>(vm, 1), sol::stack::get<const float>(vm, 2)); return 0;
 }
 
 //==== GYRO VECTOR MATH ====
 /*
 static inline int gyroMatMultMat(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatMultMat, GYMatrix4, const GYMatrix4, const GYMatrix4)
+    (void)vm; gyMatMultMat(sol::stack::get<GYMatrix4>(vm, 1), sol::stack::get<const GYMatrix4>(vm, 2), sol::stack::get<const GYMatrix4>(vm, 3)); return 0;
 }*/
 /*
 static inline int gyroMatMultVec(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyMatMultVec, const GYVector4*const, GYVector4*, const unsigned)
+    (void)vm; gyMatMultVec(sol::stack::get<const GYVector4*const>(vm, 1), sol::stack::get<GYVector4*>(vm, 2), sol::stack::get<const unsigned>(vm, 3)); return 0;
 }
 
 static inline int gyroVec4Add(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyVec4Add, void*, const void* const, const void* const)
+    (void)vm; gyVec4Add(sol::stack::get<void*>(vm, 1), sol::stack::get<const void* const>(vm, 2), sol::stack::get<const void* const>(vm, 3)); return 0;
 }*/
 /*
 static inline int gyroVec4Mult(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyVec4Mult, const void*const, const void* const)
+    (void)vm; gyVec4Mult(sol::stack::get<const void*const>(vm, 1), sol::stack::get<const void* const>(vm, 2)); return 0;
 }
 
 static inline int gyroVec4Add(lua_State*const vm) {
-    OOLUA_C_FUNCTION(void, gyVec4Add, void*, const void* const, const void* const)
+    (void)vm; gyVec4Add(sol::stack::get<void*>(vm, 1), sol::stack::get<const void* const>(vm, 2), sol::stack::get<const void* const>(vm, 3)); return 0;
 }*/
+
+
+namespace elysian::lua {
+void registerEngine(sol::state_view state);
+void registergyro(sol::state_view state);
+}
 
 #endif

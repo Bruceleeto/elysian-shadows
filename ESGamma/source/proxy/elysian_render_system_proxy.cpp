@@ -23,6 +23,14 @@
     \sa Engine
 */
 
-OOLUA_EXPORT_FUNCTIONS(RenderSystem)
-OOLUA_EXPORT_FUNCTIONS_CONST(RenderSystem)
 
+namespace elysian::lua {
+using namespace elysian;
+using RenderSystem = elysian::RenderSystem;
+
+void registerRenderSystem(sol::state_view state) {
+    if (state["RenderSystem"].valid()) return;
+    using T = elysian::RenderSystem;
+    auto type = registerType<T>(state, "RenderSystem");
+}
+}

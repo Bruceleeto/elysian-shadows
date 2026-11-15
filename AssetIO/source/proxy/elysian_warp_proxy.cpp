@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_warp_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -143,19 +144,39 @@
  */
 
 
-OOLUA_EXPORT_FUNCTIONS(Warp,
-                                   setAreaPath,
-                                   setLevelPath,
-                                   setChangeArea,
-                                   setChangeLevel,
-                                   setObliqueTransition,
-                                    getToPosVec,
-                                    setToPosVec,
-                                    getCameraBoundaryRect,
-                                    setCameraBoundaryRect)
-OOLUA_EXPORT_FUNCTIONS_CONST(Warp,
-                             getAreaPath,
-                             getLevelPath,
-                             getChangeArea,
-                             getChangeLevel,
-                             getObliqueTransition)
+
+namespace elysian::lua {
+using namespace elysian;
+using Warp = elysian::Warp;
+
+void registerWarp(sol::state_view state) {
+    if (state["Warp"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Warp;
+    auto type = registerType<T, elysian::Component>(state, "Warp");
+    type["getCameraBoundaryRect"] = method<T>(&T::getCameraBoundaryRect);
+    type["setCameraBoundaryRect"] = method<T>(&T::setCameraBoundaryRect);
+    type["getToPosVec"] = method<T, Vector3()>(&T::getToPosVec);
+    type["setToPosVec"] = method<T, void(const Vector3&)>(&T::setToPosVec);
+    type["setAreaPath"] = method<T, void(const char*)>(&T::setAreaPath);
+    type["getAreaPath"] = method<T, const char*() const>(&T::getAreaPath);
+    type["setLevelPath"] = method<T, void(const char*)>(&T::setLevelPath);
+    type["getLevelPath"] = method<T, const char*() const>(&T::getLevelPath);
+    type["setChangeArea"] = method<T, void(bool)>(&T::setChangeArea);
+    type["getChangeArea"] = method<T, bool() const>(&T::getChangeArea);
+    type["setChangeLevel"] = method<T, void(bool)>(&T::setChangeLevel);
+    type["getChangeLevel"] = method<T, bool() const>(&T::getChangeLevel);
+    type["setObliqueTransition"] = method<T, void(bool)>(&T::setObliqueTransition);
+    type["getObliqueTransition"] = method<T, bool() const>(&T::getObliqueTransition);
+    property(type, "toPos", method<T, Vector3()>(&T::getToPosVec), method<T, void(const Vector3&)>(&T::setToPosVec));
+    property(type, "changeArea", method<T, bool() const>(&T::getChangeArea), method<T, void(bool)>(&T::setChangeArea));
+    property(type, "changeLevel", method<T, bool() const>(&T::getChangeLevel), method<T, void(bool)>(&T::setChangeLevel));
+    property(type, "areaPath", method<T, const char*() const>(&T::getAreaPath), method<T, void(const char*)>(&T::setAreaPath));
+    property(type, "levelPath", method<T, const char*() const>(&T::getLevelPath), method<T, void(const char*)>(&T::setLevelPath));
+    property(type, "obliqueTran", method<T, bool() const>(&T::getObliqueTransition), method<T, void(bool)>(&T::setObliqueTransition));
+    property(type, "cameraBoundaryRect", method<T>(&T::getCameraBoundaryRect), method<T>(&T::setCameraBoundaryRect));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Warp", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

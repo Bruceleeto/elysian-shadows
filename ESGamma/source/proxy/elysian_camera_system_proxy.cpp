@@ -25,10 +25,6 @@
 */
 
 
-OOLUA_EXPORT_FUNCTIONS_CONST(CameraKeyFrame)
-OOLUA_EXPORT_FUNCTIONS(CameraKeyFrame)
-
-
 /*!
     \qmltype CameraSystem
     \since 1.5.8
@@ -115,16 +111,34 @@ OOLUA_EXPORT_FUNCTIONS(CameraKeyFrame)
  * \sa addEntity()
  */
 
-OOLUA_EXPORT_FUNCTIONS(CameraSystem,
-                       scale,
-                       moveToKeyFrame,
-                       setBoundaries,
-                       setDynamic,
-                       pushPerspectiveState,
-                       popState,
-                       shake,
-                       setFollowEntity)
-OOLUA_EXPORT_FUNCTIONS_CONST(CameraSystem,
-                       addEntity,
-                       removeEntity,
-                       getKeyFrame)
+
+namespace elysian::lua {
+using namespace elysian;
+using CameraKeyFrame = elysian::CameraKeyFrame;
+using CameraSystem = elysian::CameraSystem;
+
+void registerCameraKeyFrame(sol::state_view state) {
+    if (state["CameraKeyFrame"].valid()) return;
+    registerInstanceTransform(state);
+    using T = elysian::CameraKeyFrame;
+    auto type = registerType<T, elysian::InstanceTransform>(state, "CameraKeyFrame");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerCameraSystem(sol::state_view state) {
+    if (state["CameraSystem"].valid()) return;
+    using T = elysian::CameraSystem;
+    auto type = registerType<T>(state, "CameraSystem");
+    type["addEntity"] = method<T, void(Entity*) const>(&T::addEntity);
+    type["removeEntity"] = method<T, void(Entity*) const>(&T::removeEntity);
+    type["setFollowEntity"] = method<T, void(Entity*)>(&T::setFollowEntity);
+    type["scale"] = [](T& self, float arg0, float arg1, sol::object arg2) { return std::invoke(method<T, void(float, float, EventMonitor*)>(&T::scale), self, arg0, arg1, take<EventMonitor>(arg2)); };
+    type["getKeyFrame"] = method<T, CameraKeyFrame() const>(&T::getKeyFrame);
+    type["moveToKeyFrame"] = [](T& self, const CameraKeyFrame& arg0, float arg1, sol::object arg2) { return std::invoke(method<T, void(const CameraKeyFrame&, float, EventMonitor*)>(&T::moveToKeyFrame), self, arg0, arg1, take<EventMonitor>(arg2)); };
+    type["setBoundaries"] = method<T, void(float, float, float, float)>(&T::setBoundaries);
+    type["setDynamic"] = method<T, void(bool)>(&T::setDynamic);
+    type["pushPerspectiveState"] = method<T, void()>(&T::pushPerspectiveState);
+    type["popState"] = method<T, void()>(&T::popState);
+    type["shake"] = [](T& self, const GYVector3& arg0, unsigned arg1, float arg2, bool arg3, sol::object arg4) { return std::invoke(method<T, void(const GYVector3&, unsigned, float, bool, EventMonitor*)>(&T::shake), self, arg0, arg1, arg2, arg3, take<EventMonitor>(arg4)); };
+}
+}

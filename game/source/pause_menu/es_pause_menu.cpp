@@ -200,10 +200,10 @@ PauseMenuInfoPane::PauseMenuInfoPane(void):
     _title->setAlignment(LabelWidget::LEFT);
     //_title->setFont(&System::getGuiSys()->verdana);
     _subTitle->setAlignment(LabelWidget::LEFT);
-    LuaVariant prefab = LuaManager::getPrefab(ELYSIAN_PAUSE_MENU_INFO_PANE_HELP_ICON_PREFAB);
+    sol::object prefab = LuaManager::getPrefab(ELYSIAN_PAUSE_MENU_INFO_PANE_HELP_ICON_PREFAB);
     elysian::Entity* helpIconEntity = nullptr;
-    if(!prefab.isNil()) {
-        helpIconEntity = prefab.getValue<elysian::Entity*>();
+    if(prefab.valid()) {
+        helpIconEntity = prefab.as<elysian::Entity*>();
     }
     _helpIcon = new elysian::EntityWidget(helpIconEntity);
     _helpIcon->setSizePolicy(Widget::FIXED, Widget::FIXED);

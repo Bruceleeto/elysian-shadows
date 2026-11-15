@@ -50,12 +50,7 @@ class TkArea: /*public PropertyStackModel,*/ public elysian::AreaBase, public Tr
     Q_OBJECT
     friend class Assets;
 
-ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-    ELYSIAN_LUA_PROXY_FIELD(dirName, getDirName)
-    ELYSIAN_LUA_PROXY_FIELD(startPosition, getStartPosition, setStartPosition)
-   // ELYSIAN_LUA_PROXY_FIELD(name, )
-    //ELYSIAN_LUA_PROXY_FIELD(path, )
-ELYSIAN_LUA_PROXY_FIELDS_END()
+public:
 
 
 private:

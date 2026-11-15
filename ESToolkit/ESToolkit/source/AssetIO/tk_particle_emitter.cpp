@@ -56,29 +56,28 @@ void TkParticleEmitterAttrib::initializeDelegates(void) {
 #if 0
     auto* typeDelegate = new ColorSwatchPropertyItemDelegate();
 
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
     auto* spinBox = new SpinboxPropertyItemDelegate(0, 255);
-    LuaVariant fieldDelegate = {
-        { "r", spinBox },
-        { "g", spinBox },
-        { "b", spinBox },
-        { "a", spinBox }
-    };
+    sol::table fieldDelegate = elysian::lua::table();
+    fieldDelegate.set("r", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("g", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("b", static_cast<PropertyItemDelegate*>(spinBox));
+    fieldDelegate.set("a", static_cast<PropertyItemDelegate*>(spinBox));
     fieldDelegate.push();
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
 #endif
 
     DynamicContentPropertyItemDelegate* typeDelegate = new DynamicContentPropertyItemDelegate();
-    OOLUA::push(*_mainState, typeDelegate);
-    lua_setfield(*_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+    sol::stack::push(_mainState, typeDelegate);
+    lua_setfield(_mainState, -2, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
 
     typeDelegate->addButton(QApplication::style()->standardIcon(QStyle::SP_MediaPlay), [](ESTkStandardItem* item) {
         auto* luaItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaItem) {
-            auto attrib = luaItem->getVariant().getValue<std::shared_ptr<ParticleEmitterAttrib>>();
+            auto attrib = luaItem->getVariant().as<std::shared_ptr<ParticleEmitterAttrib>>();
             if(attrib) {
                 elysian::System::getPartSys()->emitPreview(attrib);
             }

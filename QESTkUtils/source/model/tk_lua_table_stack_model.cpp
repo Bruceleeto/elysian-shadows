@@ -6,17 +6,31 @@
 
 #include <QESTkUtils/model/tk_lua_table_stack_model.h>
 #include <QESTkUtils/ui/tk_theme.h>
-#include <ESToolkit/AssetIO/tk_lua_table_proxy.h>
+#include <ESToolkit/AssetIO/tk_lua_observer.h>
 #include <QVariant>
 #include <ESToolkit/AssetIO/tk_area.h>
 #include <ESToolkit/ESGamma/tk_lua_wrappers.h>
 #include <QESTkUtils/tk_lua_qt_utils.h>
 
+namespace {
+bool pushEditorMetadata(lua_State* state, int index) {
+    if (auto view = sol::stack::check_get<elysian::lua::View*>(state, index)) {
+        auto metadata = elysian::lua::get((*view)->owner, "__viewMetadata");
+        elysian::lua::get(metadata, (*view)->name).push();
+        if (lua_istable(state, -1)) return true;
+        lua_pop(state, 1);
+        return false;
+    }
+    return lua_getmetatable(state, index) != 0;
+}
+}
+
 //======== LuaTableFieldItem ========
 
-LuaTableFieldItem::LuaTableFieldItem(LuaFieldRef ref, QStandardItem*const labelItem):
+LuaTableFieldItem::LuaTableFieldItem(sol::object table, sol::object key, QStandardItem*const labelItem):
     _labelItem(labelItem),
-    _fieldRef(std::move(ref))
+    _fieldTable(std::move(table)),
+    _fieldKey(std::move(key))
 {
     //f(_fieldRef->getType() == LUA_TTABLE || _fieldRef->getType() == LUA_TUSERDATA) {
         _settingFlags = true;
@@ -39,12 +53,12 @@ inline QVariant LuaTableFieldItem::getValue(void) const {
     int         valType;
 
     //retrieve field
-    _fieldRef.getTableRef().push();
-    _fieldRef.getKey().push();
-    lua_gettable(*_mainState, -2);
+    _fieldTable.push();
+    _fieldKey.push();
+    lua_gettable(_mainState, -2);
 
     //check type
-    valType = lua_type(*_mainState, -1);
+    valType = lua_type(_mainState, -1);
 
     //Let QVariant handle all primitive types
     if(valType != LUA_TTABLE && valType != LUA_TUSERDATA) {
@@ -52,12 +66,12 @@ inline QVariant LuaTableFieldItem::getValue(void) const {
             //setDirty(true);
             //emitDataChanged();
         }
-        OOLUA::pull(*_mainState, val);
+        val = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(val)>>>(_mainState);
     //Table/Userdata fields are out-of-date
 
     } else if(!_tableData) {
-        _tableData = new LuaTableTableFieldData(LuaVariant::fromStack());
-        //if(!_tableData->getParentRef().isNil() && (*_tableData->getParentRef()[_fieldRef.getKey()] == ))
+        _tableData = new LuaTableTableFieldData(elysian::lua::fromStack());
+        //if(!!_tableData->getParentRef().valid() && (elysian::lua::get(_tableData->getParentRef(), _fieldKey) == ))
         if(_tableData->isPrefab()) {
             _labelItem->setData(QVariant(ELYSIAN_LUA_TABLE_STACK_MODEL_PREFAB_FONT_COLOR), Qt::ForegroundRole);
         }
@@ -65,10 +79,10 @@ inline QVariant LuaTableFieldItem::getValue(void) const {
         _tableData->insertTableFieldItems(_labelItem);
     } //else Table/userdata fields should be up-to-date
     else {
-         //val.setValue(QString(lua_typename(*_mainState, valType)));
-         lua_pop(*_mainState, 1); //don't actually give a fuck about the table
+         //val.setValue(QString(lua_typename(_mainState, valType)));
+         lua_pop(_mainState, 1); //don't actually give a fuck about the table
     }
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 
     LuaManager::stackBalanceEnd();
     return val;
@@ -77,11 +91,11 @@ inline QVariant LuaTableFieldItem::getValue(void) const {
 
 //Push value from model to update Lua table/userdata
 inline void LuaTableFieldItem::setValue(const QVariant val) {
-    _fieldRef.getTableRef().push();
-    _fieldRef.getKey().push();
-    OOLUA::push(*_mainState, val);
-    lua_settable(*_mainState, -3);
-    lua_pop(*_mainState, 1);
+    _fieldTable.push();
+    _fieldKey.push();
+    sol::stack::push(_mainState, val);
+    lua_settable(_mainState, -3);
+    lua_pop(_mainState, 1);
 }
 
 
@@ -115,68 +129,68 @@ QStyledItemDelegate* LuaTableFieldItem::getStyledItemDelegate(void) const {
         _triedDelegate = true;
 
         LuaManager::stackBalanceBegin();
-        _fieldRef.getTableRef().push();
+        _fieldTable.push();
 
-        if(LuaManager::getMetatable(-1)) {
+        if(pushEditorMetadata(_mainState, -1)) {
             //Check for delegate associated with particular field
-            lua_getfield(*_mainState, -1, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
-            if(!lua_isnil(*_mainState, -1)) {
-                int type = lua_type(*_mainState, -1);
+            lua_getfield(_mainState, -1, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+            if(!lua_isnil(_mainState, -1)) {
+                int type = lua_type(_mainState, -1);
                 switch(type) {
                 case LUA_TFUNCTION:
-                    _delegate = LuaManager::_callFunction<PropertyItemDelegate*>(nullptr, _fieldRef.getTableRef(), _fieldRef.getKey());
+                    _delegate = LuaManager::_callFunction<PropertyItemDelegate*>(nullptr, _fieldTable, _fieldKey);
                     if(_delegate) _ownsDelegate = true;
                     break;
                 case LUA_TTABLE:
-                    _fieldRef.getKey().push();
-                    lua_gettable(*_mainState, -2);
+                    _fieldKey.push();
+                    lua_gettable(_mainState, -2);
 
-                    if(!lua_isnil(*_mainState, -1)) {
+                    if(!lua_isnil(_mainState, -1)) {
                         PropertyItemDelegate* delegate;
-                        OOLUA::pull(*_mainState, delegate);
+                        delegate = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(delegate)>>>(_mainState);
                         _delegate = static_cast<QStyledItemDelegate*>(delegate);
                         GY_ASSERT(_delegate); //WTF
-                    } else lua_pop(*_mainState, 1);
+                    } else lua_pop(_mainState, 1);
 
-                    lua_pop(*_mainState, 1);
+                    lua_pop(_mainState, 1);
                     break;
                 default:
-                    lua_pop(*_mainState, 1);
+                    lua_pop(_mainState, 1);
                     GY_ASSERT(false); //trying to pull some kind of fucked-ass shit as a delegate!
                     break;
                 }
-            } else lua_pop(*_mainState, 1);
-            lua_pop(*_mainState, 1);
+            } else lua_pop(_mainState, 1);
+            lua_pop(_mainState, 1);
         }
-        lua_pop(*_mainState, 1);
+        lua_pop(_mainState, 1);
 
 
         //Fall-back: Check for delegate associated with particular outer table/userdata type
-        const int luaType = _fieldRef.getVariant().getType();
+        const int luaType = elysian::lua::type(elysian::lua::get(_fieldTable, _fieldKey));
         if(!_delegate && (luaType == LUA_TTABLE || luaType == LUA_TUSERDATA)) {
-            _fieldRef.getVariant().push();
-            if(LuaManager::getMetatable(-1)) {
-                lua_getfield(*_mainState, -1, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
-                if(!lua_isnil(*_mainState, -1)) {
-                    int type = lua_type(*_mainState, -1);
+            elysian::lua::get(_fieldTable, _fieldKey).push();
+            if(pushEditorMetadata(_mainState, -1)) {
+                lua_getfield(_mainState, -1, TK_LUA_TABLE_OUTER_DELEGATE_FIELD_KEY);
+                if(!lua_isnil(_mainState, -1)) {
+                    int type = lua_type(_mainState, -1);
                     switch(type) {
                     case LUA_TUSERDATA: {
                         PropertyItemDelegate* delegate;
-                        OOLUA::pull(*_mainState, delegate);
+                        delegate = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(delegate)>>>(_mainState);
                         _delegate = static_cast<QStyledItemDelegate*>(delegate);
                         GY_ASSERT(_delegate); //WTF
                         break;
                     }
                     default:
-                        lua_pop(*_mainState, 1);
+                        lua_pop(_mainState, 1);
                         GY_ASSERT(false); //trying to pull some kind of fucked-ass shit as a delegate!
                         break;
                     }
-                } else lua_pop(*_mainState, 1);
-                lua_pop(*_mainState, 1);
+                } else lua_pop(_mainState, 1);
+                lua_pop(_mainState, 1);
             }
 
-            lua_pop(*_mainState, 1);
+            lua_pop(_mainState, 1);
         }
 
         LuaManager::stackBalanceEnd();
@@ -215,34 +229,34 @@ QStandardItem* LuaTableFieldItem::getAncestorSiblingItem(QStringList keyNames, i
 
 //======== LuaTableFieldData ========
 
-void LuaTableTableFieldData::onFieldChanged(const LuaVariant& key) {
-    auto* item = static_cast<LuaTableFieldItem*>(_fieldItems[key]->getValue<void*>());
+void LuaTableTableFieldData::onFieldChanged(const sol::object& key) {
+    auto* item = static_cast<LuaTableFieldItem*>(elysian::lua::get(_fieldItems, key).as<void*>());
     if(item) {
         item->setDirty();
         item->emitDataChanged();
     } else {
-        Debug::printf(Debug::LOG_ERROR, "LuaTableTableFieldData(LuaVariant key): Could not find key '%s' in the table!", key.asString().getValue<const char*>());
+        Debug::printf(Debug::LOG_ERROR, "LuaTableTableFieldData(sol::object key): Could not find key '%s' in the table!", elysian::lua::string(key).c_str());
 
     }
 }
 
-void LuaTableTableFieldData::onFieldAdded(const LuaVariant& key) {
+void LuaTableTableFieldData::onFieldAdded(const sol::object& key) {
     insertTableFieldItem(key);
 }
 
 
-void LuaTableTableFieldData::insertTableFieldItem(LuaVariant key) {
+void LuaTableTableFieldData::insertTableFieldItem(sol::object key) {
     QList<QStandardItem*> items;
 
-    auto* labelItem = PropertyStackModel::createReadOnlyItem(key.asString().getValue<const char*>());
-    auto* valueItem = new LuaTableFieldItem(LuaFieldRef(LuaVariant::makeWeakRef(_tableRef), std::move(key)), labelItem);
+    auto* labelItem = PropertyStackModel::createReadOnlyItem(elysian::lua::string(key).c_str());
+    auto* valueItem = new LuaTableFieldItem(_tableRef, std::move(key), labelItem);
 
     if(_isPrefab) {
         labelItem->setData(QVariant(ELYSIAN_LUA_TABLE_STACK_MODEL_PREFAB_FONT_COLOR), Qt::ForegroundRole);
         valueItem->setData(QVariant(ELYSIAN_LUA_TABLE_STACK_MODEL_PREFAB_FONT_COLOR), Qt::ForegroundRole);
     }
 
-    if(!_parentRef.isNil() && (*_parentRef[valueItem->getKey()] == valueItem->getVariant())) {
+    if(!!_parentRef.valid() && (elysian::lua::get(_parentRef, valueItem->getKey()) == valueItem->getVariant())) {
         labelItem->setData(QVariant(Theme::commandText()), Qt::ForegroundRole);
         valueItem->setData(QVariant(Theme::commandText()), Qt::ForegroundRole);
     }
@@ -252,7 +266,7 @@ void LuaTableTableFieldData::insertTableFieldItem(LuaVariant key) {
 
     _parentItem->appendRow(items);
     valueItem->insertingModelItem();
-    _fieldItems[valueItem->getKey()] = (void*)valueItem;
+    elysian::lua::set(_fieldItems, valueItem->getKey(), (void*)valueItem);
 
 }
 
@@ -267,25 +281,25 @@ void LuaTableTableFieldData::insertTableFieldItems(QStandardItem*const parentIte
     _parentItem = parentItem; //Store reference to its own parent
 
     _tableRef.push();
-    int valueType = lua_type(*_mainState, -1);
+    int valueType = lua_type(_mainState, -1);
 
     //Downcast to most specific type before recursing over it
     if(valueType == LUA_TUSERDATA) {
         LuaManager::pushGlobalField("down_cast");
-        lua_pushvalue(*_mainState, -2);
+        lua_pushvalue(_mainState, -2);
         ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 1);
         //update reference
-        lua_pushvalue(*_mainState, -1);
+        lua_pushvalue(_mainState, -1);
 
-        _tableRef.pull();
-        lua_remove(*_mainState, -2);
+        _tableRef = elysian::lua::fromStack();
+        lua_remove(_mainState, -2);
     }
 
     //Populate metatable
     if((metatable = getMetatable(-1))) {
-        //int metaRef = luaL_ref(*_mainState, LUA_REGISTRYINDEX);
+        //int metaRef = luaL_ref(_mainState, LUA_REGISTRYINDEX);
        // (void)metaRef;
-        lua_pop(*_mainState, 1);
+        lua_pop(_mainState, 1);
        /* auto* label = new QStandardItem("__metatable");
         auto* valueItem = new LuaTableItem(metaRef, label);
         stackModel->addRow(label, valueItem);*/
@@ -294,39 +308,45 @@ void LuaTableTableFieldData::insertTableFieldItems(QStandardItem*const parentIte
     //Check if userdata is iterable
     if(valueType == LUA_TUSERDATA && metatable) {
         getMetatable(-1);
-        lua_getfield(*_mainState, -1, "__connectSignals");
+        lua_getfield(_mainState, -2, "__connectSignals");
+        if (lua_isnil(_mainState, -1)) {
+            lua_pop(_mainState, 1);
+            lua_getfield(_mainState, -1, "__connectSignals");
+        }
         //userdata has lua table proxy
-        if(!lua_isnil(*_mainState, -1)) {
-            lua_pushvalue(*_mainState, -3);
-            lua_pushlightuserdata(*_mainState, static_cast<QObject*>(this));
+        if(!lua_isnil(_mainState, -1)) {
+            lua_pushvalue(_mainState, -3);
+            lua_pushlightuserdata(_mainState, static_cast<QObject*>(this));
             ELYSIAN_LUA_MANAGER_PROTECTED_CALL(2, 0, nullptr);
             iterable = true;
         //userdata doesn't have lua table proxy
         } else {
-            iterable = false;
-            lua_pop(*_mainState, 1); //pop nil
+            lua_pop(_mainState, 1); //pop nil
+            lua_getfield(_mainState, -1, "__pairs");
+            iterable = lua_isfunction(_mainState, -1);
+            lua_pop(_mainState, 1);
         }
-        lua_pop(*_mainState, 1); //pop metatable
+        lua_pop(_mainState, 1); //pop metatable
     //Populate table
     } else if(valueType == LUA_TTABLE) {
         iterable = true;
-        auto* ud = TkLuaTableUserdata::inject(*_mainState, _tableRef);
+        auto* ud = TkLuaTableUserdata::inject(_mainState, _tableRef);
         ud->disconnect(this);
-        connect(ud, SIGNAL(fieldChanged(const LuaVariant&)), this, SLOT(onFieldChanged(const LuaVariant&)));
-        connect(ud, SIGNAL(fieldAdded(const LuaVariant&)), this, SLOT(onFieldAdded(const LuaVariant&)));
+        connect(ud, SIGNAL(fieldChanged(const sol::object&)), this, SLOT(onFieldChanged(const sol::object&)));
+        connect(ud, SIGNAL(fieldAdded(const sol::object&)), this, SLOT(onFieldAdded(const sol::object&)));
     } else iterable = false;
 
     if(iterable) {
         genericIterate(-1, [&](void) {
-            LuaVariant key;
-            lua_pushvalue(*_mainState, -2);
-            OOLUA::pull(*_mainState, key);
+            sol::object key;
+            lua_pushvalue(_mainState, -2);
+            key = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(key)>>>(_mainState);
 
             insertTableFieldItem(std::move(key));
 
         });
     }
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 
     LuaManager::stackBalanceEnd();
 }
@@ -344,14 +364,12 @@ void LuaTableStackModel::populateModel(void) {
 
 
     //Create an invisible outer proxy table around table for table delegates to work properly/orthogonally on first item.
-    LuaVariant v = {
-        { 1, _tableRef }
-    };
+    sol::object v = elysian::lua::table({{elysian::lua::make(1), _tableRef}});
 
     QList<QStandardItem*> items;
-    _parentItem = PropertyStackModel::createReadOnlyItem(_tableRef.getTypeString());//ESTkStandardItem(QString("Lua Table"));
+    _parentItem = PropertyStackModel::createReadOnlyItem(elysian::lua::typeName(_tableRef).c_str());//ESTkStandardItem(QString("Lua Table"));
     items.push_back(_parentItem);
-    auto* valItem = new LuaTableFieldItem(LuaFieldRef(std::move(v), LuaVariant(1)), _parentItem);
+    auto* valItem = new LuaTableFieldItem(std::move(v), elysian::lua::make(1), _parentItem);
     items.push_back(valItem);
 
     //items.push_back(PropertyStackModel::createReadOnlyItem());

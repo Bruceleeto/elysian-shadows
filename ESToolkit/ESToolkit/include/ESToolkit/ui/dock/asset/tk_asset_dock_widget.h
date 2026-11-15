@@ -10,7 +10,7 @@
 #include <QDockWidget>
 #include <QFileSystemModel>
 #include <ESToolkit/core/tk_asset_manager.h>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <QHash>
 
 #define TK_SPECULARSHEET_ASSET_ICON         ":/assetIcons/images/_0000_specularsheet_icon.png"
@@ -145,7 +145,7 @@ class PrefabAssetFileType: public CustomAssetFileType, public AssetManager {
     Q_OBJECT
 private:
     QString             _prefabName;
-    LuaVariant          _prefabRef;
+    sol::object          _prefabRef;
 
 private Q_SLOTS:
     void                _onItemChanged(QStandardItem* item);

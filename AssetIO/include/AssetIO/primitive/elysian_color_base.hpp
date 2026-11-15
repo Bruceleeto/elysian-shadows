@@ -8,7 +8,7 @@
 #define ELYSIAN_COLOR_BASE_HPP
 
 #include <libGyro/gyro_video_api.h>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/utility/elysian_generic.hpp>
 
 ELYSIAN_ASSET_TYPEDEF(Color4)
@@ -93,8 +93,10 @@ namespace elysian {
     class Color4Base:
             public GYColor4,
             public VirtualArray<Color4, int, unsigned char>,
-            public LuaTableProxy<Color4>
+            public LuaObject<Color4>
     {
+    public: using LuaObjectType = LuaObject<Color4>;
+
 
         GYColor4*       _ptr;
 
@@ -107,12 +109,7 @@ namespace elysian {
             INDEX_A
         };
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(r, getR, setR)
-            ELYSIAN_LUA_PROXY_FIELD(g, getG, setG)
-            ELYSIAN_LUA_PROXY_FIELD(b, getB, setB)
-            ELYSIAN_LUA_PROXY_FIELD(a, getA, setA)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                         Color4Base(void);
                         Color4Base(GYColor4* color);
@@ -184,7 +181,7 @@ inline Color4Base::Color4Base(unsigned char c): GYColor4 { c, c, c, c }, _ptr(th
 inline Color4Base::Color4Base(GYColor4* color):GYColor4 { color->r, color->g, color->b, color->a }, _ptr(color) {}
 //inline Color4Base::Color4Base(const GYColor4& other): GYColor4 { other.r, other.g, other.b, other.a }, _ptr(this) {}
 //inline Color4Base::Color4Base(GYColor4 &&other): GYColor4 { other.r, other.g, other.b, other.a }, _ptr(this) {}
-inline Color4Base::Color4Base(const Color4Base& color) : LuaTableProxy<Color4>() {
+inline Color4Base::Color4Base(const Color4Base& color) : LuaObject<Color4>() {
     *this = color;
 }
 inline Color4Base::Color4Base(const unsigned char r, const unsigned char g, const unsigned char b, const unsigned char a):

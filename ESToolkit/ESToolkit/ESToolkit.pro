@@ -30,7 +30,6 @@ dreamcast {
 #    QMAKE_BUNDLE_DATA += deployment
 }
 
-QMAKE_CXXFLAGS += -Wno-empty-body
 
 
 DEPENDPATH += 	../../AssetIO/include \
@@ -55,7 +54,6 @@ DEPENDPATH += 	../../AssetIO/include \
         $${LIBGYRO_PATH}/api \
         $${ESDEV_ROOT}/AssetIO/include \
         $${ESDEV_ROOT}/ESGamma/include \
-        $${ESDEV_ROOT}/OOLua/include \
         $${ESDEV_ROOT}/libGyro-Kinetic/api \
         $${ESDEV_ROOT}/UnitTests/include
 }
@@ -69,7 +67,6 @@ INCLUDEPATH += include \
     ../../libGyro/api \
     ../../QESTkUtils/include \
     ../../game/include \
-    ../../OOLua/include/oolua \
     ../../Spine/include
 
 SOURCES += \
@@ -95,7 +92,6 @@ SOURCES += \
     ../../AssetIO/source/primitive/elysian_material.cpp \
     ../../AssetIO/source/primitive/elysian_quad_sprite_attrib.cpp \
     ../../AssetIO/source/primitive/elysian_sprite_attrib.cpp \
-    ../../AssetIO/source/utility/elysian_lua_table_proxy_base.cpp \
     ../../ESGamma/source/gui/elysian_adventure_log.cpp \
     ../../ESGamma/source/gui/elysian_font.cpp \
     ../../ESGamma/source/lua/elysian_lua_manager_base.cpp \
@@ -162,8 +158,6 @@ SOURCES += \
     ../../ESGamma/source/utility/elysian_camera_shake_subprocess.cpp \
     ../../AssetIO/source/proxy/elysian_bit_mask_proxy.cpp \
     ../../AssetIO/source/utility/elysian_bit_mask.cpp \
-    ../../ESGamma/source/utility/elysian_lua_table_ref.cpp \
-    ../../ESGamma/source/utility/elysian_lua_variant.cpp \
     ../../AssetIO/source/proxy/elysian_dialog_proxy.cpp \
     ../../AssetIO/source/level/elysian_dialog_base.cpp \
     ../../AssetIO/source/level/elysian_dialog_screen_base.cpp \
@@ -171,7 +165,6 @@ SOURCES += \
     ../../ESGamma/source/system/elysian_input_system_base.cpp \
     ../../game/source/behavior/elysian_playable_behavior.cpp \
     ../../ESGamma/source/system/elysian_pathfinding_system.cpp \
-    ../../AssetIO/source/utility/elysian_lua_variant_base.cpp \
     ../../ESGamma/source/system/elysian_level_system_base.cpp \
     ../../game/source/behavior/elysian_state_machine_behavior.cpp \
     ../../ESGamma/source/system/elysian_gui_system_base.cpp \
@@ -222,7 +215,7 @@ SOURCES += \
         source/AssetIO/tk_entity.cpp \
         source/AssetIO/tk_level.cpp \
         source/AssetIO/tk_light_source.cpp \
-        source/AssetIO/tk_lua_table_proxy.cpp \
+        source/AssetIO/tk_lua_observer.cpp \
         source/AssetIO/tk_map_entry.cpp \
         source/AssetIO/tk_particle_emitter.cpp \
         source/ESToolkit/core/tk_project.cpp \
@@ -315,6 +308,10 @@ SOURCES += \
 }
 
 HEADERS += \
+    ../../AssetIO/include/AssetIO/utility/elysian_lua_binding.hpp \
+    ../../AssetIO/include/AssetIO/utility/elysian_lua_identity.hpp \
+    ../../AssetIO/include/AssetIO/utility/elysian_lua_object.hpp \
+    ../../AssetIO/include/AssetIO/utility/elysian_lua_values.hpp \
     ../../AssetIO/include/AssetIO/component/elysian_audio_source_base.hpp \
     ../../AssetIO/include/AssetIO/component/elysian_behavior_base.hpp \
     ../../AssetIO/include/AssetIO/component/elysian_character_base.hpp \
@@ -332,7 +329,6 @@ HEADERS += \
     ../../AssetIO/include/AssetIO/crtp/elysian_component.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_entity.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_level.hpp \
-    ../../AssetIO/include/AssetIO/crtp/elysian_lua_table_proxy.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_renderable.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_area_base.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_direction.hpp \
@@ -352,7 +348,6 @@ HEADERS += \
     ../../AssetIO/include/AssetIO/utility/elysian_asset_typedefs.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_cstr_map.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_generic.hpp \
-    ../../AssetIO/include/AssetIO/utility/elysian_lua_table_proxy_base.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_mem_pool.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_stl_algorithm.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_ring_buffer.hpp \
@@ -393,17 +388,12 @@ HEADERS += \
     ../../AssetIO/include/AssetIO/proxy/elysian_bit_mask_proxy.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_sprite_attrib.hpp \
     ../../AssetIO/include/AssetIO/primitive/elysian_sprite_attrib_base.hpp \
-    ../../AssetIO/include/AssetIO/utility/elysian_lua_table_ref.hpp \
     ../../AssetIO/include/AssetIO/proxy/elysian_dialog_proxy.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_dialog_base.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_dialog.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_dialog_screen.hpp \
     ../../AssetIO/include/AssetIO/level/elysian_dialog_screen_base.hpp \
-    ../../AssetIO/include/AssetIO/crtp/elysian_lua_variant.hpp \
-    ../../AssetIO/include/AssetIO/utility/elysian_lua_variant_base.hpp \
-    ../../AssetIO/include/AssetIO/utility/elysian_lua_stack.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_functional.hpp \
-    ../../AssetIO/include/AssetIO/utility/elysian_oolua_string_traits.hpp \
     ../../AssetIO/include/AssetIO/crtp/elysian_color.hpp \
     ../../AssetIO/include/AssetIO/primitive/elysian_color_base.hpp \
     ../../AssetIO/include/AssetIO/utility/elysian_cpp_lua_callback.hpp \
@@ -535,7 +525,7 @@ HEADERS += \
         include/ESToolkit/AssetIO/tk_examinable.h \
         include/ESToolkit/AssetIO/tk_level.h \
         include/ESToolkit/AssetIO/tk_light_source.h \
-        include/ESToolkit/AssetIO/tk_lua_table_proxy.h \
+        include/ESToolkit/AssetIO/tk_lua_observer.h \
         include/ESToolkit/AssetIO/tk_map_entry.h \
         include/ESToolkit/AssetIO/tk_particle_emitter.h \
         include/ESToolkit/core/tk_project.h \
@@ -549,7 +539,6 @@ HEADERS += \
         include/ESToolkit/AssetIO/tk_dialog_screen.h \
         include/ESToolkit/AssetIO/tk_dialog.h \
         include/ESToolkit/AssetIO/tk_color.h \
-        include/ESToolkit/AssetIO/tk_lua_variant.h \
         include/ESToolkit/AssetIO/tk_blend_mode.h \
         include/ESToolkit/ui/item/tk_checkered_alpha_rect_graphics_item.h \
         include/ESToolkit/core/tk_debug.h \
@@ -705,14 +694,6 @@ INCLUDEPATH += $$PWD/../../libGyro/qtcreator/libGyro
 DEPENDPATH += $$PWD/../../libGyro/qtcreator/libGyro
 
 PRE_TARGETDEPS += $$OUT_PWD/../../libGyro/qtcreator/libGyro/liblibGyro.a
-
-LIBS += -L$$OUT_PWD/../../OOLua/qtcreator/OOLua/ -lOOLua
-
-INCLUDEPATH += $$PWD/../../OOLua/qtcreator/OOLua
-DEPENDPATH += $$PWD/../../OOLua/qtcreator/OOLua
-
-PRE_TARGETDEPS += $$OUT_PWD/../../OOLua/qtcreator/OOLua/libOOLua.a
-
 
 LIBS += -L$$OUT_PWD/../../Spine/qtcreator/Spine/ -lSpine
 

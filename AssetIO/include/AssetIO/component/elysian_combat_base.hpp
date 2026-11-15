@@ -9,7 +9,7 @@
 
 #include <libGyro/gyro_video_api.h>
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <AssetIO/utility/elysian_bit_mask.hpp>
 #include <queue>
 
@@ -66,11 +66,10 @@ namespace elysian {
 
     class CombatStatusModifier;
 
-    class CombatAttrib: public LuaTableProxy<CombatAttrib> {
-         ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(type,           getTypeFlags,           setTypeFlags)
-            ELYSIAN_LUA_PROXY_FIELD(typeAgainst,    getTypeAgainstFlags,    setTypeAgainstFlags)
-         ELYSIAN_LUA_PROXY_FIELDS_END()
+    class CombatAttrib: public LuaObject<CombatAttrib> {
+    public: using LuaObjectType = LuaObject<CombatAttrib>;
+
+         public:
     private:
         //GYColor4				_particleColor		= { 255, 255, 255, 255 };
         BitMask32                               _typeFlags;//= BitMask32(~0x0);
@@ -90,13 +89,10 @@ namespace elysian {
     };
 
     //The only combat-related variables the engine has knowledge of
-    class CombatStatus: public LuaTableProxy<CombatStatus> {
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(maxHp,  getMaxHp,   setMaxHp)
-            ELYSIAN_LUA_PROXY_FIELD(hp,     getHp,      setHp)
-            ELYSIAN_LUA_PROXY_FIELD(maxMp,  getMaxMp,   setMaxMp)
-            ELYSIAN_LUA_PROXY_FIELD(mp,     getMp,      setMp)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+    class CombatStatus: public LuaObject<CombatStatus> {
+    public: using LuaObjectType = LuaObject<CombatStatus>;
+
+        public:
 
     public:
         enum STATUS_EFFECT {
@@ -151,21 +147,14 @@ namespace elysian {
 
     class CombatBase:
         public Component,
-        public LuaTableProxy<CombatBase, Combat>
+        public LuaObject<CombatBase, Combat>
     {
+    public: using LuaObjectType = LuaObject<CombatBase, Combat>;
+
 	public:
         friend Combat;
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(dmgType,        getDmgType,         setDmgType)
-            ELYSIAN_LUA_PROXY_FIELD(collisionFlags, getCollisionFlags,  setCollisionFlags)
-            ELYSIAN_LUA_PROXY_FIELD(aggroDist,      getAggroDist,       setAggroDist)
-            ELYSIAN_LUA_PROXY_FIELD(deaggroDist,    getDeaggroDist,     setDeaggroDist)
-            ELYSIAN_LUA_PROXY_FIELD(targetType,     getTargetType,      setTargetType)
-            ELYSIAN_LUA_PROXY_FIELD(inCombat,       isInCombat)
-            ELYSIAN_LUA_PROXY_FIELD(status,         getStatus,          setStatus)
-            ELYSIAN_LUA_PROXY_FIELD(attrib,         getAttrib,          setAttrib)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
         enum COLLISION_FLAGS {
             ON_COLLIDE			= (1u<<0),

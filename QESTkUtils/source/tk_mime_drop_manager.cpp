@@ -104,8 +104,8 @@ bool MimeDropManager::_iterateHandlersForMimeData(const QMimeData* data, Qt::Dro
 
     if(_supportMimeArray && tkData && tkData->isArray()) {
         auto& array = tkData->getVariant();
-        for(int i = 1; i <= array.getLength(); ++i) {
-            if(!handleSingleMimeData(static_cast<const QMimeData*>(array[i]->getValue<void*>()))) {
+        for(std::size_t i = 1; i <= elysian::lua::length(array); ++i) {
+            if(!handleSingleMimeData(static_cast<const QMimeData*>(elysian::lua::get(array, i).template as<void*>()))) {
                 return false;
             }
         }

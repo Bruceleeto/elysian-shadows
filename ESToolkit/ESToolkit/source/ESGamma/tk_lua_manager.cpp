@@ -5,10 +5,10 @@
  */
 
 #include <ESToolkit/ESGamma/tk_lua_manager.h>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 
 QStringList TkLuaManager::_udTypeNames;
-LuaVariant TkLuaManager::_serializeFunc;
+sol::object TkLuaManager::_serializeFunc;
 unsigned TkLuaManager::_serializeDepth = 0;
 
 
@@ -19,8 +19,8 @@ bool TkLuaManager::initialize(void) {
     success &= runScriptSandbox(TK_LUA_MANAGER_METATABLE_SCRIPT_PATH);
 
     pushGlobalField("serialize");
-    _serializeFunc.pull();
-    lua_register(*_mainState, "serialize", &_serializeCFunc);
+    _serializeFunc = elysian::lua::fromStack();
+    lua_register(_mainState, "serialize", &_serializeCFunc);
 
     //Put the bitches in alphabetical order!
     _udTypeNames.sort();
@@ -29,17 +29,17 @@ bool TkLuaManager::initialize(void) {
 }
 
 bool TkLuaManager::uninitialize(void) {
-    _serializeFunc.setNil();
+    _serializeFunc = sol::object{};
     _udTypeNames.clear();
     _serializeDepth = 0;
     return elysian::LuaManagerBase::uninitialize();
 }
 
-LuaVariant TkLuaManager::getParent(const LuaVariant &t) {
-    return callGlobalFunction<LuaVariant>("getparenttable", nullptr, t);
+sol::object TkLuaManager::getParent(const sol::object &t) {
+    return callGlobalFunction<sol::object>("getparenttable", nullptr, t);
 }
 
-void TkLuaManager::setParent(const elysian::LuaVariant& t, const elysian::LuaVariant& p) {
+void TkLuaManager::setParent(const sol::object& t, const sol::object& p) {
     callGlobalFunction<void>("setparenttable", nullptr, t, p);
 }
 
@@ -50,16 +50,16 @@ int TkLuaManager::_serializeCFunc(lua_State */*vm*/) {
     //rPrintByIndex(-2, 1, "Serialize[-2]");
     //rPrintByIndex(-1, 1, "Serialize[-1]");
 
-//    dbgprintf("Stack size - %d", lua_gettop(*_mainState));
+//    dbgprintf("Stack size - %d", lua_gettop(_mainState));
     _serializeFunc.push();
 
-    lua_insert(*_mainState, -2);
+    lua_insert(_mainState, -2);
 
   //  rPrintByIndex(-3, 1, "Serialize[-3]");
    // rPrintByIndex(-2, 1, "Serialize[-2]");
    // rPrintByIndex(-1, 1, "Serialize[-1]");
 
-     //   dbgprintf("Stack size - %d", lua_gettop(*_mainState));
+     //   dbgprintf("Stack size - %d", lua_gettop(_mainState));
 
     ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 1, nullptr);
 

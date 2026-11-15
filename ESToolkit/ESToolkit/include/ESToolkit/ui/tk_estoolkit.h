@@ -11,7 +11,7 @@
 #include <QUndoGroup>
 #include <QDir>
 #include <libGyro/gyro_system_api.h>
-#include <AssetIO/crtp/elysian_lua_variant.hpp>
+#include <AssetIO/utility/elysian_lua_values.hpp>
 #include <ESGamma/crtp/elysian_lua_manager.hpp>
 #include <ESToolkit/core/tk_assets.h>
 
@@ -79,18 +79,18 @@ public:
 
 
     static ESToolkit*   getInstance(void);
-    static void         select(const LuaVariant& ref);
+    static void         select(const sol::object& ref);
     static int          pushSelection(lua_State*const vm);
     static void         searchDocs(QString query);
     static void         openDoc(QString page, QString section=QString());
     static void         showStatusBarMessage(QString message);
     static void         showStatusBarMessage(QString message, QColor color);
-    static QString      messageBoxQuestion(QString message, LuaVariant buttons=LuaVariant(), QString informativeText=QString());
-    static LuaVariant   messageBoxTextPrompt(QString message);
+    static QString      messageBoxQuestion(QString message, sol::object buttons=elysian::lua::make(), QString informativeText=QString());
+    static sol::object   messageBoxTextPrompt(QString message);
 
-    static void         popSelectionView(int index, LuaVariant tableRef);
+    static void         popSelectionView(int index, sol::object tableRef);
     static QString      popInputPrompt(void);
-    static void         graphValue(int index, LuaVariant value);
+    static void         graphValue(int index, sol::object value);
 
     bool            verifySingleArea(const QString path);
     bool            openProjectDir(const QString dir);

@@ -16,8 +16,6 @@
 
 namespace elysian {
 
-    ELYSIAN_LUA_PROXY_FIELDS_EXPORT(AudioSourceBase)
-
     AudioSystem* AudioSourceBase::_audioSys = nullptr;
 
     void AudioSourceBase::update(void) {
@@ -57,8 +55,8 @@ namespace elysian {
         }
     }
 
-    void AudioSourceBase::playLua(LuaVariant v) {
-        play(v.getValue<EventMonitor*>());
+    void AudioSourceBase::playLua(sol::object v) {
+        play(v.as<EventMonitor*>());
     }
 
     void AudioSourceBase::play(EventMonitor* monitor) {

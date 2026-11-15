@@ -238,20 +238,20 @@ void CombatSystem::_processCurrentCombatAction(CollisionContact*const contact, C
 // MACRO THESE FUNCTION NAMES
 
 #if 0
-void CombatSystem::resolveCombatAction(OOLUA::Lua_table_ref action, Combat*const src, Combat*const target) {
-  OOLUA::Lua_table_ref statMods;
+void CombatSystem::resolveCombatAction(sol::object action, Combat*const src, Combat*const target) {
+  sol::object statMods;
 
   _curActionRes.src = src;
   _curActionRes.target = target;
 
-  lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, action.ref());	//push actionTable
-  lua_getfield(*_mainState, -1, "calculateCombatStatMods");
-  OOLUA::push(*_mainState, src);
+  lua_rawgeti(_mainState, LUA_REGISTRYINDEX, action.registry_index());	//push actionTable
+  lua_getfield(_mainState, -1, "calculateCombatStatMods");
+  sol::stack::push(_mainState, src);
   ELYSIAN_LUA_MANAGER_PROTECTED_CALL(1, 1, nullptr);
-  OOLUA::pull(*_mainState, statMods);
+  statMods = sol::stack::pop<std::remove_cv_t<std::remove_reference_t<decltype(statMods)>>>(_mainState);
 
-  lua_rawgeti(*_mainState, LUA_REGISTRYINDEX, target->getSelfTable().ref()); //push combat target's self table
-  lua_getfield(*_mainState, -1, "applyCombatAction");
+  lua_rawgeti(_mainState, LUA_REGISTRYINDEX, target->getSelfTable().registry_index()); //push combat target's self table
+  lua_getfield(_mainState, -1, "applyCombatAction");
   _callFunction<void>(nullptr, statMods);
 
   _processCurrentCombatAction();
@@ -424,8 +424,8 @@ void CombatSystem::_emitCombatModifierText(const Combat* const target,
   // Emit icons for status ailments!
 }
 
-LuaVariant CombatSystem::getCombatants(void) const {
-   return LuaVariant::fromSequenceContainer(_combatants);
+sol::object CombatSystem::getCombatants(void) const {
+   return elysian::lua::sequence(_combatants);
 }
 
 }

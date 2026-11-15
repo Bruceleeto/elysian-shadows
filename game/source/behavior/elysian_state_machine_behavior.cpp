@@ -32,7 +32,7 @@ void StateMachineBehavior::setCurrentState(State* state) {
 
 }
 
-void StateMachineBehavior::setStateTable(LuaVariant t) {
+void StateMachineBehavior::setStateTable(sol::object t) {
     _stateTable = std::move(t);
     //Find triggers within each state
     //Cache triggers as integer indices

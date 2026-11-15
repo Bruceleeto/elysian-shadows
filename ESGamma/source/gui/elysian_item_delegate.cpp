@@ -27,7 +27,7 @@ namespace elysian {
     }
 
     Widget* DefaultItemDelegate::_createWidget(const ItemModelIndex &index) const {
-        return new LabelWidget(_model->getItemValue(index).asString().getValue<const char*>());
+        return new LabelWidget(elysian::lua::string(_model->getItemValue(index)).c_str());
     }
 
     Widget* DefaultItemDelegate::getDisplayWidget(const ItemModelIndex &index) const {

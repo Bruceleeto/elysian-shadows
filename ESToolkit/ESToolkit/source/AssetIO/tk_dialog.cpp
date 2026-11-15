@@ -28,19 +28,19 @@ bool TkDialogText::validate(const TkDialog* dialog, QString& errorMsg) const {
 }
 
 void TkDialogOption::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     DynamicContentPropertyItemDelegate* nextIndexDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto* dialogOption = luaFieldItem->getTableRef().getValue<TkDialogOption*>();
+            auto* dialogOption = luaFieldItem->getTableRef().as<TkDialogOption*>();
             if(dialogOption) {
-                int nextIndex = luaFieldItem->getVariant().getValue<int>();
+                int nextIndex = luaFieldItem->getVariant().as<int>();
                 auto* dialogItem = luaFieldItem->getAncestorSiblingLuaItem({"*", "options", "*", "screens", "dialog"}, 1);
                 if(dialogItem) {
-                    auto dialog = dialogItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                    auto dialog = dialogItem->getVariant().as<std::shared_ptr<TkDialog>>();
                     if(dialog) {
                         if(nextIndex == 0 || nextIndex < -1 || nextIndex > (int)dialog->getScreenCount()) {
                             option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -53,29 +53,29 @@ void TkDialogOption::initializeDelegates(void) {
             }
         }
     });
-    OOLUA::push(*_mainState, nextIndexDelegate);
-    lua_setfield(*_mainState, -2, "nextIndex");
+    sol::stack::push(_mainState, nextIndexDelegate);
+    lua_setfield(_mainState, -2, "nextIndex");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }
 
 void TkDialogText::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
-    OOLUA::push(*_mainState, new QESTkUtils::PlainTextEditPropertyItemDelegate);
-    lua_setfield(*_mainState, -2, "text");
+    sol::stack::push(_mainState, new QESTkUtils::PlainTextEditPropertyItemDelegate);
+    lua_setfield(_mainState, -2, "text");
 
     DynamicContentPropertyItemDelegate* nextIndexDelegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto* dialogText = luaFieldItem->getTableRef().getValue<TkDialogText*>();
+            auto* dialogText = luaFieldItem->getTableRef().as<TkDialogText*>();
             if(dialogText) {
-                int nextIndex = luaFieldItem->getVariant().getValue<int>();
+                int nextIndex = luaFieldItem->getVariant().as<int>();
                 auto* dialogItem = luaFieldItem->getAncestorSiblingLuaItem({"*", "screens", "dialog"}, 1);
                 if(dialogItem) {
-                    auto dialog = dialogItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                    auto dialog = dialogItem->getVariant().as<std::shared_ptr<TkDialog>>();
                     if(dialog) {
                         if(nextIndex == 0 || nextIndex < -1 || nextIndex > (int)dialog->getScreenCount()) {
                             option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -88,10 +88,10 @@ void TkDialogText::initializeDelegates(void) {
             }
         }
     });
-    OOLUA::push(*_mainState, nextIndexDelegate);
-    lua_setfield(*_mainState, -2, "nextIndex");
+    sol::stack::push(_mainState, nextIndexDelegate);
+    lua_setfield(_mainState, -2, "nextIndex");
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 }
 
 bool TkDialogPrompt::validate(const TkDialog* dialog, QString& errorMsg) const {
@@ -136,9 +136,9 @@ bool TkDialog::validate(QString& errorMsg) const {
 
 
 void TkDialog::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     DynamicContentPropertyItemDelegate* screensDelegate =
             new DynamicContentPropertyItemDelegate(DynamicContentPropertyItemDelegate::luaArraySizeTextCallback<true>);
@@ -149,17 +149,17 @@ void TkDialog::initializeDelegates(void) {
         [](ESTkStandardItem* item) {
         auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto dialog = luaFieldItem->getTableRef().getValue<shared_ptr<TkDialog>>();
+            auto dialog = luaFieldItem->getTableRef().as<shared_ptr<TkDialog>>();
             if(dialog) {
                 QESTkUtils::MenuStack menu("Add DialogScreen");
 
                 menu.insertAction("DialogText", [=](bool) {
-                    luaFieldItem->getVariant()[dialog->getScreenCount()+1].setVariant(new TkDialogText);
+                    elysian::lua::set(luaFieldItem->getVariant(), dialog->getScreenCount()+1, new TkDialogText);
                     luaFieldItem->setDirty(true);
                 });
 
                 menu.insertAction("DialogPrompt", [=](bool) {
-                    luaFieldItem->getVariant()[dialog->getScreenCount()+1].setVariant(new TkDialogPrompt);
+                    elysian::lua::set(luaFieldItem->getVariant(), dialog->getScreenCount()+1, new TkDialogPrompt);
                     luaFieldItem->setDirty(true);
                 });
 
@@ -167,14 +167,14 @@ void TkDialog::initializeDelegates(void) {
             }
         }
     });
-    OOLUA::push(*_mainState, screensDelegate);
-    lua_setfield(*_mainState, -2, "screens");
+    sol::stack::push(_mainState, screensDelegate);
+    lua_setfield(_mainState, -2, "screens");
 
     DynamicContentPropertyItemDelegate* startScreenDelegate =
             new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
             auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
             if(luaFieldItem) {
-                auto dialog = luaFieldItem->getTableRef().getValue<shared_ptr<TkDialog>>();
+                auto dialog = luaFieldItem->getTableRef().as<shared_ptr<TkDialog>>();
                 const unsigned startScreen = dialog->getStartScreen();
                 if(startScreen >= dialog->getScreenCount()) {
                     option.palette.setColor(QPalette::Text, QColor(Qt::red));
@@ -185,8 +185,8 @@ void TkDialog::initializeDelegates(void) {
             }
         });
 
-    OOLUA::push(*_mainState, startScreenDelegate);
-    lua_setfield(*_mainState, -2, "startScreen");
+    sol::stack::push(_mainState, startScreenDelegate);
+    lua_setfield(_mainState, -2, "startScreen");
 
 
 #if 0
@@ -194,16 +194,16 @@ void TkDialog::initializeDelegates(void) {
         {
             QString("Entity"),
             {
-                [](LuaVariant v, Qt::DropAction, QDropEvent*, int, int, const QModelIndex& parent) {
+                [](sol::object v, Qt::DropAction, QDropEvent*, int, int, const QModelIndex& parent) {
                     auto* model = qobject_cast<const QStandardItemModel*>(parent.model());
                     if(model) {
                         LuaTableFieldItem* luaItem = LuaTableFieldItem::fromStandardItem(model->itemFromIndex(parent));
                         if(luaItem) {
-                            const LuaVariant& self = luaItem->getTableData()->getTableRef();
-                            LuaVariant srcTable = v["skeleton"]["attrib"]["animations"].getVariant();
+                            const sol::object& self = luaItem->getTableData()->getTableRef();
+                            sol::object srcTable = elysian::lua::get(elysian::lua::get(elysian::lua::get(v, "skeleton"), "attrib"), "animations");
 
-                            for(int i = 1; i <= srcTable.getLength(); ++i) {
-                                self[i].setVariant(srcTable[i].getVariant());
+                            for(std::size_t i = 1; i <= elysian::lua::length(srcTable); ++i) {
+                                elysian::lua::set(self, i, elysian::lua::get(srcTable, i));
                             }
 
                             return true;
@@ -211,8 +211,8 @@ void TkDialog::initializeDelegates(void) {
                     }
                     return false;
                 },
-                [](LuaVariant v, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&) {
-                    return !v["skeleton"]["attrib"]["animations"].getVariant().isNil();
+                [](sol::object v, Qt::DropAction, QDragEnterEvent*, int, int, const QModelIndex&) {
+                    return !!elysian::lua::get(elysian::lua::get(elysian::lua::get(v, "skeleton"), "attrib"), "animations").valid();
                 }
             }
         }
@@ -222,7 +222,7 @@ void TkDialog::initializeDelegates(void) {
 
 
 
-    lua_pop(*_mainState, 1);
+    lua_pop(_mainState, 1);
 
 }
 
@@ -230,18 +230,18 @@ void TkDialog::initializeVirtualTableDelegates(QString key) {
 
     if(key == "screens") {
 
-        LuaVariant delegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            auto self = t["__ud"]->getValue<std::shared_ptr<TkDialog>>();
-            if(self && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            auto self = elysian::lua::get(t, "__ud").as<std::shared_ptr<TkDialog>>();
+            if(self && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if(index <= self->getScreenCount()) {
 
                     DynamicContentPropertyItemDelegate* delegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            auto dialog = luaFieldItem->getTableRef()["__ud"]->getValue<std::shared_ptr<TkDialog>>();
+                            auto dialog = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<std::shared_ptr<TkDialog>>();
                             if(dialog) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 TkDialogScreen* screen = dialog->getScreen(index);
                                 if(screen) {
                                     QString errorMsg;
@@ -277,9 +277,9 @@ void TkDialog::initializeVirtualTableDelegates(QString key) {
                         if(luaItem) {
                             auto* dialogItem = luaItem->getAncestorSiblingLuaItem({"screens", "dialog"}, 1);
                             if(dialogItem) {
-                                auto dialog = dialogItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                                auto dialog = dialogItem->getVariant().as<std::shared_ptr<TkDialog>>();
                                 if(dialog) {
-                                    unsigned screenIndex = luaItem->getKey().getValue<unsigned>();
+                                    unsigned screenIndex = luaItem->getKey().as<unsigned>();
                                     elysian::System::getDialogSys()->startDialogAtScreenIndex(dialog, screenIndex-1);
                                 }
                             }
@@ -291,9 +291,9 @@ void TkDialog::initializeVirtualTableDelegates(QString key) {
                         if(luaFieldItem) {
                             auto* dialogItem = luaFieldItem->getAncestorSiblingLuaItem({"screens", "dialog"}, 1);
                             if(dialogItem) {
-                                auto dialog = dialogItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                                auto dialog = dialogItem->getVariant().as<std::shared_ptr<TkDialog>>();
                                 if(dialog) {
-                                    unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                    unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                     if(index <= dialog->getScreenCount()) {
                                         dialog->setScreen(index, nullptr);
                                         dialogItem->setDirty();
@@ -309,9 +309,9 @@ void TkDialog::initializeVirtualTableDelegates(QString key) {
                         if(luaFieldItem) {
                             auto* dialogItem = luaFieldItem->getAncestorSiblingLuaItem({"screens", "dialog"}, 1);
                             if(dialogItem) {
-                                auto dialog = dialogItem->getVariant().getValue<std::shared_ptr<TkDialog>>();
+                                auto dialog = dialogItem->getVariant().as<std::shared_ptr<TkDialog>>();
                                 if(dialog) {
-                                    unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                    unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                     if(index <= dialog->getScreenCount()) {
                                         dialog->setScreen(index, nullptr);
                                         dialogItem->setDirty();
@@ -337,16 +337,16 @@ void TkDialog::initializeVirtualTableDelegates(QString key) {
             return nullptr;
         };
 
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     }
 
 }
 
 void TkDialogPrompt::initializeDelegates(void) {
-    lua_newtable(*_mainState);
-    lua_pushvalue(*_mainState, -1);
-    lua_setfield(*_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+    lua_newtable(_mainState);
+    lua_pushvalue(_mainState, -1);
+    lua_setfield(_mainState, -3, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
 
     DynamicContentPropertyItemDelegate* optionsDelegate =
             new DynamicContentPropertyItemDelegate(DynamicContentPropertyItemDelegate::luaArraySizeTextCallback<true>);
@@ -357,39 +357,39 @@ void TkDialogPrompt::initializeDelegates(void) {
         [](ESTkStandardItem* item) {
         auto* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
         if(luaFieldItem) {
-            auto* prompt = luaFieldItem->getTableRef().getValue<TkDialogPrompt*>();
+            auto* prompt = luaFieldItem->getTableRef().as<TkDialogPrompt*>();
             if(prompt) {
-                luaFieldItem->getVariant()[prompt->getOptionCount()+1].setVariant(new TkDialogOption);
+                elysian::lua::set(luaFieldItem->getVariant(), prompt->getOptionCount()+1, new TkDialogOption);
                 luaFieldItem->setDirty();
             }
         }
 
     });
 
-    OOLUA::push(*_mainState, optionsDelegate);
-    lua_setfield(*_mainState, -2, "options");
+    sol::stack::push(_mainState, optionsDelegate);
+    lua_setfield(_mainState, -2, "options");
 
-    OOLUA::push(*_mainState, new QESTkUtils::PlainTextEditPropertyItemDelegate);
-    lua_setfield(*_mainState, -2, "text");
-    lua_pop(*_mainState, 1);
+    sol::stack::push(_mainState, new QESTkUtils::PlainTextEditPropertyItemDelegate);
+    lua_setfield(_mainState, -2, "text");
+    lua_pop(_mainState, 1);
 }
 
 void TkDialogPrompt::initializeVirtualTableDelegates(QString key) {
 
     if(key == "options") {
 
-        LuaVariant delegateFunc = [](LuaVariant t, LuaVariant k) -> PropertyItemDelegate* {
-            auto* self = t["__ud"]->getValue<TkDialogPrompt*>();
-            if(self && k.getType() == LUA_TNUMBER) {
-                unsigned index = k.getValue<unsigned>();
+        auto delegateFunc = [](sol::object t, sol::object k) -> PropertyItemDelegate* {
+            auto* self = elysian::lua::get(t, "__ud").as<TkDialogPrompt*>();
+            if(self && elysian::lua::type(k) == LUA_TNUMBER) {
+                unsigned index = k.as<unsigned>();
                 if(index <= self->getOptionCount()) {
 
                     DynamicContentPropertyItemDelegate* delegate = new DynamicContentPropertyItemDelegate([](ESTkStandardItem* item, QStyleOptionViewItem& option) {
                         LuaTableFieldItem* luaFieldItem = LuaTableFieldItem::fromStandardItem(item);
                         if(luaFieldItem) {
-                            auto* prompt = luaFieldItem->getTableRef()["__ud"]->getValue<TkDialogPrompt*>();
+                            auto* prompt = elysian::lua::get(luaFieldItem->getTableRef(), "__ud").as<TkDialogPrompt*>();
                             if(prompt) {
-                                unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                 TkDialogOption* opt = prompt->getOption(index);
                                 if(opt) {
                                     option.palette.setColor(QPalette::Text, QColor(Qt::gray));
@@ -406,9 +406,9 @@ void TkDialogPrompt::initializeVirtualTableDelegates(QString key) {
                         if(luaFieldItem) {
                             auto* promptItem = luaFieldItem->getAncestorSiblingLuaItem({"options", "*"}, 1);
                             if(promptItem) {
-                                auto* prompt = promptItem->getVariant().getValue<TkDialogPrompt*>();
+                                auto* prompt = promptItem->getVariant().as<TkDialogPrompt*>();
                                 if(prompt) {
-                                    unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                    unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                     if(index <= prompt->getOptionCount()) {
                                         prompt->setOption(index, nullptr);
                                         promptItem->setDirty();
@@ -424,9 +424,9 @@ void TkDialogPrompt::initializeVirtualTableDelegates(QString key) {
                         if(luaFieldItem) {
                             auto* promptItem = luaFieldItem->getAncestorSiblingLuaItem({"options", "*"}, 1);
                             if(promptItem) {
-                                auto* prompt = promptItem->getVariant().getValue<TkDialogPrompt*>();
+                                auto* prompt = promptItem->getVariant().as<TkDialogPrompt*>();
                                 if(prompt) {
-                                    unsigned index = luaFieldItem->getKey().getValue<unsigned>()-1;
+                                    unsigned index = luaFieldItem->getKey().as<unsigned>()-1;
                                     if(index <= prompt->getOptionCount()) {
                                         prompt->setOption(index, nullptr);
                                         promptItem->setDirty();
@@ -453,8 +453,8 @@ void TkDialogPrompt::initializeVirtualTableDelegates(QString key) {
             return nullptr;
         };
 
-        delegateFunc.push();
-        lua_setfield(*_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
+        sol::stack::push(_mainState, sol::as_function(delegateFunc));
+        lua_setfield(_mainState, -2, TK_LUA_TABLE_DELEGATE_FIELD_KEY);
     }
 
 }

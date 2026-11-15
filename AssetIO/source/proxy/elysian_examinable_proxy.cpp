@@ -1,3 +1,4 @@
+#include <AssetIO/proxy/elysian_examinable_proxy.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -97,15 +98,32 @@
  * \sa dialog, getDialog()
  */
 
-OOLUA_EXPORT_FUNCTIONS(Examinable,
-                       setDialog,
-                       setMaxDist,
-                       setEnabled,
-                       setRelativeDir,
-                       setHasDescription)
-OOLUA_EXPORT_FUNCTIONS_CONST(Examinable,
-                             isEnabled,
-                             getMaxDist,
-                             getRelativeDir,
-                             hasDescription,
-                             getDialog)
+
+namespace elysian::lua {
+using namespace elysian;
+using Examinable = elysian::Examinable;
+
+void registerExaminable(sol::state_view state) {
+    if (state["Examinable"].valid()) return;
+    registerComponent(state);
+    using T = elysian::Examinable;
+    auto type = registerType<T, elysian::Component>(state, "Examinable");
+    type["setDialog"] = method<T, void(std::shared_ptr<Dialog>)>(&T::setDialog);
+    type["setMaxDist"] = method<T, void(float)>(&T::setMaxDist);
+    type["getMaxDist"] = method<T, float() const>(&T::getMaxDist);
+    type["isEnabled"] = method<T, bool() const>(&T::isEnabled);
+    type["setEnabled"] = method<T, void(bool)>(&T::setEnabled);
+    type["getRelativeDir"] = method<T, Direction::DIR4() const>(&T::getRelativeDir);
+    type["setRelativeDir"] = method<T, void(Direction::DIR4)>(&T::setRelativeDir);
+    type["hasDescription"] = method<T, bool() const>(&T::hasDescription);
+    type["setHasDescription"] = method<T, void(bool)>(&T::setHasDescription);
+    type["getDialog"] = method<T, std::shared_ptr<Dialog>() const>(&T::getDialog);
+    property(type, "enabled", method<T, bool() const>(&T::isEnabled), method<T, void(bool)>(&T::setEnabled));
+    property(type, "maxDist", method<T, float() const>(&T::getMaxDist), method<T, void(float)>(&T::setMaxDist));
+    property(type, "relativeDir", method<T, Direction::DIR4() const>(&T::getRelativeDir), method<T, void(Direction::DIR4)>(&T::setRelativeDir));
+    property(type, "dialog", method<T, std::shared_ptr<Dialog>() const>(&T::getDialog), method<T, void(std::shared_ptr<Dialog>)>(&T::setDialog));
+    inheritProperties<T, elysian::Component>();
+    finish<T>(type, "Examinable", [] { return LuaManager::isSerializing(); });
+    initializeEditor<T>(type);
+}
+}

@@ -80,26 +80,6 @@
     \sa EntityWidget, LabelWidget, GroupWidget, Layout, GuiSystem
 */
 
-OOLUA_EXPORT_FUNCTIONS(Widget,
-                       setMinSize,
-                       setMaxSize,
-                       setPosition,
-                       setSize,
-                       getMarginSize,
-                       setMarginSize,
-                       setHorizontalSizePolicy,
-                       setVerticalSizePolicy,
-                       setSizePolicy,
-                       setLayout,
-                       setEnabled)
-OOLUA_EXPORT_FUNCTIONS_CONST(Widget,
-                             getPosition,
-                             getSize,
-                             getHorizontalSizePolicy,
-                             getVerticalSizePolicy,
-                             getLayout,
-                             isEnabled)
-
 /*!
     \qmltype EntityWidget
     \inherits Widget
@@ -114,12 +94,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(Widget,
     existing character Entities in a UI menu.
 */
 
-OOLUA_EXPORT_FUNCTIONS(EntityWidget,
-                       setEntity)
-
-OOLUA_EXPORT_FUNCTIONS_CONST(EntityWidget,
-                             getEntity)
-
 /*!
     \qmltype LabelWidget
     \since 1.6.0
@@ -130,15 +104,6 @@ OOLUA_EXPORT_FUNCTIONS_CONST(EntityWidget,
     LabelWidget is a lightweight Widget used for displaying generic text as a UI element.
     Color can be controlled manually or via the standard Font UI markup in the text string.
 */
-
-OOLUA_EXPORT_FUNCTIONS(LabelWidget,
-                       setText,
-                       setColor)
-
-OOLUA_EXPORT_FUNCTIONS_CONST(LabelWidget,
-                             getText,
-                             getColor)
-
 
 /*!
     \qmltype GroupWidget
@@ -154,6 +119,64 @@ OOLUA_EXPORT_FUNCTIONS_CONST(LabelWidget,
 */
 
 
-OOLUA_EXPORT_FUNCTIONS(GroupWidget)
-OOLUA_EXPORT_FUNCTIONS_CONST(GroupWidget)
 
+namespace elysian::lua {
+using namespace elysian;
+using Widget = elysian::Widget;
+using GroupWidget = elysian::GroupWidget;
+using EntityWidget = elysian::EntityWidget;
+using LabelWidget = elysian::LabelWidget;
+
+void registerWidget(sol::state_view state) {
+    if (state["Widget"].valid()) return;
+    using T = elysian::Widget;
+    auto type = registerType<T>(state, "Widget");
+    type["getPosition"] = method<T, Vector2() const>(&T::getPosition);
+    type["setPosition"] = method<T, void(Vector2)>(&T::setPosition);
+    type["getSize"] = method<T, Vector2() const>(&T::getSize);
+    type["setSize"] = method<T, void(Vector2)>(&T::setSize);
+    type["setMaxSize"] = method<T, void(Vector2)>(&T::setMaxSize);
+    type["setMinSize"] = method<T, void(Vector2)>(&T::setMinSize);
+    type["getMarginSize"] = method<T, Vector2()>(&T::getMarginSize);
+    type["setMarginSize"] = method<T, void(Vector2)>(&T::setMarginSize);
+    type["setHorizontalSizePolicy"] = method<T, void(uint16_t)>(&T::setHorizontalSizePolicy);
+    type["setVerticalSizePolicy"] = method<T, void(uint16_t)>(&T::setVerticalSizePolicy);
+    type["setSizePolicy"] = method<T, void(uint16_t, uint16_t)>(&T::setSizePolicy);
+    type["setLayout"] = method<T, void(TableLayout*)>(&T::setLayout);
+    type["setEnabled"] = method<T, void(bool)>(&T::setEnabled);
+    type["getHorizontalSizePolicy"] = method<T, uint16_t() const>(&T::getHorizontalSizePolicy);
+    type["getVerticalSizePolicy"] = method<T, uint16_t() const>(&T::getVerticalSizePolicy);
+    type["getLayout"] = method<T, TableLayout*() const>(&T::getLayout<TableLayout>);
+    type["isEnabled"] = method<T, bool() const>(&T::isEnabled);
+}
+
+void registerGroupWidget(sol::state_view state) {
+    if (state["GroupWidget"].valid()) return;
+    registerWidget(state);
+    using T = elysian::GroupWidget;
+    auto type = registerType<T, elysian::Widget>(state, "GroupWidget");
+    type["new"] = sol::factories(factory<T>());
+}
+
+void registerEntityWidget(sol::state_view state) {
+    if (state["EntityWidget"].valid()) return;
+    registerWidget(state);
+    using T = elysian::EntityWidget;
+    auto type = registerType<T, elysian::Widget>(state, "EntityWidget");
+    type["new"] = sol::factories(factory<T>(), factory<T, Entity*>());
+    type["setEntity"] = method<T, void(Entity*)>(&T::setEntity);
+    type["getEntity"] = method<T, Entity*() const>(&T::getEntity);
+}
+
+void registerLabelWidget(sol::state_view state) {
+    if (state["LabelWidget"].valid()) return;
+    registerWidget(state);
+    using T = elysian::LabelWidget;
+    auto type = registerType<T, elysian::Widget>(state, "LabelWidget");
+    type["new"] = sol::factories(factory<T>(), factory<T, const char*>());
+    type["setText"] = method<T, void(const char*)>(&T::setText);
+    type["setColor"] = method<T, void(Color4)>(&T::setColor);
+    type["getText"] = method<T, const char*() const>(&T::getText);
+    type["getColor"] = method<T, Color4() const>(&T::getColor);
+}
+}

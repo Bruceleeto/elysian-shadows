@@ -71,13 +71,7 @@ The different Tile collder types are:
  * \sa getColliderType(), COLLIDER_TYPE
  */
 
-OOLUA_EXPORT_FUNCTIONS(Tile,
-                        setColliderType,
-                        setDamping,
-                        setWalkSfx,
-                        setHitSfx)
-EXPORT_OOLUA_FUNCTIONS_1_CONST(Tile,
-                               getColliderType)
+
 
 
 /*!
@@ -116,10 +110,32 @@ EXPORT_OOLUA_FUNCTIONS_1_CONST(Tile,
  * Returns the asset-relative path to the directory containing the level.
  */
 
-EXPORT_OOLUA_FUNCTIONS_1_NON_CONST(Level,
-                                    getTile)
-EXPORT_OOLUA_FUNCTIONS_2_CONST(Level,
-                                //getTileAmount,
-                                getDirName,
-                                getPath)
 
+
+
+
+namespace elysian::lua {
+using namespace elysian;
+using Tile = elysian::Tile;
+using Level = elysian::Level;
+
+void registerTile(sol::state_view state) {
+    if (state["Tile"].valid()) return;
+    using T = elysian::Tile;
+    auto type = registerType<T>(state, "Tile");
+    type["setColliderType"] = method<T, void(unsigned)>(&T::setColliderType);
+    type["getColliderType"] = method<T, unsigned() const>(&T::getColliderType);
+    type["setDamping"] = method<T, void(float)>(&T::setDamping);
+    type["setWalkSfx"] = method<T, void(GYWav*)>(&T::setWalkSfx);
+    type["setHitSfx"] = method<T, void(GYWav*)>(&T::setHitSfx);
+}
+
+void registerLevel(sol::state_view state) {
+    if (state["Level"].valid()) return;
+    using T = elysian::Level;
+    auto type = registerType<T>(state, "Level");
+    type["getTile"] = method<T, Tile*(uint16_t)>(&T::getTile);
+    type["getDirName"] = method<T, const char*() const>(&T::getDirName);
+    type["getPath"] = method<T, const char*() const>(&T::getPath);
+}
+}

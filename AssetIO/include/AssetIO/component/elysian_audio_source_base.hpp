@@ -8,7 +8,7 @@
 #define ELYSIAN_AUDIO_SOURCE_BASE_HPP
 
 #include <AssetIO/crtp/elysian_component.hpp>
-#include <AssetIO/crtp/elysian_lua_table_proxy.hpp>
+#include <AssetIO/utility/elysian_lua_object.hpp>
 #include <libGyro/gyro_wav_api.h>
 #include <libGyro/gyro_audio_api.h>
 
@@ -21,21 +21,13 @@ namespace elysian {
 
     class AudioSourceBase:
         public Component,
-        public LuaTableProxy<AudioSourceBase, AudioSource>
+        public LuaObject<AudioSourceBase, AudioSource>
     {
+    public: using LuaObjectType = LuaObject<AudioSourceBase, AudioSource>;
+
     public:
 
-        ELYSIAN_LUA_PROXY_FIELDS_BEGIN()
-            ELYSIAN_LUA_PROXY_FIELD(wavFile,            getWavFile,         setWavFile)
-            ELYSIAN_LUA_PROXY_FIELD(basePath,           getBasePath,        setBasePath)
-            ELYSIAN_LUA_PROXY_FIELD(gain,               getGain,            setGain)
-            ELYSIAN_LUA_PROXY_FIELD(pitch,              getPitch,           setPitch)
-            ELYSIAN_LUA_PROXY_FIELD(looping,            getLooping,         setLooping)
-            ELYSIAN_LUA_PROXY_FIELD(rolloffFactor,      getRolloffFactor,   setRolloffFactor)
-            ELYSIAN_LUA_PROXY_FIELD(startLooping,       getStartLooping,    setStartLooping)
-            ELYSIAN_LUA_PROXY_FIELD(startWavFile,       getStartWavFile,    setStartWavFile)
-            //ELYSIAN_LUA_PROXY_FIELD(allowConcurrent,    getAllowConcurrent, setAllowConcurrent)
-        ELYSIAN_LUA_PROXY_FIELDS_END()
+        public:
 
                             AudioSourceBase(void) = default;
                             AudioSourceBase(Entity& entity, const AudioSourceBase*const other=nullptr);
@@ -56,7 +48,7 @@ namespace elysian {
         void                setStartWavFile(const char* filepath);
         const char*         getBasePath(void) const;
         void                play(EventMonitor* monitor=nullptr);
-        void                playLua(LuaVariant v=LuaVariant());
+        void                playLua(sol::object v=elysian::lua::make());
         void                stop(void);
         void                setGain(const float val);
         void                setPitch(const float val);
