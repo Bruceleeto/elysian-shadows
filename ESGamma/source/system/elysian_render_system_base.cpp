@@ -120,11 +120,10 @@ bool RenderSystemBase::initialize(void) {
             }
         }
 
-        _luminanceComputeTask = new LuminanceHistogramComputeTask(_glalColorTex);
-        if(_luminanceComputeTask->isValid()) {
-            getComputeSystem()->addComputeTask(_luminanceComputeTask);
-            dbgprintf("HISTOGRAMZZZZZ - <%d, %d>", _luminanceComputeTask->getDevice()->getPlatformIdx(), _luminanceComputeTask->getDevice()->getDeviceIdx());
-        }
+        //The luminance histogram (automatic HDR exposure) is not created: its callers are
+        //disabled in Engine, and registering _glalColorTex with OpenCL makes the NVIDIA
+        //driver reject resizing that texture (GL_INVALID_OPERATION), so the view goes
+        //black as soon as the widget is resized.
 
         //_lightCullComputeTask = new LightCullingComputeTask(_glalDepthBuffer,
           //                                                  glalLightingUBO);
@@ -275,7 +274,7 @@ void RenderSystemBase::createLuminanceHistogram(void) {
     unsigned width, height;
     std::tie(width, height) = getCameraSys()->getViewportSize();
 
-    if(_luminanceComputeTask->isAccelerated() && _luminanceComputeTask->isValid()) {
+    if(_luminanceComputeTask && _luminanceComputeTask->isAccelerated() && _luminanceComputeTask->isValid()) {
         success &= _luminanceComputeTask->getCommandQueue()->enqueueAcquireRendererSharedObject(1, &_luminanceComputeTask->_fboBuffer);
         success &= _luminanceComputeTask->enqueueKernel(width*height);
         success &= _luminanceComputeTask->getCommandQueue()->enqueueReleaseRendererSharedObject(1, &_luminanceComputeTask->_fboBuffer);
@@ -298,7 +297,7 @@ void RenderSystemBase::createLuminanceHistogram(void) {
 void RenderSystemBase::updateHDRExposure(void) {
 
 
-    if(_luminanceComputeTask->isAccelerated()) {
+    if(_luminanceComputeTask && _luminanceComputeTask->isAccelerated()) {
         bool retVal;
 
         updateHDRExposureMonitor.start();
