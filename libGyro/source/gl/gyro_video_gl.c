@@ -431,6 +431,10 @@ void gyVidPresentScene(void) {
                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glalVidBindDefaultFbo();
     glViewport(0, 0, (GLsizei)_projWidth, (GLsizei)_projHeight);
+    //Overlays (GUI) are drawn into the window next; give them a clean depth buffer,
+    //as the bloom composite does.
+    glClearDepth(1.0f);
+    glClear(GL_DEPTH_BUFFER_BIT);
     GY_GL_CHECK_ERROR();
 }
 
