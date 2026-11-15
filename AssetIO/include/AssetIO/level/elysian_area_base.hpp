@@ -164,7 +164,7 @@ namespace elysian {
         int                         lastOffset[2] = {0};
         int                         minIndex[2] = {INT_MAX};
         int                         maxIndex[2] = {0};
-        GYVector4                   _ambientColor   = { 0.5f, 0.5f, 0.5f, 100.0f };
+        GYVector4                   _ambientColor   = { 0.5f, 0.5f, 0.5f, 1.0f };
         bool                        _useSun         = true;
 
         char                        _bgmOggTracks[3][ELYSIAN_AREA_PATH_SIZE] = {{ 0 }};
