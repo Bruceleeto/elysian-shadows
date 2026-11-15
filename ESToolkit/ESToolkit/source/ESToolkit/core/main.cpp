@@ -104,7 +104,7 @@ static GYAppCbRet Init(int argc, char **argv) {
     QSurfaceFormat fmt;
     fmt.setVersion( 4, 1 );
    // fmt.setStencilBufferSize(0);
-    fmt.setDepthBufferSize(32);
+    fmt.setDepthBufferSize(24);
     fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     fmt.setProfile( QSurfaceFormat::CoreProfile ); // Requires >=Qt-4.8.0
     //fmt.setOption(QSurfaceFormat::DebugContext);
@@ -120,7 +120,7 @@ static GYAppCbRet Init(int argc, char **argv) {
     //glfmt.setDirectRendering(true);
 
     glfmt.setSwapInterval(0);
-    glfmt.setDepthBufferSize(32);
+    glfmt.setDepthBufferSize(24);
     glfmt.setStencilBufferSize(0);
     glfmt.setDoubleBuffer(true);
     glfmt.setAlphaBufferSize(0);
