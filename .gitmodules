@@ -2,3 +2,6 @@
 	path = sol2
 	url = https://github.com/Bruceleeto/sol2.git
 	branch = solpp
+[submodule "assets"]
+	path = assets
+	url = git@github.com:Bruceleeto/assets.git

@@ -23,7 +23,7 @@ We're opening up the full *Elysian Shadows* codebase — engine, toolkit, and th
 
 Before you dive in, know what you're getting:
 
-- **No assets.** No art, music, maps, or game scripts are included — this is code only.
+- **Assets are private.** The game assets (art, music, maps, scripts) are a private submodule at `assets/`. Without access, the code still builds, but there is no game to load.
 - **Only ESToolkit on Linux is known to build.** It builds cleanly with GCC 15 and Qt 6 (6.2 or newer). The only supported targets are Linux (Debian/Ubuntu) and the Sega Dreamcast; the Dreamcast build hasn't been fixed up yet. Windows, macOS, iOS and Android support has been removed.
 - **It could use some love.** Expect rough edges, dead code, and the occasional colorful comment.
 
@@ -48,7 +48,7 @@ ESToolkit builds with qmake and Qt 6. Linux is the tested platform.
 
 ### 1. Get the source
 
-sol2 (the C++/Lua bindings) is a git submodule, so clone recursively:
+sol2 (the C++/Lua bindings) and the game assets are git submodules, so clone recursively:
 
 ```sh
 git clone --recursive git@github.com:Bruceleeto/elysian-shadows.git
