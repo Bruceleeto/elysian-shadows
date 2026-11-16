@@ -44,7 +44,7 @@ else()
         source/al/gyro_wav_al.c
         source/al/gyro_ogg_al.c
         source/x86/gyro_matrix_x86.c
-        source/x86/gyro_system_glfw_x86.c
+        source/x86/gyro_system_x86.c
         source/qt/gyro_texture_qt.cpp
         source/qt/gyro_debug_qt.cpp
         source/qt/gyro_input_qt.cpp
