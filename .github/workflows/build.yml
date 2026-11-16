@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    # Lua 5.5 and SDL3 are packaged from Ubuntu 26.04 onwards.
+    container: ubuntu:26.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            git ca-certificates build-essential cmake pkg-config \
+            qt6-base-dev qt6-base-dev-tools qt6-charts-dev qt6-tools-dev \
+            liblua5.5-dev libsdl3-dev libopenal-dev libogg-dev libvorbis-dev zlib1g-dev
+
+      - uses: actions/checkout@v4
+
+      # The assets submodule is private; only sol2 is needed to build.
+      - name: Fetch sol2
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git submodule update --init sol2
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_C_FLAGS=-Werror -DCMAKE_CXX_FLAGS=-Werror
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
