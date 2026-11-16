@@ -242,7 +242,7 @@
     of, so you should not have to worry about varying levels of support.
 
     \section2 Envelope
-    Rumble "Envelope" is an SDL2 Haptic term used to describe the fade-in and fade-out characteristics of a particular effect. Again,
+    Rumble "Envelope" is an SDL3 Haptic term used to describe the fade-in and fade-out characteristics of a particular effect. Again,
     many devices will totally ignore this too, in which case the main effect will be played for the entire duration without any fade-in
     or fade-out, so you should once again not have to worry about this. You may have a better chance at implementing fade-ins and fade-outs
     stringing together two \l{RampRumbleEffect}s and one \l{ConstantRumbleEffect}, if this functionality is absolutely necessary.
@@ -598,7 +598,7 @@ PERIODIC_TYPE can have one of the following values
     \endtable
 
     \section2 LibGyro Driver Implementation
-    Rumble support is implemented via the SDL2Haptic API on non-Dreamcast platforms and uses the KallistiOS Maple API on the
+    Rumble support is implemented via the SDL3 Haptic API on non-Dreamcast platforms and uses the KallistiOS Maple API on the
     Dreamcast.
 
     \section2 Rumble Test and Demo Area
@@ -1175,7 +1175,7 @@ The following is a table of the different states and their descriptions.
  *
  *\e {NOTE: THIS IS A STATIC METHOD!}
  *
- * Loads the file located at \a filePath, which is a collection of SDL2 Input controller mapping
+ * Loads the file located at \a filePath, which is a collection of SDL3 gamepad controller mapping
  * declarations. This should be called BEFORE controllers are created/initialized/used and should
  * usually be called when the Engine initializes (global_init.lua).
  *

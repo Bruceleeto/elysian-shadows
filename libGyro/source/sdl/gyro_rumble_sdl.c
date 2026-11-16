@@ -10,258 +10,164 @@
 #include <sdl/gyro_sdl.inl>
 #include <assert.h>
 
-//========== INTERNALS =========
-
-#define SDL_HAPTIC_DEVICE_UNUSED_PORT   -1
-
+// Joystick and gamepad pointers are borrowed from the controller backend.
 typedef struct SDLHapticDevice {
-    GYRumble    _gyRumble;
+    GYRumble _gyRumble;
     SDL_Haptic* _haptic;
-    int         _port;
-    int         _curEffect;
-
+    SDL_Joystick* _joystick;
+    SDL_Gamepad* _gamepad;
+    int _port;
+    int _curEffect;
+    bool _rumbleReady;
 } SDLHapticDevice;
 
-static GYRumbleInitParams _initParams = {
-    0
-};
+static SDLHapticDevice* _devices;
+static unsigned _deviceCapacity;
+static bool _initialized;
 
-static SDLHapticDevice  _tempDevice = {
-    {
-      0
-    },
-    NULL,
-    SDL_HAPTIC_DEVICE_UNUSED_PORT,
-    0
-};
-static SDLHapticDevice* _devices = NULL;
-static unsigned         _deviceCount = 0;
+static int _rumbleResult(bool result, const char* operation) {
+    if (!result) _gyLog(GY_DEBUG_ERROR, "GYRO_RUMBLE: %s failed: %s", operation, SDL_GetError());
+    return result;
+}
 
-
-static SDLHapticDevice* _claimFreeDevice(void) {
-    for(unsigned i = 0; i < _initParams.maxDevices; ++i) {
-        if(_devices[i]._port == SDL_HAPTIC_DEVICE_UNUSED_PORT) {
-            ++_deviceCount;
-            assert(_deviceCount <= _initParams.maxDevices);
-            return &_devices[i];
-        }
-    }
-
+static SDLHapticDevice* _getSDLHapticDeviceByGYRumble(const GYRumble* rumble) {
+    for (unsigned i = 0; i < _deviceCapacity; ++i)
+        if (&_devices[i]._gyRumble == rumble) return &_devices[i];
     return NULL;
 }
 
 static void _releaseDevice(SDLHapticDevice* device) {
-    if(device->_port != SDL_HAPTIC_DEVICE_UNUSED_PORT) {
-        device->_port = SDL_HAPTIC_DEVICE_UNUSED_PORT;
-        --_deviceCount;
-    }
-    SDL_HapticClose(device->_haptic);
-    device->_haptic = NULL;
-}
-
-static SDLHapticDevice* _getSDLHapticDeviceByGYRumble(const GYRumble* rumble) {
-    for(unsigned i = 0; i < _initParams.maxDevices; ++i) {
-        if(&_devices[i]._gyRumble == rumble) return &_devices[i];
-    }
-
-    if(rumble == &_tempDevice._gyRumble) return &_tempDevice;
-
-    return NULL;
-
-}
-
-static SDLHapticDevice* _getSDLHapticDeviceByPort(int port) {
-    for(unsigned i = 0; i < _initParams.maxDevices; ++i) {
-        if(_devices[i]._port == port) return &_devices[i];
-    }
-
-    return NULL;
+    if (device->_haptic) SDL_CloseHaptic(device->_haptic);
+    else if (device->_gamepad) _rumbleResult(SDL_RumbleGamepad(device->_gamepad, 0, 0, 0), "Stop gamepad rumble");
+    else if (device->_joystick) _rumbleResult(SDL_RumbleJoystick(device->_joystick, 0, 0, 0), "Stop joystick rumble");
+    memset(device, 0, sizeof(*device));
+    device->_port = -1;
+    device->_curEffect = -1;
 }
 
 int _gyRumbleSDLTryOpenHapticJoystick(SDL_Joystick* joystick, int port) {
-    int success = 1;
-    SDL_Haptic* haptic = NULL;
-
-    GY_SDL_CLEAR_ERROR();
-    if(!SDL_JoystickIsHaptic(joystick)) return 1;
-    else {
-
-        SDL_Haptic* haptic = SDL_HapticOpenFromJoystick(joystick);
-        if(!haptic) {
-            _gyLog(GY_DEBUG_ERROR, "[GYRO_RUMBLE] Could not open SDL_Haptic from SDL_Joystick on port: [%d]", port);
-
-        } else {
-            _gyLog(GY_DEBUG_VERBOSE, "[GYRO_RUMBLE] SDL Haptic Device Detected on port: [%d]", port);
-            _gyPush();
-
-            if (!SDL_HapticRumbleSupported(haptic)) {
-                _gyLog(GY_DEBUG_VERBOSE, "[GYRO_RUMBLE] Haptic device does not have Rumble support!");
-                goto haptic_close;
-
-            } else {
-                _gyLog(GY_DEBUG_VERBOSE, "[GYRO_RUMBLE]: Rumble Device attached to port: [%d]", port);
-
-                if (SDL_HapticRumbleInit(haptic) != 0) {
-                    _gyLog(GY_DEBUG_ERROR, "Haptic Rumble Init Failed: %s", SDL_GetError());
-                    goto haptic_error;
-
-                } else {
-                    SDLHapticDevice* dev = (port == SDL_HAPTIC_DEVICE_UNUSED_PORT)? &_tempDevice : _claimFreeDevice();
-                    if(!dev) dev = &_tempDevice;
-                    else dev->_port = port;
-                    dev->_haptic = haptic;
-                    gyRumbleDeviceQuery(&dev->_gyRumble);
-                    goto done;
-                }
+    if (!joystick || port < 0) return 1;
+    SDLHapticDevice* device = NULL;
+    for (unsigned i = 0; i < _deviceCapacity; ++i) {
+        if (_devices[i]._port == port) return 1;
+        if (!device && _devices[i]._port < 0) device = &_devices[i];
+    }
+    if (!device) return 1;
+    if (SDL_IsJoystickHaptic(joystick)) {
+        device->_haptic = SDL_OpenHapticFromJoystick(joystick);
+        if (!device->_haptic) {
+            _gyLog(GY_DEBUG_ERROR, "Could not open haptic device: %s", SDL_GetError());
+            return 0;
+        }
+        if (SDL_HapticRumbleSupported(device->_haptic)) {
+            device->_rumbleReady = SDL_InitHapticRumble(device->_haptic);
+            if (!device->_rumbleReady) {
+                _rumbleResult(false, "Initialize haptic rumble");
+                _releaseDevice(device);
+                return 0;
             }
         }
-    }
-
- haptic_error:
-    success = 0;
- haptic_close:
-    SDL_HapticClose(haptic);
-done:
-    _gyPop(1);
-    return success;
-
-}
-
-int _gyRumbleSDLTryCloseHapticJoystick(SDL_Joystick* joystick, int port) {
-    (void) joystick;
-    int success = 1;
-        SDLHapticDevice* dev = (port == SDL_HAPTIC_DEVICE_UNUSED_PORT)? &_tempDevice : _getSDLHapticDeviceByPort(port);
-        if(dev) {
-            _releaseDevice(dev);
-        } else success = 0;
-    return success;
-}
-
-
-//========== PUBLIC API IMPLEMENTATION =========
-
-int gyRumbleDeviceQuery(GYRumble* dev) {
-    if(!dev) return 0;
-
-    SDLHapticDevice* device = _getSDLHapticDeviceByGYRumble(dev);
-    assert(device);
-
-#define CHECK_HAPTIC_FEATURE(a) \
-    if(flags & SDL_HAPTIC_##a) _gyLog(GY_DEBUG_VERBOSE, #a)
-
-    _gyLog(GY_DEBUG_VERBOSE, "SDL_Haptic Supported Effects");
-    _gyPush();
-    int success = 1;
-    assert(device);
-
-    GY_SDL_CLEAR_ERROR();
-    unsigned flags = SDL_HapticQuery(device->_haptic);
-    if(!flags) {
-        GY_SDL_CHECK_ERROR();
-        success = 0;
     } else {
-        device->_gyRumble.featureFlags = flags;
-        CHECK_HAPTIC_FEATURE(CONSTANT);
-        CHECK_HAPTIC_FEATURE(SINE);
-        CHECK_HAPTIC_FEATURE(LEFTRIGHT);
-        CHECK_HAPTIC_FEATURE(TRIANGLE);
-        CHECK_HAPTIC_FEATURE(SAWTOOTHUP);
-        CHECK_HAPTIC_FEATURE(SAWTOOTHDOWN);
-        CHECK_HAPTIC_FEATURE(RAMP);
-        CHECK_HAPTIC_FEATURE(SPRING);
-        CHECK_HAPTIC_FEATURE(DAMPER);
-        CHECK_HAPTIC_FEATURE(INERTIA);
-        CHECK_HAPTIC_FEATURE(CUSTOM);
-        CHECK_HAPTIC_FEATURE(GAIN);
-        CHECK_HAPTIC_FEATURE(AUTOCENTER);
-        CHECK_HAPTIC_FEATURE(STATUS);
-        CHECK_HAPTIC_FEATURE(PAUSE);
+        SDL_PropertiesID props = SDL_GetJoystickProperties(joystick);
+        if (!props) return _rumbleResult(false, "Get joystick properties");
+        if (!SDL_GetBooleanProperty(props, SDL_PROP_JOYSTICK_CAP_RUMBLE_BOOLEAN, false)) return 1;
+        SDL_JoystickID id = SDL_GetJoystickID(joystick);
+        if (SDL_IsGamepad(id)) device->_gamepad = SDL_GetGamepadFromID(id);
     }
-
-    _gyPop(1);
-
-#undef CHECK_HAPTIC_FEATURE
-    return success;
-}
-
-int gyRumbleInit(const struct GYRumbleInitParams* params) {
-    int success = 1;
-    _gyLog(GY_DEBUG_VERBOSE, "[GYRO_RUMBLE_API]: Initializing SDL_Haptic");
-    _gyPush();
-
-    if(params) memcpy(&_initParams, params, sizeof(GYRumbleInitParams));
-
-    GY_SDL_CLEAR_ERROR();
-    if(SDL_Init(SDL_INIT_HAPTIC) < 0) {
-        success = 0;
-        _gyLog(GY_DEBUG_ERROR, "Could not initialize SDL_GAMECONTROLLER! [%s]", SDL_GetError());
-    } else {
-        _gyLog(GY_DEBUG_VERBOSE, "Max requested rumble device ports: %d", _initParams.maxDevices);
-
-        _devices    = malloc(sizeof(SDLHapticDevice)*_initParams.maxDevices);
-        memset(_devices, 0, sizeof(SDLHapticDevice)*_initParams.maxDevices);
-        for(unsigned i = 0; i < _initParams.maxDevices; ++i) {
-            _devices[i]._port       = SDL_HAPTIC_DEVICE_UNUSED_PORT;
-            _devices[i]._curEffect  = -1;
-        }
-        _deviceCount = 0;
+    device->_joystick = joystick;
+    device->_port = port;
+    if (!gyRumbleDeviceQuery(&device->_gyRumble)) {
+        _releaseDevice(device);
+        return 0;
     }
-
-    return success;
-}
-
-int gyRumbleUninit(void) {
-    _gyLog(GY_DEBUG_VERBOSE, "[GYRO_RUMBLE_API]: Uninitializing SDL_Haptic");
-
-    for(unsigned i = 0; i < _initParams.maxDevices; ++i) {
-        _releaseDevice(&_devices[i]);
-    }
-    assert(!_deviceCount);
-
-    free(_devices);
-    _devices = NULL;
-    _deviceCount = 0;
-
-    SDL_QuitSubSystem(SDL_INIT_HAPTIC);
-    _initParams.maxDevices = 0;
     return 1;
 }
 
+int _gyRumbleSDLTryCloseHapticJoystick(SDL_Joystick* joystick, int port) {
+    (void)joystick;
+    for (unsigned i = 0; i < _deviceCapacity; ++i)
+        if (_devices[i]._port == port) _releaseDevice(&_devices[i]);
+    return 1;
+}
+
+int gyRumbleDeviceQuery(GYRumble* dev) {
+    SDLHapticDevice* device = _getSDLHapticDeviceByGYRumble(dev);
+    if (!device || !device->_joystick) return 0;
+    dev->featureFlags = device->_haptic ? SDL_GetHapticFeatures(device->_haptic) : SDL_HAPTIC_LEFTRIGHT;
+    if (!dev->featureFlags) return _rumbleResult(false, "Get haptic features");
+    return 1;
+}
+
+int gyRumbleInit(const GYRumbleInitParams* params) {
+    if (_initialized) return 1;
+    if (!params) return 0;
+    if (!_rumbleResult(SDL_InitSubSystem(SDL_INIT_HAPTIC), "Initialize haptics")) return 0;
+    _devices = calloc(params->maxDevices, sizeof(*_devices));
+    if (!_devices && params->maxDevices) {
+        SDL_QuitSubSystem(SDL_INIT_HAPTIC);
+        return 0;
+    }
+    _deviceCapacity = params->maxDevices;
+    for (unsigned i = 0; i < _deviceCapacity; ++i) {
+        _devices[i]._port = -1;
+        _devices[i]._curEffect = -1;
+    }
+    _initialized = true;
+    return 1;
+}
+
+int gyRumbleUninit(void) {
+    if (!_initialized) return 1;
+    for (unsigned i = 0; i < _deviceCapacity; ++i) _releaseDevice(&_devices[i]);
+    free(_devices);
+    _devices = NULL;
+    _deviceCapacity = 0;
+    _initialized = false;
+    SDL_QuitSubSystem(SDL_INIT_HAPTIC);
+    return 1;
+}
 
 int gyRumblePoll(unsigned slot, GYRumble** handle) {
-   assert(slot < _initParams.maxDevices);
-   SDLHapticDevice* dev = &_devices[slot];
-   assert(dev);
-   *handle = &dev->_gyRumble;
-   return dev->_port != -1;
-
+    if (!handle) return 0;
+    *handle = NULL;
+    if (slot >= _deviceCapacity) return 0;
+    *handle = &_devices[slot]._gyRumble;
+    return _devices[slot]._port >= 0;
 }
 
-int gyRumblePlay(struct GYRumble* dev, float intensity, uint32_t duration) {
-    SDLHapticDevice* sdlDev = _getSDLHapticDeviceByGYRumble(dev);
-    if(!sdlDev || !sdlDev->_haptic) return 0;
-
-    int success = 1;
-    GY_SDL_CLEAR_ERROR();
-    if(SDL_HapticRumblePlay(sdlDev->_haptic, intensity, duration) < 0) {
-        GY_SDL_CHECK_ERROR();
-        success = 0;
-    }
-    return success;
+static Uint16 _rumbleMagnitude(float intensity) {
+    if (!(intensity > 0.0f)) return 0;
+    if (intensity >= 1.0f) return UINT16_MAX;
+    return intensity * UINT16_MAX;
 }
 
-int gyRumbleStop(struct GYRumble* dev) {
-    SDLHapticDevice* sdlDev = _getSDLHapticDeviceByGYRumble(dev);
-    if(!sdlDev || !sdlDev->_haptic) return 0;
+static int _playMotors(SDLHapticDevice* device, float large, float small, uint32_t duration) {
+    const Uint16 low = _rumbleMagnitude(large), high = _rumbleMagnitude(small);
+    if (device->_gamepad)
+        return _rumbleResult(SDL_RumbleGamepad(device->_gamepad, low, high, duration), "Gamepad rumble");
+    return _rumbleResult(SDL_RumbleJoystick(device->_joystick, low, high, duration), "Joystick rumble");
+}
 
-    int success = 1;
-    GY_SDL_CLEAR_ERROR();
+int gyRumblePlay(GYRumble* dev, float intensity, uint32_t duration) {
+    SDLHapticDevice* device = _getSDLHapticDeviceByGYRumble(dev);
+    if (!device || !device->_joystick) return 0;
+    if (!device->_haptic) return _playMotors(device, intensity, intensity, duration);
+    if (!device->_rumbleReady) return 0;
+    return _rumbleResult(SDL_PlayHapticRumble(device->_haptic, intensity, duration), "Haptic rumble");
+}
 
-    if(SDL_HapticRumbleStop(sdlDev->_haptic) < 0) {
-        GY_SDL_CHECK_ERROR();
-        success = 0;
-    }
-    return success;
+int gyRumbleStop(GYRumble* dev) {
+    SDLHapticDevice* device = _getSDLHapticDeviceByGYRumble(dev);
+    if (!device || !device->_joystick) return 0;
+    if (!device->_haptic) return _playMotors(device, 0, 0, 0);
+    return _rumbleResult(SDL_StopHapticEffects(device->_haptic), "Stop haptic effects");
+}
+
+static uint32_t _effectMilliseconds(float seconds) {
+    if (seconds == GY_RUMBLE_EFFECT_DURATION_INFINITE) return SDL_HAPTIC_INFINITY;
+    if (!(seconds > 0.0f)) return 0;
+    double ms = seconds * 1000.0;
+    return ms >= UINT32_MAX ? UINT32_MAX : (uint32_t)ms;
 }
 
 inline static int _gyPeriodicTypeToSDLType(int type) {
@@ -297,17 +203,21 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
     if(!dev) return 0;
 
     SDLHapticDevice* sdlDev = _getSDLHapticDeviceByGYRumble(dev);
-    if(!sdlDev || !sdlDev->_haptic) return 0;
+    if(!sdlDev || !sdlDev->_joystick) return 0;
 
-    uint32_t duration = (effect->duration == GY_RUMBLE_EFFECT_DURATION_INFINITE)? SDL_HAPTIC_INFINITY : effect->duration  * 1000.0f * iterations;
+    if (!iterations) return 1;
+    const uint32_t duration = _effectMilliseconds(effect->duration);
+    const uint64_t total = (uint64_t)duration * iterations;
+    const uint32_t fallbackDuration = duration == SDL_HAPTIC_INFINITY || total >= UINT32_MAX ? UINT32_MAX : (uint32_t)total;
     float fallbackIntensity = 1.0f;
-    SDL_HapticEffect sdlEffect;
+    SDL_HapticEffect sdlEffect = {0};
     switch(effect->effectType) {
     case GY_RUMBLE_EFFECT_LEFTRIGHT:
+        if (!sdlDev->_haptic) return _playMotors(sdlDev, effect->leftRight.largeIntensity, effect->leftRight.smallIntensity, fallbackDuration);
         fallbackIntensity = (effect->leftRight.largeIntensity > 0)? effect->leftRight.largeIntensity : effect->leftRight.smallIntensity;
         if(!(dev->featureFlags & SDL_HAPTIC_LEFTRIGHT)) {
             _gyLog(GY_DEBUG_WARNING, "[GYRO_RUMBLE] RumbleDevice does not support LEFTRIGHT effects! (Falling through to direct playback)");
-            return gyRumblePlay(dev, fallbackIntensity, duration);
+            return gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
         }
         sdlEffect.leftright.type            = SDL_HAPTIC_LEFTRIGHT;
         sdlEffect.leftright.length          = duration;
@@ -320,13 +230,13 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
         if(!(dev->featureFlags & SDL_HAPTIC_CONSTANT)) {
             fallbackIntensity = effect->constant.intensity;
             _gyLog(GY_DEBUG_WARNING, "[GYRO_RUMBLE] RumbleDevice does not support CONSTANT effects! (Falling through to direct playback)");
-            return gyRumblePlay(dev, fallbackIntensity, duration);
+            return gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
         }
 
         sdlEffect.constant.type             = SDL_HAPTIC_CONSTANT;
         sdlEffect.constant.length           = duration;
-        sdlEffect.constant.attack_level     = effect->constant.startIntensity  * UINT16_MAX;
-        sdlEffect.constant.fade_level       = effect->constant.endIntensity    * UINT16_MAX;
+        sdlEffect.constant.attack_level     = effect->constant.startIntensity  * INT16_MAX;
+        sdlEffect.constant.fade_level       = effect->constant.endIntensity    * INT16_MAX;
         sdlEffect.constant.attack_length    = effect->constant.fadeInDuration  * 1000.0f;
         sdlEffect.constant.fade_length      = effect->constant.fadeOutDuration * 1000.0f;
         sdlEffect.constant.delay            = effect->constant.delay            * 1000.0f;
@@ -341,13 +251,13 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
         if(!(dev->featureFlags & SDL_HAPTIC_RAMP)) {
             fallbackIntensity = (effect->ramp.startIntensity + effect->ramp.endIntensity)*0.5f;
             _gyLog(GY_DEBUG_WARNING, "[GYRO_RUMBLE] RumbleDevice does not support RAMP effects! (Falling through to direct playback)");
-            return gyRumblePlay(dev, fallbackIntensity, duration);
+            return gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
         }
 
-        sdlEffect.ramp.type             = SDL_HAPTIC_CONSTANT;
+        sdlEffect.ramp.type             = SDL_HAPTIC_RAMP;
         sdlEffect.ramp.length           = duration;
-        sdlEffect.ramp.attack_level     = effect->ramp.startIntensity  * UINT16_MAX;
-        sdlEffect.ramp.fade_level       = effect->ramp.endIntensity    * UINT16_MAX;
+        sdlEffect.ramp.attack_level     = effect->ramp.startIntensity  * INT16_MAX;
+        sdlEffect.ramp.fade_level       = effect->ramp.endIntensity    * INT16_MAX;
         sdlEffect.ramp.attack_length    = effect->ramp.fadeInDuration  * 1000.0f;
         sdlEffect.ramp.fade_length      = effect->ramp.fadeOutDuration * 1000.0f;
         sdlEffect.ramp.delay            = effect->ramp.delay            * 1000.0f;
@@ -365,22 +275,22 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
         int actualType = _gyPeriodicTypeToSDLType(effect->periodic.periodicType);
 
         switch(actualType) {
-        case GY_RUMBLE_EFFECT_PERIODIC_SINE:
+        case SDL_HAPTIC_SINE:
             if(!(dev->featureFlags & SDL_HAPTIC_SINE)) {
                 actualType = _gyRumbleEffectPeriodicSupportPriority(dev->featureFlags, SDL_HAPTIC_TRIANGLE, SDL_HAPTIC_SAWTOOTHUP, SDL_HAPTIC_SAWTOOTHDOWN);
             }
             break;
-        case GY_RUMBLE_EFFECT_PERIODIC_TRIANGLE:
+        case SDL_HAPTIC_TRIANGLE:
             if(!(dev->featureFlags & SDL_HAPTIC_TRIANGLE)) {
                 actualType = _gyRumbleEffectPeriodicSupportPriority(dev->featureFlags, SDL_HAPTIC_SINE, SDL_HAPTIC_SAWTOOTHUP, SDL_HAPTIC_SAWTOOTHDOWN);
             }
             break;
-        case GY_RUMBLE_EFFECT_PERIODIC_SAWTOOTHUP:
+        case SDL_HAPTIC_SAWTOOTHUP:
             if(!(dev->featureFlags & SDL_HAPTIC_SAWTOOTHUP)) {
                 actualType = _gyRumbleEffectPeriodicSupportPriority(dev->featureFlags, SDL_HAPTIC_SAWTOOTHDOWN, SDL_HAPTIC_TRIANGLE, SDL_HAPTIC_SINE);
             }
             break;
-        case GY_RUMBLE_EFFECT_PERIODIC_SAWTOOTHDOWN:
+        case SDL_HAPTIC_SAWTOOTHDOWN:
             if(!(dev->featureFlags & SDL_HAPTIC_SAWTOOTHDOWN)) {
                 actualType = _gyRumbleEffectPeriodicSupportPriority(dev->featureFlags, SDL_HAPTIC_SAWTOOTHUP, SDL_HAPTIC_TRIANGLE, SDL_HAPTIC_SINE);
             }
@@ -392,14 +302,14 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
             _gyLog(GY_DEBUG_WARNING, "[GYRO_RUMBLE] Periodic type %s not supported on device. Falling back to %s.", _gyRumblePeriodicTypeStr(sdlEffectType), _gyRumblePeriodicTypeStr(actualType));
 
             if(!actualType) {
-                return gyRumblePlay(dev, fallbackIntensity, duration);
+                return gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
             }
         }
 
         sdlEffect.periodic.type             = actualType;
         sdlEffect.periodic.length           = duration;
-        sdlEffect.periodic.attack_level     = effect->periodic.startIntensity  * UINT16_MAX;
-        sdlEffect.periodic.fade_level       = effect->periodic.endIntensity    * UINT16_MAX;
+        sdlEffect.periodic.attack_level     = effect->periodic.startIntensity  * INT16_MAX;
+        sdlEffect.periodic.fade_level       = effect->periodic.endIntensity    * INT16_MAX;
         sdlEffect.periodic.attack_length    = effect->periodic.fadeInDuration  * 1000.0f;
         sdlEffect.periodic.fade_length      = effect->periodic.fadeOutDuration * 1000.0f;
         sdlEffect.periodic.delay            = effect->periodic.delay            * 1000.0f;
@@ -410,30 +320,29 @@ int gyRumblePlayEffect(GYRumble *dev, const GYRumbleEffect *effect, uint32_t ite
         sdlEffect.periodic.period           = effect->periodic.period * 1000.0f;
         sdlEffect.periodic.magnitude        = effect->periodic.intensityPeak   * ((effect->periodic.intensityPeak < 0)? -INT16_MIN : INT16_MAX);
         sdlEffect.periodic.offset           = effect->periodic.intensityOffset * ((effect->periodic.intensityOffset < 0)? -INT16_MIN : INT16_MAX);
-        sdlEffect.periodic.phase            = effect->periodic.phaseShift * 1000.0f;
+        sdlEffect.periodic.phase            = effect->periodic.phaseShift;
         break;
     }
     case GY_RUMBLE_EFFECT_NONE:
         _gyLog(GY_DEBUG_ERROR, "[GYRO_RUMBLE] Tried to play a RumbleEffect of type NONE!");
-        break;
-    default: assert(0); break;
+        return 0;
+    default: return 0;
     }
 
-    GY_SDL_CLEAR_ERROR();
     if(sdlDev->_curEffect >= 0) {
-        SDL_HapticDestroyEffect(sdlDev->_haptic, sdlDev->_curEffect);
+        SDL_DestroyHapticEffect(sdlDev->_haptic, sdlDev->_curEffect);
     }
 
-    sdlDev->_curEffect = SDL_HapticNewEffect(sdlDev->_haptic, &sdlEffect);
+    sdlDev->_curEffect = SDL_CreateHapticEffect(sdlDev->_haptic, &sdlEffect);
     if(sdlDev->_curEffect < 0) {
-        GY_SDL_CHECK_ERROR();
-        gyRumblePlay(dev, fallbackIntensity, duration);
+        _rumbleResult(false, "Haptic effect");
+        gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
         return 0;
     }
 
-    if(SDL_HapticRunEffect(sdlDev->_haptic, sdlDev->_curEffect, iterations) < 0) {
-        GY_SDL_CHECK_ERROR();
-        gyRumblePlay(dev, fallbackIntensity, duration);
+    if(!SDL_RunHapticEffect(sdlDev->_haptic, sdlDev->_curEffect, iterations)) {
+        _rumbleResult(false, "Haptic effect");
+        gyRumblePlay(dev, fallbackIntensity, fallbackDuration);
         return 0;
     }
 

@@ -10,12 +10,7 @@
 #include <gl/gyro_gl.h>
 #include <stdio.h>
 #include <stdarg.h>
-#if   defined(__linux__)
-#include <SDL2/SDL.h>
-
-#else
-#include <SDL.h>
-#endif
+#include <SDL3/SDL.h>
 
 #include "../common/gyro_system_callbacks.h"
 
@@ -138,7 +133,7 @@ static int _sdlQuerySystemInfo(GYSystemInfo* info) {
     _gyQueryOperatingSystemInfoString(_systemInfo.osInfo, GYRO_SYSTEM_PLATFORM_NAME_SIZE);
     _gyLog(GY_DEBUG_VERBOSE, "%-20s: %50s", "Operating System",    _systemInfo.osInfo);
 
-    intBuff = SDL_GetCPUCount();
+    intBuff = SDL_GetNumLogicalCPUCores();
     _gyLog(GY_DEBUG_VERBOSE, "%-20s: %50d", "CPU Cores",    intBuff);
     if(info) info->cpuCount = intBuff;
 

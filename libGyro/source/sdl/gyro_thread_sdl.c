@@ -21,11 +21,10 @@
 #include <libGyro/gyro_system_api.h>
 #include <libGyro/gyro_defines.h>
 #include <assert.h>
+#include <stdio.h>
+#include <limits.h>
 
-#   ifdef __linux__ // :) Sweet!
-#       include <SDL2/SDL_thread.h>
-#       include <SDL2/SDL_mutex.h>
-#   endif
+#include <SDL3/SDL.h>
 
 #ifdef GY_THREAD_PTHREADS
 #   include <pthread.h>
@@ -43,18 +42,6 @@ static struct SDLThreadContext {
 } _context;
 
 static int _initialized = 0;
-
-static inline const char* gyThreadPriorityString(GY_THREAD_PRIORITY priority) {
-    switch(priority) {
-    GYRO_SWITCH_CASE_STRING(GY_THREAD_PRIORITY_LOW);
-    GYRO_SWITCH_CASE_STRING(GY_THREAD_PRIORITY_MEDIUM);
-    GYRO_SWITCH_CASE_STRING(GY_THREAD_PRIORITY_HIGH);
-    GYRO_SWITCH_CASE_STRING(GY_THREAD_PRIORITY_REALTIME);
-    default:
-        assert(0);
-        return "UNKNOWN PRIORITY";
-    }
-}
 
 int gyThreadInit(const GYThreadInitParams *params) {
     if(_initialized) return 1;
@@ -106,8 +93,8 @@ GYThread* gyThreadCreate(const char* name,
     SDL_Thread* thread = SDL_CreateThread(fn, name, data);
 #ifdef GY_THREAD_DEBUG
     if(thread) ++_context.dbg.activeThreadCount;
-    else _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to create thread: %s", name);
 #endif
+    if (!thread) _gyLog(GY_DEBUG_ERROR, "Could not create thread: %s", SDL_GetError());
     return (GYThread*)thread;
 }
 
@@ -117,6 +104,7 @@ int gyThreadKill(GYThread* thread) {
 }
 
 void gyThreadDetach(GYThread* thread) {
+    if (!thread) return;
     //assert(thread); Safely accepts NULL threads
     SDL_DetachThread((SDL_Thread*)thread);
 #ifdef GY_THREAD_DEBUG
@@ -145,77 +133,28 @@ int gyThreadWait(GYThread* thread) {
     return retValue;
 }
 
-#ifdef GY_THREAD_PTHREADS
-static inline int _pthreadPriority(GY_THREAD_PRIORITY gyPriority, int priorityMax) {
-    float scalar;
-    switch(gyPriority) {
-    case GY_THREAD_PRIORITY_LOW:
-        scalar = 0.25f;
-        break;
-    case GY_THREAD_PRIORITY_MEDIUM:
-        scalar = 0.6f;
-        break;
-    default:
-    case GY_THREAD_PRIORITY_HIGH:
-        scalar = 1.0f;
-        break;
-    }
-    return priorityMax*scalar;
-}
-
-#endif
-
 int gyThreadPriority(GY_THREAD_PRIORITY priority) {
-    int success = 1;
-
-#ifdef GY_THREAD_PTHREADS
-    pthread_t thId = pthread_self();
-    SDL_threadID sdlId = SDL_ThreadID();
-    int policy = 0;
-    int max_prio_for_policy = 0;
-    int errorCode;
-    struct sched_param param;
-
-    //_gyLog(GY_DEBUG_VERBOSE, "Assigning priority [%s] for thread: %d", gyThreadPriorityString(priority), sdlId);
-    //_gyPush();
-
-    if((errorCode = pthread_getschedparam(thId, &policy, &param))) {
-        _gyLog(GY_DEBUG_ERROR, "Failed to retreive pthread scheduling policy! [Error: %d]", strerror(errorCode));
-        success = 0;
-        goto end;
+    SDL_ThreadPriority value;
+    switch (priority) {
+    case GY_THREAD_PRIORITY_LOW: value = SDL_THREAD_PRIORITY_LOW; break;
+    case GY_THREAD_PRIORITY_MEDIUM: value = SDL_THREAD_PRIORITY_NORMAL; break;
+    case GY_THREAD_PRIORITY_HIGH: value = SDL_THREAD_PRIORITY_HIGH; break;
+    case GY_THREAD_PRIORITY_REALTIME: value = SDL_THREAD_PRIORITY_TIME_CRITICAL; break;
+    default: return 0;
     }
-
-    if((max_prio_for_policy = sched_get_priority_max(policy)) == -1) {
-        _gyLog(GY_DEBUG_ERROR, "Failed to retreive max pthread priority! [Error: %d]", strerror(errorCode));
-        success = 0;
-        goto end;
-    } else {
-        param.sched_priority = _pthreadPriority(priority, max_prio_for_policy);
-        _gyLog(GY_DEBUG_VERBOSE, "Assigning Thread [%d] Priority: [%d/%d]", sdlId, param.sched_priority, max_prio_for_policy);
+    if (!SDL_SetCurrentThreadPriority(value)) {
+        _gyLog(GY_DEBUG_ERROR, "Could not set thread priority: %s", SDL_GetError());
+        return 0;
     }
-
-    if((errorCode = pthread_setschedparam(thId, policy, &param))) {
-        _gyLog(GY_DEBUG_ERROR, "Failed to set pthread priority [%d]! [Error: %d]", priority, strerror(errorCode));
-        success = 0;
-        goto end;
-    }
-
-#else
-
-#endif
-
-end:
-   // _gyPop(1);
-    return success;
+    return 1;
 }
-
 
 int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
     assert(mask);
 
 #if   defined(GY_THREAD_PTHREADS)
     int success = 1;
-    SDL_threadID sdlId = SDL_ThreadID();
+    SDL_ThreadID sdlId = SDL_GetCurrentThreadID();
 
     //_gyLog(GY_DEBUG_VERBOSE, "Assigning Thread [%u] CPU Affinity.", sdlId);
     //_gyPush();
@@ -246,11 +185,11 @@ int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
         }
     }
     strcat(buffer, ">");
-    _gyLog(GY_DEBUG_VERBOSE, "Setting CPU Affinity for Thread [%d]: Cores: %s", sdlId, buffer);
+    _gyLog(GY_DEBUG_VERBOSE, "Setting CPU Affinity for Thread [%" SDL_PRIu64 "]: Cores: %s", sdlId, buffer);
 
-    success &= !pthread_setaffinity_np(pthread_self(), maskSize, &cpuMask);
+    success &= !pthread_setaffinity_np(pthread_self(), sizeof(cpuMask), &cpuMask);
     if(!success) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to modify thread CPU affinity for thread: %d", sdlId);
+        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to modify thread CPU affinity for thread: %" SDL_PRIu64, sdlId);
     }
 
    // _gyPop(1);
@@ -262,16 +201,17 @@ int gyThreadCpuAffinity(GYCpuAffinityMask mask) {
 
 //==== MUTEX API ======
 GYMutex* gyMutexCreate(void) {
-    SDL_mutex* mutex = SDL_CreateMutex();
+    SDL_Mutex* mutex = SDL_CreateMutex();
 #ifdef GY_THREAD_DEBUG
     if(mutex) ++_context.dbg.activeMutexCount;
-    else _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to create SDL_mutex!");
 #endif
+    if (!mutex) _gyLog(GY_DEBUG_ERROR, "Could not create mutex: %s", SDL_GetError());
     return (GYMutex*)mutex;
 }
 
 int gyMutexDestroy(GYMutex* mtx) {
-    SDL_DestroyMutex((SDL_mutex*)mtx);
+    if (!mtx) return 0;
+    SDL_DestroyMutex((SDL_Mutex*)mtx);
 #ifdef GY_THREAD_DEBUG
     assert(_context.dbg.activeMutexCount);
     --_context.dbg.activeMutexCount;
@@ -280,100 +220,83 @@ int gyMutexDestroy(GYMutex* mtx) {
 }
 
 int gyMutexLock(GYMutex* mtx) {
-    if(SDL_LockMutex((SDL_mutex*)mtx)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to lock mutex: [%s]", SDL_GetError());
-        return 0;
-    }
+    if (!(mtx)) return 0;
+    SDL_LockMutex((SDL_Mutex*)mtx);
     return 1;
 }
 
 int gyMutexTryLock(GYMutex* mtx) {
-    int retVal = SDL_TryLockMutex((SDL_mutex*)mtx);
-    if(retVal) {
-        if(retVal != SDL_MUTEX_TIMEDOUT)
-            _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to unlock mutex: [%s]", SDL_GetError());
-        return 0;
-    }
-    return 1;
+    return mtx && SDL_TryLockMutex((SDL_Mutex*)mtx);
 }
 
 int gyMutexUnlock(GYMutex* mtx) {
-    if(SDL_UnlockMutex((SDL_mutex*)mtx)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to unlock mutex: [%s]", SDL_GetError());
-        return 0;
-    }
+    if (!(mtx)) return 0;
+    SDL_UnlockMutex((SDL_Mutex*)mtx);
     return 1;
 }
 
 //==== SEMAPHORE API ======
 GYSemaphore* gySemaphoreCreate(uint32_t initialValue) {
-    SDL_sem* sem = SDL_CreateSemaphore(initialValue);
+    SDL_Semaphore* sem = SDL_CreateSemaphore(initialValue);
 #ifdef GY_THREAD_DEBUG
     if(sem) ++_context.dbg.activeSemaphoreCount;
-    else _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to create SDL Semaphore!");
 #endif
+    if (!sem) _gyLog(GY_DEBUG_ERROR, "Could not create semaphore: %s", SDL_GetError());
     return (GYSemaphore*)sem;
 }
 int gySemaphoreDestroy(GYSemaphore* sem) {
-    SDL_DestroySemaphore((SDL_sem*)sem);
+    if (!sem) return 0;
+    SDL_DestroySemaphore((SDL_Semaphore*)sem);
 #ifdef GY_THREAD_DEBUG
     --_context.dbg.activeSemaphoreCount;
 #endif
     return 1;
 }
 int gySemaphorePost(GYSemaphore* sem) {
-    if(SDL_SemPost((SDL_sem*)sem)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed posting semaphore! [Error: %s]", SDL_GetError());
-        return 0;
-    }
+    if (!(sem)) return 0;
+    SDL_SignalSemaphore((SDL_Semaphore*)sem);
     return 1;
 }
 int gySemaphoreWait(GYSemaphore* sem) {
-    if(SDL_SemWait((SDL_sem*)sem)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed waiting on a semaphore! [Error: %s]", SDL_GetError());
-        return 0;
-    }
+    if (!(sem)) return 0;
+    SDL_WaitSemaphore((SDL_Semaphore*)sem);
     return 1;
 }
 
 int gySemaphoreTryWait(GYSemaphore* sem) {
-    int retVal;
-    if((retVal = SDL_SemWait((SDL_sem*)sem))) {
-        if(retVal != SDL_MUTEX_TIMEDOUT)
-            _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: TryWait on a semaphore failed! [Error: %s]", SDL_GetError());
-        return 0;
-    }
-    return 1;
+    return sem && SDL_TryWaitSemaphore((SDL_Semaphore*)sem);
 }
 
 uint32_t gySemaphoreValue(GYSemaphore* sem) {
     assert(sem);
-    return SDL_SemValue((SDL_sem*)sem);
+    return SDL_GetSemaphoreValue((SDL_Semaphore*)sem);
 }
 
 int gySemaphoreWaitTimeout(GYSemaphore* sem, uint32_t ms) {
-    int retVal;
-    if((retVal = SDL_SemWaitTimeout((SDL_sem*)sem, ms))) {
-        if(retVal != SDL_MUTEX_TIMEDOUT)
-            _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: WaitTimeout on a semaphore failed! [Error: %s]", SDL_GetError());
-        return 0;
+    if (!(sem)) return 0;
+    const Uint64 deadline = SDL_GetTicks() + ms;
+    for (;;) {
+        const Uint64 now = SDL_GetTicks();
+        const Uint64 remaining = now < deadline ? deadline - now : 0;
+        const Sint32 timeout = ms == UINT32_MAX ? -1 : remaining > INT32_MAX ? INT32_MAX : (Sint32)remaining;
+        if (SDL_WaitSemaphoreTimeout((SDL_Semaphore*)sem, timeout)) return 1;
+        if (SDL_GetTicks() >= deadline) return 0;
     }
-    return 1;
 }
 
 //=== CONDITIONAL API =====
 GYCondition* gyConditionCreate(void) {
-    SDL_cond* cond = SDL_CreateCond();
+    SDL_Condition* cond = SDL_CreateCondition();
 #ifdef GY_THREAD_DEBUG
     if(cond) ++_context.dbg.activeConditionCount;
-    else _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to create SDL Condition variable!");
 #endif
+    if (!cond) _gyLog(GY_DEBUG_ERROR, "Could not create condition: %s", SDL_GetError());
     return (GYCondition*)cond;
 }
 
 int gyConditionDestroy(GYCondition* cond) {
     if(!cond) return 0;
-    SDL_DestroyCond((SDL_cond*)cond);
+    SDL_DestroyCondition((SDL_Condition*)cond);
 #ifdef GY_THREAD_DEBUG
     assert(_context.dbg.activeConditionCount);
     --_context.dbg.activeConditionCount;
@@ -382,37 +305,33 @@ int gyConditionDestroy(GYCondition* cond) {
 }
 
 int gyConditionBroadcast(GYCondition* cond) {
-    if(SDL_CondBroadcast((SDL_cond*)cond)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to Broadcast SDL Condition variable: [%s]", SDL_GetError());
-        return 0;
-    }
+    if (!(cond)) return 0;
+    SDL_BroadcastCondition((SDL_Condition*)cond);
     return 1;
 }
 
 int gyConditionSignal(GYCondition* cond) {
-    if(SDL_CondSignal((SDL_cond*)cond)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to Signal SDL Condition variable: [%s]", SDL_GetError());
-        return 0;
-    }
+    if (!(cond)) return 0;
+    SDL_SignalCondition((SDL_Condition*)cond);
     return 1;
 }
 
 int gyConditionWait(GYCondition* cond, GYMutex* mtx) {
-    if(SDL_CondWait((SDL_cond*)cond, (SDL_mutex*)mtx)) {
-        _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to wait on SDL Condition variable: [%s]", SDL_GetError());
-        return 0;
-    }
+    if (!(cond && mtx)) return 0;
+    SDL_WaitCondition((SDL_Condition*)cond, (SDL_Mutex*)mtx);
     return 1;
 }
 
 int gyConditionWaitTimeout(GYCondition* cond, GYMutex* mtx, uint32_t ms) {
-    int retVal = SDL_CondWaitTimeout((SDL_cond*)cond, (SDL_mutex*)mtx, ms);
-    if(retVal) {
-        if(retVal != SDL_MUTEX_TIMEDOUT)
-            _gyLog(GY_DEBUG_ERROR, "GY_THREAD_API: Failed to wait on SDL Condition variable: [%s]", SDL_GetError());
-        return 0;
+    if (!(cond && mtx)) return 0;
+    const Uint64 deadline = SDL_GetTicks() + ms;
+    for (;;) {
+        const Uint64 now = SDL_GetTicks();
+        const Uint64 remaining = now < deadline ? deadline - now : 0;
+        const Sint32 timeout = ms == UINT32_MAX ? -1 : remaining > INT32_MAX ? INT32_MAX : (Sint32)remaining;
+        if (SDL_WaitConditionTimeout((SDL_Condition*)cond, (SDL_Mutex*)mtx, timeout)) return 1;
+        if (SDL_GetTicks() >= deadline) return 0;
     }
-    return 1;
 }
 
 const GYThreadDebugInfo* gyThreadDebugQueryInfo(void) { return &_context.dbg; }
@@ -420,15 +339,15 @@ const GYThreadDebugInfo* gyThreadDebugQueryInfo(void) { return &_context.dbg; }
 //==== ATOMICS ====
 
 int gyAtomicAdd(GYAtomic* a, int v) {
-    return SDL_AtomicAdd((SDL_atomic_t*)a, v);
+    return SDL_AddAtomicInt((SDL_AtomicInt*)a, v);
 }
 
 int gyAtomicGet(GYAtomic* a) {
-    return SDL_AtomicGet((SDL_atomic_t*)a);
+    return SDL_GetAtomicInt((SDL_AtomicInt*)a);
 }
 
 int gyAtomicSet(GYAtomic* a, int v) {
-    return SDL_AtomicSet((SDL_atomic_t*)a, v);
+    return SDL_SetAtomicInt((SDL_AtomicInt*)a, v);
 }
 
 void gyCompilerBarrier(void) {

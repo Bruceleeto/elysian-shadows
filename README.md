@@ -62,7 +62,7 @@ On Debian or Ubuntu:
 ```sh
 sudo apt install build-essential cmake pkg-config qt6-base-dev qt6-base-dev-tools liblua5.5-dev \
     qt6-charts-dev qt6-tools-dev \
-    libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
+    libsdl3-dev libopenal-dev libogg-dev libvorbis-dev \
     zlib1g-dev
 ```
 
@@ -84,12 +84,14 @@ Optional extras, passed to `cmake`:
 
 - `-DESTK_DOCS=ON` bundles the Lua API docs (not tested recently).
 - `-DCMAKE_BUILD_TYPE=Debug` for a debug build (the default is `RelWithDebInfo`).
+- `-DESTK_PRECOMPILE_HEADERS=OFF` disables ESToolkit's precompiled headers (enabled by default). This only affects desktop compilation; the Dreamcast target does not use them.
 
-### Lua binding checks
+### Headless tests
 
 Run `ctest` in the build folder for the headless ownership, identity, property,
-constructor and Qt conversion tests. Serialization checks also run when the
-assets are checked out. For Lua 5.5 syntax checks, run
+constructor and Qt conversion tests, plus virtual gamepad input, rumble, haptic
+envelopes, thread synchronization and loopback TCP checks. Serialization checks
+also run when the assets are checked out. For Lua 5.5 syntax checks, run
 `tests/check_scripts <file.lua>...` from the build folder. None of these launch the editor.
 
 ### Qt Creator

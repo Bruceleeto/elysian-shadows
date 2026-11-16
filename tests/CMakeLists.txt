@@ -20,3 +20,24 @@ endforeach()
 # Serialization checks run when the assets submodule is checked out.
 add_test(NAME binding COMMAND binding WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 add_test(NAME qt_values COMMAND qt_values)
+
+# Exercise the real libGyro backends using a virtual gamepad and loopback TCP.
+add_executable(platform_sdl3 platform_sdl3.c)
+target_link_libraries(platform_sdl3 PRIVATE libGyro)
+target_compile_options(platform_sdl3 PRIVATE -Werror)
+add_test(NAME platform_sdl3 COMMAND platform_sdl3)
+set_tests_properties(platform_sdl3 PROPERTIES TIMEOUT 20)
+
+# Linux link wrapping captures force-feedback effects without physical hardware.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(haptic_sdl3 haptic_sdl3.c)
+    target_link_libraries(haptic_sdl3 PRIVATE libGyro)
+    target_compile_options(haptic_sdl3 PRIVATE -Werror)
+    foreach(function IsJoystickHaptic OpenHapticFromJoystick GetHapticFeatures
+            HapticRumbleSupported InitHapticRumble CloseHaptic CreateHapticEffect
+            DestroyHapticEffect RunHapticEffect StopHapticEffects PlayHapticRumble)
+        target_link_options(haptic_sdl3 PRIVATE "LINKER:--wrap=SDL_${function}")
+    endforeach()
+    add_test(NAME haptic_sdl3 COMMAND haptic_sdl3)
+    set_tests_properties(haptic_sdl3 PROPERTIES TIMEOUT 20)
+endif()

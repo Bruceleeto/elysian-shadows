@@ -6,13 +6,7 @@
 
 #include <libGyro/gyro_performance_api.h>
 #include <libGyro/gyro_platform.h>
-#if   defined(__linux__)
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
-#else
-#include <SDL.h>
-#include <SDL_timer.h>
-#endif
+#include <SDL3/SDL.h>
 
 uint64_t _gyPerfFreqCached = 0;
 
