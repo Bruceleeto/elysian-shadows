@@ -238,8 +238,10 @@ int glalVidInitializeBloom(void) {
     gyVidVertexArrayBind(0);
 
     
-    //=====ATTACH BLOOM ATTACHMENT TO DEFAULT FRAMEBUFFER=======
-    //glBindFramebuffer(GL_READ_FRAMEBUFFER, glalVidDefaultFbo());
+    //Instantiate the generated texture name before attaching it to the FBO.
+    //Storage is allocated by gyVidBloomResizeFramebuffer.
+    glBindTexture(GL_TEXTURE_2D, _downscaleTex);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _bloomBuffFbo);
     glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
                            GL_COLOR_ATTACHMENT0,

@@ -23,33 +23,48 @@ ALboolean           _alExtFloat32   = 0;
 
 //==== PUBLIC API IMPLEMENTATION =====
 
+static int _checkALCError(const char* operation) {
+    const ALCenum error = alcGetError(_alDevice);
+    if(error == ALC_NO_ERROR) return 1;
+    _gyLog(GY_DEBUG_ERROR, "OpenAL device error in %s: %s (%d)",
+           operation, alcGetString(_alDevice, error), error);
+    return 0;
+}
+
 int gyAudInit(void) {
-    GY_AL_CLEAR_ERROR();
-    alGetError(); //defaults to fucking error on Windows for whatever-the-fuck reason!
-    _alDevice = alcOpenDevice(NULL);                                               //Open the device
     _gyLog(GY_DEBUG_VERBOSE, "GYRO_AUDIO_API: Initializing OpenAL Subsystem");
     _gyPush();
-
-    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Vendor",        alGetString(AL_VENDOR));
-    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Renderer",      alGetString(AL_RENDERER));
-    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Version",       alGetString(AL_VERSION));
-    const char* devStr = alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
-    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "Device", devStr? devStr : "ERROR");
-    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Extensions",    alGetString(AL_EXTENSIONS));
-
+    _alDevice = alcOpenDevice(NULL);
     if(!_alDevice) {
         _gyLog(GY_DEBUG_WARNING, "Could not open OpenAL Device!");
         _gyPop(1);
         return 0;
     }
 
-    _alContext = alcCreateContext(_alDevice, NULL);                                   //Give the device a context
-    alcMakeContextCurrent(_alContext);                                             //Make the context the current
+    _alContext = alcCreateContext(_alDevice, NULL);
     if(!_alContext) {
-        _gyLog(GY_DEBUG_WARNING, "Could not make OpenAL Context!");
+        _checkALCError("alcCreateContext");
+        alcCloseDevice(_alDevice);
+        _alDevice = NULL;
         _gyPop(1);
         return 0;
     }
+    if(!alcMakeContextCurrent(_alContext)) {
+        _checkALCError("alcMakeContextCurrent");
+        alcDestroyContext(_alContext);
+        alcCloseDevice(_alDevice);
+        _alContext = NULL;
+        _alDevice = NULL;
+        _gyPop(1);
+        return 0;
+    }
+
+    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Vendor", alGetString(AL_VENDOR));
+    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Renderer", alGetString(AL_RENDERER));
+    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Version", alGetString(AL_VERSION));
+    const char* devStr = alcGetString(_alDevice, ALC_DEVICE_SPECIFIER);
+    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "Device", devStr ? devStr : "ERROR");
+    _gyLog(GY_DEBUG_VERBOSE, "%-20s: %40s", "OpenAL Extensions", alGetString(AL_EXTENSIONS));
 
     _alExtFloat32 = alIsExtensionPresent("AL_EXT_float32");
     if(_alExtFloat32) {
@@ -60,17 +75,33 @@ int gyAudInit(void) {
     }
     GY_AL_CHECK_ERROR();
     _gyPop(1);
-
     return 1;
 }
 
 int gyAudUninit(void) {
     _gyLog(GY_DEBUG_VERBOSE, "GYRO_AUDIO_API: Uninitializing OpenAL!");
-    GY_AL_CLEAR_ERROR();
-    alcMakeContextCurrent(NULL);
-    alcDestroyContext(_alContext);
-    alcCloseDevice(_alDevice);
-    GY_AL_CHECK_ERROR();
+    if(_alContext) {
+        if(alcGetCurrentContext() == _alContext) {
+            GY_AL_CHECK_ERROR();
+            if(!alcMakeContextCurrent(NULL)) {
+                _checkALCError("alcMakeContextCurrent(NULL)");
+                return 0;
+            }
+        }
+        alcDestroyContext(_alContext);
+        if(!_checkALCError("alcDestroyContext")) return 0;
+        _alContext = NULL;
+    }
+    if(_alDevice) {
+        if(!alcCloseDevice(_alDevice)) {
+            _checkALCError("alcCloseDevice");
+            return 0;
+        }
+        _alDevice = NULL;
+    }
+    _alExtFloat32 = 0;
+    _alFmtMono32 = -1;
+    _alFmtStereo32 = -1;
     return 1;
 }
 

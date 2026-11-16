@@ -534,6 +534,9 @@ void AreaBase::setTileEntry(const unsigned l, const unsigned x, const unsigned y
     ELYSIAN_AREA_PROTECTED_MAP_ACCESS(l*height*width + y*width + x) = e;
 
 #ifdef GYRO_GLAL
+    //Load scripts can edit the CPU map before activate() creates its vertex buffer.
+    //populateVbo() will upload those edits when the area becomes active.
+    if(!vboPopulated) return;
     GYVertex entry[4];
     //if(e.getValue() == 0) return;
     vboEntryFromTileEntry(entry, &e, x, y, l);

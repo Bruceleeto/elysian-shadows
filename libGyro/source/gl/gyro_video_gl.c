@@ -373,10 +373,10 @@ void gyVidSceneEnd(void) {
 }
 
 void gyVidClearColor(const GYColor4 color) {
-    _clearColor.x = (float)color.r * 255.0f;
-    _clearColor.y = (float)color.g * 255.0f;
-    _clearColor.z = (float)color.b * 255.0f;
-    _clearColor.w = (float)color.a * 255.0f;
+    _clearColor.x = (float)color.r / 255.0f;
+    _clearColor.y = (float)color.g / 255.0f;
+    _clearColor.z = (float)color.b / 255.0f;
+    _clearColor.w = (float)color.a / 255.0f;
     glClearColor(_clearColor.x, _clearColor.y, _clearColor.z, _clearColor.w);
 }
 

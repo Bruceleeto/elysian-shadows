@@ -41,3 +41,10 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_test(NAME haptic_sdl3 COMMAND haptic_sdl3)
     set_tests_properties(haptic_sdl3 PROPERTIES TIMEOUT 20)
 endif()
+
+# OpenAL Soft null output exercises context lifetime without audio hardware.
+add_executable(audio_context audio_context.c)
+target_link_libraries(audio_context PRIVATE libGyro)
+target_compile_options(audio_context PRIVATE -Werror)
+add_test(NAME audio_context COMMAND audio_context)
+set_tests_properties(audio_context PROPERTIES ENVIRONMENT "ALSOFT_DRIVERS=null" TIMEOUT 10)
