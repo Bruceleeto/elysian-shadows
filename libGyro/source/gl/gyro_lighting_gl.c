@@ -29,6 +29,8 @@ GYLightSource*		glalLightSources[GYRO_VIDEO_LIGHT_SOURCES_MAX]		= { NULL };
 unsigned			glalLightSourceCount								= 0;
 int					glalLightingEnabled									= 1;
 int					glalLightsEnabled[GYRO_VIDEO_LIGHT_SOURCES_MAX]		= { 0 };
+enum { LIGHT_BUFFER_CAPACITY = sizeof(glalLightingUBOData.sources) / sizeof(glalLightingUBOData.sources[0]) };
+static GYLightSource* _uboLightSources[LIGHT_BUFFER_CAPACITY];
 static int          _shadowPass                                         = 0;
 static int          _firstShadowPass                                    = 0;
 
@@ -221,6 +223,8 @@ void _lightSourceToLightingUBOLightsource(const GYLightSource* lightSrc, Lightin
         break;
     }
 
+    //A light only samples a shadow layer after its shadow pass has populated it.
+    uboSrc->shadowMapIdx = -1;
     memcpy(uboSrc->projViewMat,          lightSrc->camera->projViewMat,                sizeof(GYMatrix4));
     memcpy(&uboSrc->position,            &lightSrc->position,                         sizeof(GYVector4));
     memcpy(&uboSrc->diffuseColor,        &lightSrc->properties->diffuseColor,         sizeof(GYVector4));
@@ -566,7 +570,13 @@ void gyVidLightSourceAdd(GYLightSource* const light) {
         return;
     }
 
-    _lightSourceToLightingUBOLightsource(light, &glalLightingUBOData.sources[glalLightingUBOData.count++]);
+    if(glalLightingUBOData.count >= LIGHT_BUFFER_CAPACITY) {
+        _gyLog(GY_DEBUG_WARNING, "Scene exceeds the lighting buffer's %d-light capacity.", LIGHT_BUFFER_CAPACITY);
+        return;
+    }
+    const int index = glalLightingUBOData.count++;
+    _uboLightSources[index] = light;
+    _lightSourceToLightingUBOLightsource(light, &glalLightingUBOData.sources[index]);
     return;
 //#if 0
     for(unsigned i = 0; i < GYRO_VIDEO_LIGHT_SOURCES_MAX; ++i) {
@@ -702,7 +712,7 @@ void gyVidLightSourceBeginShadowPass(GYLightSource* const light, const GY_CUBE_M
                                   GL_DEPTH_ATTACHMENT,
                                   glalPointShadowCubeMapTextureArray,
                                   0,
-                                  internals->shadowMapIdx + face);
+                                  internals->shadowMapIdx * GY_CUBE_MAP_FACE_MAX + face);
                  GY_GL_CHECK_ERROR();
 
 
@@ -862,6 +872,17 @@ void gyVidLightSourceBeginShadowPass(GYLightSource* const light, const GY_CUBE_M
 
     //Store projection view matrix (plus bias) for next render pass
     if(useBias) gyMatMultMat(cam->projViewMat, (const float (*)[4])glalShadowTexCoordBiasMat, (const float (*)[4])lightProjViewMatrix);
+
+    //Registration happens before the shadow cameras are updated. Publish this
+    //frame's matrix and valid shadow layer before EndShadowPasses uploads the UBO.
+    for(int i = 0; i < glalLightingUBOData.count; ++i) {
+        if(_uboLightSources[i] == light) {
+            memcpy(glalLightingUBOData.sources[i].projViewMat, cam->projViewMat, sizeof(GYMatrix4));
+            glalLightingUBOData.sources[i].shadowMapIdx = internals->shadowMapIdx;
+            break;
+        }
+    }
+
 
     glActiveTexture(glalTextureMapTexUnits[GLAL_TEMP_MAP]);
 

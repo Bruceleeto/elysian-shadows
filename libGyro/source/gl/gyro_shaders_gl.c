@@ -81,6 +81,8 @@ static GYMaterial           _materialCache;
 static GYVector4			_globalAmbience									= { 0.0f, 0.0f, 0.0f, 1.0f };
 GYVector3					glalCamWorldPos									= { 0.0f, 0.0f, 0.0f };
 
+static float _hdrExposure = 1.0f;
+
 // ==== SHARED EXTERN VARIABLES ======
 int                         glalTextureMappingEnabled                       = 1;
 int                         glalNormalMappingEnabled                        = 1;
@@ -434,7 +436,10 @@ void gyVidSetGlobalAmbience(const GYVector4*const color) {
 }
 
 void gyVidHighDynamicRangeExposure(float exposure) {
-    glUniform1f(glalCurLightShader->uniformLoc[GLAL_SHADER_HDR_EXPOSURE], exposure);
+    gyVidVertexBatchFlush();
+    _hdrExposure = exposure;
+    glProgramUniform1f(glalLightingShader.program->program,
+                      glalLightingShader.uniformLoc[GLAL_SHADER_HDR_EXPOSURE], exposure);
 
 }
 
@@ -574,7 +579,7 @@ void glalDefaultShadersLoadUniforms(void) {
     gyVidLightSourceAdd(NULL);
 
     gyVidSetGlobalAmbience(&_globalAmbience);
-    gyVidHighDynamicRangeExposure(100.0f);
+    gyVidHighDynamicRangeExposure(_hdrExposure);
     //gyVidLightingSetEnable(glalLightingEnabled);
 
     glUniform3fv(glalCurLightShader->uniformLoc[GLAL_SHADER_CAM_WORLD_POS], 1, (float*)&glalCamWorldPos);

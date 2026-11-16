@@ -48,3 +48,19 @@ target_link_libraries(audio_context PRIVATE libGyro)
 target_compile_options(audio_context PRIVATE -Werror)
 add_test(NAME audio_context COMMAND audio_context)
 set_tests_properties(audio_context PROPERTIES ENVIRONMENT "ALSOFT_DRIVERS=null" TIMEOUT 10)
+
+# Exercise the real bloom passes without Qt windows or a physical GPU.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    pkg_check_modules(EGL QUIET IMPORTED_TARGET egl)
+    if(EGL_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/assets/shaders/bloomComposite.fsh")
+        add_executable(bloom_gl bloom_gl.c bloom_assets.cpp)
+        target_link_libraries(bloom_gl PRIVATE libGyro PkgConfig::EGL)
+        target_link_options(bloom_gl PRIVATE "LINKER:--wrap=glalGetProcAddress")
+        target_compile_options(bloom_gl PRIVATE -Werror)
+        add_test(NAME bloom_gl COMMAND bloom_gl)
+        set_tests_properties(bloom_gl PROPERTIES
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/assets"
+            ENVIRONMENT "EGL_PLATFORM=surfaceless;LIBGL_ALWAYS_SOFTWARE=1"
+            SKIP_RETURN_CODE 77 TIMEOUT 30)
+    endif()
+endif()
