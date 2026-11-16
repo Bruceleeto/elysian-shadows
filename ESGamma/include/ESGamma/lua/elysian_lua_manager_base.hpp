@@ -90,6 +90,7 @@ namespace elysian {
 
 		static bool					initialize(void);
 		static bool					uninitialize(void);
+        static void                 closeState(void);
         static void                 updateFrameStats(void);
 		
         static sol::object           exec(const char*const str, ...);

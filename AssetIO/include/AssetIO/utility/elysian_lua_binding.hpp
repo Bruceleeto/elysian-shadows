@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace elysian::lua {
@@ -36,14 +37,40 @@ template<class R, class... A> struct Method<R(A...) const> {
 template<class T, class Signature, class C>
 auto method(Signature C::* value) { return Method<Signature>::template bind<T>(value); }
 
+struct Ownership;
+
+// Every live guard, so the engine can destroy Lua-owned objects at shutdown
+// while its systems still exist. Never destroyed: guards are collected when
+// the Lua state closes during static destruction.
+inline std::unordered_set<Ownership*>& ownerships() {
+    static auto* live = new std::unordered_set<Ownership*>;
+    return *live;
+}
+
 struct Ownership {
     void* pointer;
     void (*destroy)(void*);
-    Ownership(void* p, void (*d)(void*)) : pointer(p), destroy(d) {}
+    Ownership(void* p, void (*d)(void*)) : pointer(p), destroy(d) { ownerships().insert(this); }
     Ownership(const Ownership&) = delete;
     Ownership& operator=(const Ownership&) = delete;
-    ~Ownership() { if (pointer) destroy(pointer); }
+    ~Ownership() {
+        ownerships().erase(this);
+        if (pointer) destroy(pointer);
+    }
 };
+
+// Destroys every object still owned by Lua, leaving its userdata empty.
+// Destructors may run Lua and destroy other owners, so rescan after each one.
+inline void destroyOwnedObjects() {
+    for (;;) {
+        auto& live = ownerships();
+        auto owner = std::find_if(live.begin(), live.end(), [](const Ownership* o) { return o->pointer; });
+        if (owner == live.end()) return;
+        void* pointer = (*owner)->pointer;
+        (*owner)->pointer = nullptr;
+        (*owner)->destroy(pointer);
+    }
+}
 
 // The owner lives in the pointer userdata's uservalue, so releasing ownership
 // does not replace the userdata or invalidate existing Lua references.
@@ -475,6 +502,39 @@ void finish(sol::usertype<T>& type, const char* name, Serializing serializing) {
             return {sol::make_object(self.lua_state(), sol::nil), sol::make_object(self.lua_state(), sol::nil)};
         };
         return std::make_tuple(sol::as_function(std::move(next)), self, sol::nil);
+    };
+
+    // Scripts override engine methods by assigning to the class table
+    // (function Character.getAnimNameFromStates ...). sol2 would store that
+    // in the class table only, leaving instances calling the C++ binding, so
+    // route the assignment through the usertype to replace the binding.
+    // Functions are stored as bound methods, not usertype variables: instance
+    // assignments (prefab.new = ...) must stay no-ops, as they were with OOLua,
+    // where sol2 would write a variable for every instance of the class.
+    type.push();
+    sol::table classTable(type.lua_state(), sol::stack_reference(type.lua_state(), -1));
+    lua_pop(type.lua_state(), 1);
+    sol::table classMetatable = classTable[sol::metatable_key];
+    classMetatable[sol::meta_function::new_index] = [type](sol::object, sol::object key, sol::object value, sol::this_state state) mutable {
+        if (key.get_type() != sol::type::string) luaL_error(state, "class table keys must be strings");
+        if (value.get_type() != sol::type::function) {
+            type.set(key.as<std::string>(), value);
+            return;
+        }
+        type.set(key.as<std::string>(), [function = sol::protected_function(value)](sol::variadic_args args, sol::this_state l) {
+            sol::variadic_results results;
+            std::string error;
+            {
+                sol::protected_function_result result = function(args);
+                if (result.valid()) {
+                    for (const auto& item : result) results.push_back(item);
+                    return results;
+                }
+                error = sol::error(result).what();
+            }
+            luaL_error(l, "%s", error.c_str());
+            return results;
+        });
     };
 }
 

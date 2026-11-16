@@ -420,6 +420,9 @@ Engine::~Engine(void) {
     _threadSystem->uninitialize();
     delete _threadSystem;
 
+    //Every C++ holder of Lua references is gone now
+    LuaManager::closeState();
+
     dbgpop();
 
 }

@@ -30,7 +30,7 @@ const char									LuaManagerBase::_rPrint[] =
         "l = (l) or 100; i = i or \"\";	-- default item limit, indent string\n"
         "if (l<1) then print \"LOG_ERROR: Item limit reached.\"; return l-1 end;\n"
         "local ts = type(s);\n"
-        "if (ts ~= \"table\" and not(ts == \"userdata\" and getmetatable(s) and getmetatable(s).__pairs)) then print (i,ts,s); return l-1 end\n"
+        "if (ts ~= \"table\" and not(ts == \"userdata\" and pcall(pairs, s))) then print (i,ts,s); return l-1 end\n"
         "print (i,ts);           -- print \"table\"\n"
         "for k,v in pairs(s) do  -- print \"[KEY] VALUE\"\n"
             "l = rPrint(v, l, i..\"\t[\"..tostring(k)..\"]\")\n"
@@ -111,7 +111,8 @@ void LuaManagerBase::rPrintByIndex(const int index, const unsigned depth, const 
     if(depth) lua_pushinteger(_mainState, depth);				//push depth if given
     else lua_pushnil(_mainState);								//push nil for default depth if not
     lua_pushstring(_mainState, name);							//push name of table
-    lua_call(_mainState, 3, 1);								//call rPrint
+    if(lua_pcall(_mainState, 3, 1, 0) != LUA_OK)                //call rPrint, result or error left on top
+        _errorprintf("rPrint failed: %s", lua_tostring(_mainState, -1));
     lua_pop(_mainState, 2);
 
    // oldTop = lua_gettop(_mainState);
@@ -498,9 +499,20 @@ bool LuaManagerBase::initialize(void) {
 }
 
 bool LuaManagerBase::uninitialize(void) {
+    //Destroy Lua-owned objects now, while the engine systems they use still exist.
+    //The state stays open so C++ objects can still release their Lua references.
+    lua::destroyOwnedObjects();
     _mainState.collect_garbage();
     _scripts.clear();
     return true;
+}
+
+//Closes the Lua state, collecting whatever it still holds (e.g. shared attribs),
+//once nothing in C++ references it anymore. A fresh state replaces it, so the
+//next initialize() starts clean.
+void LuaManagerBase::closeState(void) {
+    _mainState = sol::state();
+    lua::activeState = _mainState.lua_state();
 }
 
 unsigned LuaManagerBase::getScriptCount(void) {
