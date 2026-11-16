@@ -116,6 +116,7 @@ set(ES_ENGINE_SOURCES
     AssetIO/source/proxy/elysian_event_proxy.cpp
     ESGamma/source/proxy/elysian_event_system_proxy.cpp
     ESGamma/source/proxy/elysian_collision_system_proxy.cpp
+    ESGamma/source/proxy/elysian_warp_system_proxy.cpp
     ESGamma/source/proxy/elysian_examinable_system_proxy.cpp
     ESGamma/source/device/elysian_rumble_device.cpp
     game/source/pause_menu/es_options_menu.cpp
@@ -303,6 +304,7 @@ set(ES_ENGINE_SOURCES
     ESGamma/include/ESGamma/crtp/elysian_particle_system.hpp
     ESGamma/include/ESGamma/proxy/elysian_event_system_proxy.hpp
     ESGamma/include/ESGamma/proxy/elysian_collision_system_proxy.hpp
+    ESGamma/include/ESGamma/proxy/elysian_warp_system_proxy.hpp
     ESGamma/include/ESGamma/proxy/elysian_examinable_system_proxy.hpp
     ESGamma/include/ESGamma/device/elysian_rumble_device.hpp
     ESGamma/include/ESGamma/device/elysian_player_io_device.hpp

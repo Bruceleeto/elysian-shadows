@@ -369,8 +369,8 @@ void Engine::render(void) {
           //  func();
             guiRenderMonitor.resume();
            // _dialogSystem->render();
-           // _warpSystem->render();
             _guiSystem->renderForeground();
+            _warpSystem->render();
             guiRenderMonitor.stop();
 
             gyVidSceneEnd();

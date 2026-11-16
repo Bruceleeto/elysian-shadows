@@ -56,7 +56,8 @@ PartySystem::~PartySystem(void) {
 #endif
 }
 
-void PartySystem::update(void) {//VOIDICATE
+void PartySystem::update(void) {
+    if(!_partyVisible) return;
 //  _tapTimer += getTimerSys()->getDeltaTime();
   //  _dashPartTimer += getTimerSys()->getDeltaTime();
  // if(_playableParty.size() < 1) return;
@@ -67,9 +68,11 @@ void PartySystem::update(void) {//VOIDICATE
 void PartySystem::onObserveEvent(Event *event, EventTarget*) {
     switch(event->getEventType()) {
     case EVENT_AREA_ENTER:
+        _areaEntered = true;
         getPartySys()->addPartyToArea();
         break;
     case EVENT_AREA_EXIT:
+        _areaEntered = false;
         getPartySys()->removePartyFromArea();
         break;
     case EVENT_KEYBOARD_ATTACHED:
@@ -400,7 +403,15 @@ void PartySystem::removePartyFromArea(void) {
     }
 }
 
+void PartySystem::setPartyVisible(bool visible) {
+    if(_partyVisible == visible) return;
+    _partyVisible = visible;
+    if(visible) addPartyToArea();
+    else removePartyFromArea();
+}
+
 void PartySystem::addPartyToArea(void) {
+    if(!_partyVisible || !_areaEntered || !_curArea) return;
     if(!_partyActive) {
         auto* leader = getPartyLeader();
 
@@ -876,6 +887,7 @@ void PartySystem::_checkDpadPartyMemberSwap(void) {
 }
 
 void PartySystem::processInput(void) {
+    if(!_inputEnabled) return;
     pollUnassignedPlayers();
     _checkDpadPartyMemberSwap();
 }

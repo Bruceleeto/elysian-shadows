@@ -161,6 +161,21 @@
 
 
 
+/*!
+ * \qmlmethod void GuiSystem::setPauseMenuEnabled(bool enabled)
+ * Enables or disables opening the pause menu with Start. Disabling also closes an open menu.
+ */
+
+/*!
+ * \qmlmethod bool GuiSystem::isPauseMenuEnabled()
+ * Returns whether the pause menu can be opened.
+ */
+
+/*!
+ * \qmlmethod Widget* GuiSystem::getFgWidget()
+ * Returns the current foreground widget, or nil. The GUI does not own this widget.
+ */
+
 namespace elysian::lua {
 using namespace elysian;
 using AdventureLog = elysian::AdventureLog;
@@ -180,6 +195,9 @@ void registerGuiSystem(sol::state_view state) {
     if (state["GuiSystem"].valid()) return;
     using T = elysian::GuiSystem;
     auto type = registerType<T>(state, "GuiSystem");
+    type["setPauseMenuEnabled"] = method<T>(&T::setPauseMenuEnabled);
+    type["isPauseMenuEnabled"] = method<T>(&T::isPauseMenuEnabled);
+    type["getFgWidget"] = method<T>(&T::getFgWidget);
     type["addCombatText"] = method<T, void(const char*, GYColor4, const GYVector2&, const GYVector2&)>(&T::addCombatText);
     type["setFgWidget"] = method<T, void(Widget*)>(&T::setFgWidget);
     type["clearFgWidget"] = method<T, void()>(&T::clearFgWidget);

@@ -27,6 +27,7 @@
 #include <ESGamma/proxy/elysian_dialog_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_light_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_particle_system_proxy.hpp>
+#include <ESGamma/proxy/elysian_warp_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_party_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_rigid_body_system_proxy.hpp>
 #include <ESGamma/proxy/elysian_timer_system_proxy.hpp>
@@ -464,6 +465,7 @@ namespace elysian {
 		elysian::lua::registerArea(_mainState);
     //	elysian::lua::registerGameInput(_mainState);
        // elysian::lua::registerMouseInput(_mainState);
+        elysian::lua::registerWarpSystem(_mainState);
 		elysian::lua::registerPartySystem(_mainState);
 		elysian::lua::registerTimerSystem(_mainState);
         elysian::lua::registerEngine(_mainState);
@@ -485,6 +487,7 @@ namespace elysian {
         elysian::lua::registerAdventureLog(_mainState);
         elysian::lua::registerHorizontalLayout(_mainState);
         elysian::lua::registerVerticalLayout(_mainState);
+        elysian::lua::registerGroupWidget(_mainState);
         elysian::lua::registerEntityWidget(_mainState);
         elysian::lua::registerLabelWidget(_mainState);
 		elysian::lua::registerGuiSystem(_mainState);
@@ -533,6 +536,7 @@ namespace elysian {
         _mainState["Engine"]["getCurArea"] = &Singletons_getCurArea;
         _mainState["Engine"]["getCurLevel"] = &Singletons_getCurLevel;
         _mainState["Engine"]["setProcessInput"] = &Singletons_setProcessInput;
+        _mainState["Engine"]["getWarpSys"] = [] { return Singletons::getWarpSys(); };
         _mainState["Engine"]["getPartySys"] = &Singletons_getPartySystem;
         _mainState["Engine"]["getInputSys"] = &Singletons_getInputSystem;
         _mainState["Engine"]["getTimerSys"] = &Singletons_getTimerSystem;
@@ -710,6 +714,10 @@ namespace elysian {
  *
  * Tells the engine to process input normally if \a val is true, otherwise the engine will no longer process input events,
  * giving full control to Lua.
+ */
+/*!
+ * \qmlmethod WarpSystem* Engine::getWarpSys()
+ * Returns the system for scripted level and area transitions.
  */
 /*!
  * \qmlmethod PartySystem* Engine::getPartySys()

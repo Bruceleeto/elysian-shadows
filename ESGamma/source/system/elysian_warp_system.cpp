@@ -26,6 +26,31 @@ WarpSystem::WarpSystem(void):
 {
     _screenRect._transform._pos.z = ZCoordConstants::warpOverlay;
 	_screenRect.setColor(0, 0, 0, 0);
+    _screenRect.setBlendMode(BlendMode(GY_BLEND_SRC_ALPHA, GY_BLEND_ONE_MINUS_SRC_ALPHA));
+}
+
+bool WarpSystem::warpTo(const char* levelPath, const char* areaPath) {
+    if(!_enabled || _state != CHECK_WARP || !levelPath || !areaPath ||
+       !*levelPath || !*areaPath ||
+       strlen(levelPath) >= sizeof(_currentWarp._levelPath) ||
+       strlen(areaPath) >= sizeof(_currentWarp._areaPath)) return false;
+#ifndef ELYSIAN_ENGINE
+    // The editor creates all levels and areas when it opens the project.
+    auto* level = getLevelSys()->findLevel(levelPath);
+    auto* area = getLevelSys()->findArea(areaPath);
+    if(!level || !area || area->getLevel() != level) return false;
+#endif
+    _currentWarp.setLevelPath(levelPath);
+    _currentWarp.setAreaPath(areaPath);
+    _currentWarp.setChangeLevel(true);
+    _currentWarp.setChangeArea(true);
+    _currentWarp.setObliqueTransition(false);
+    _currentWarp.setCameraBoundaryRect(Recti(-1)); // Use the destination area's bounds.
+    _useAreaStartPosition = true;
+    _timer = 0.0f;
+    _state = FADE_OUT;
+    setEngineState(System::ENGINE_WARPING);
+    return true;
 }
 
 void WarpSystem::initialize(void) {
@@ -34,7 +59,7 @@ void WarpSystem::initialize(void) {
 }
 
 void WarpSystem::render(void) {
-	_screenRect.render(); 
+    if(_timer > 0.0f) _screenRect.render();
 
 }
 
@@ -103,10 +128,17 @@ void WarpSystem::UpdateFadeIn(void) {
 }
 
 void WarpSystem::UpdatePause(void) {
-	setEngineState(System::ENGINE_NORMAL);
-	Collidable *playerCollider = getPartySys()->getPartyLeader()->getCollidable();
+    setEngineState(System::ENGINE_NORMAL);
+    auto* leader = getPartySys()->getPartyLeader();
+    auto* playerCollider = leader ? leader->getCollidable() : nullptr;
+    if(!playerCollider || !_curArea || !getPartySys()->isPartyVisible()) {
+        _state = CHECK_WARP;
+        return;
+    }
 	for(unsigned int i = 0; i < _curArea->warps.size(); ++i) {
-		if(getCollisionSys()->checkCollision(*playerCollider, *_curArea->warps[i]->getEntity()->getCollidable())) {
+        auto* entity = _curArea->warps[i]->getEntity();
+        auto* collider = entity ? entity->getCollidable() : nullptr;
+        if(collider && getCollisionSys()->checkCollision(*playerCollider, *collider)) {
 			return;
 		}
 	}      
@@ -118,13 +150,19 @@ void WarpSystem::UpdatePause(void) {
 void WarpSystem::UpdateCheckWarp(void) {
 	//Check for warp
 	//Debug::printf(Debug::LOG_VERBOSE, "WARP CHECK");
-	if(!getPartySys()->getPartyLeader()) return; //before we dereference it
-	Collidable *playerCollider = getPartySys()->getPartyLeader()->getCollidable();
+    if(!_enabled || !_curArea || !getPartySys()->isPartyVisible()) return;
+    auto* leader = getPartySys()->getPartyLeader();
+    auto* playerCollider = leader ? leader->getCollidable() : nullptr;
+    if(!playerCollider) return;
 
 	for(unsigned int i = 0; i < _curArea->warps.size(); ++i) {
-		if(getCollisionSys()->checkCollision(*playerCollider, *_curArea->warps[i]->getEntity()->getCollidable())) {
+        auto* entity = _curArea->warps[i]->getEntity();
+        auto* collider = entity ? entity->getCollidable() : nullptr;
+        if(collider && getCollisionSys()->checkCollision(*playerCollider, *collider)) {
 			//Debug::printf(Debug::LOG_VERBOSE, "Warp Collision! %s", _curArea->warps[i]->getEntity()->getName());
 			_currentWarp = *_curArea->warps[i];
+            _useAreaStartPosition = false;
+            _timer = 0.0f;
 			_state = FADE_OUT;
 			setEngineState(System::ENGINE_WARPING);
 			if(_currentWarp._obliqueTran) {

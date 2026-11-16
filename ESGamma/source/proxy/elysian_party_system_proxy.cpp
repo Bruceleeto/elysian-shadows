@@ -90,6 +90,27 @@
  * If \a{entity} a party member, returns \a{InvalidIndex}.
  */
 
+/*!
+ * \qmlmethod void PartySystem::setInputEnabled(bool enabled)
+ * Enables or disables party input, including movement, interaction and player joining.
+ */
+
+/*!
+ * \qmlmethod bool PartySystem::isInputEnabled()
+ * Returns whether party input is enabled.
+ */
+
+/*!
+ * \qmlmethod void PartySystem::setPartyVisible(bool enabled)
+ * Shows or removes party entities from the active area without changing party membership.
+ * Hidden party entities do not update or collide. Visibility persists across area changes.
+ */
+
+/*!
+ * \qmlmethod bool PartySystem::isPartyVisible()
+ * Returns whether the party is shown in areas.
+ */
+
 namespace elysian::lua {
 using namespace elysian;
 using PartySystem = elysian::PartySystem;
@@ -98,6 +119,10 @@ void registerPartySystem(sol::state_view state) {
     if (state["PartySystem"].valid()) return;
     using T = elysian::PartySystem;
     auto type = registerType<T>(state, "PartySystem");
+    type["setInputEnabled"] = method<T>(&T::setInputEnabled);
+    type["isInputEnabled"] = method<T>(&T::isInputEnabled);
+    type["setPartyVisible"] = method<T>(&T::setPartyVisible);
+    type["isPartyVisible"] = method<T>(&T::isPartyVisible);
     type["addCharacterToParty"] = [](T& self, sol::object arg0) { return std::invoke(method<T, void(Entity*)>(&T::addCharacterToParty), self, take<Entity>(arg0)); };
     type["removeCharacterFromParty"] = [](T& self, const Entity* arg0) { auto result = std::invoke(method<T, bool(const Entity*)>(&T::removeCharacterFromParty), self, arg0); return std::make_tuple(result, arg0); };
     type["getPartyLeader"] = method<T, Entity*() const>(&T::getPartyLeader);

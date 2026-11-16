@@ -118,6 +118,7 @@ namespace elysian {
         float                       _fgFadeAlphaStart       = 1.0f;
 
 
+        bool                        _pauseMenuEnabled = true;
         bool                        _pauseMenuActive         = false;
         ElysianShadows::PauseMenu*  _menuWidget          = nullptr;
 
@@ -175,6 +176,8 @@ namespace elysian {
         void            fadeFgLayer(const float time, const bool enabled=false); // doesn't affect AdventureLog!
         FADE_STATE      getFgFadeState(void) const;
 
+        void            setPauseMenuEnabled(bool enabled);
+        bool            isPauseMenuEnabled() const { return _pauseMenuEnabled; }
         void            setPauseMenuActive(bool val);
 
         Font			verdana;

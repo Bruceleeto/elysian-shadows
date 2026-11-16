@@ -64,3 +64,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             SKIP_RETURN_CODE 77 TIMEOUT 30)
     endif()
 endif()
+
+# The title behavior runs against mocked services; no editor or game is launched.
+if(EXISTS "${PROJECT_SOURCE_DIR}/assets/level/rewrite/00_title/area/title/title_behav.lua")
+    add_executable(title_menu title_menu.cpp)
+    target_link_libraries(title_menu PRIVATE PkgConfig::Lua)
+    target_compile_options(title_menu PRIVATE -Werror)
+    add_test(NAME title_menu COMMAND title_menu WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+endif()

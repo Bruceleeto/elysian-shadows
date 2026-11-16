@@ -145,6 +145,9 @@ namespace elysian {
         GYWav*                  _playerJoinSfx              = nullptr;
         GYWav*                  _playerSwapSfx              = nullptr;
         bool                    _wasOnGround                = true;
+        bool                    _inputEnabled = true;
+        bool                    _partyVisible = true;
+        bool                    _areaEntered = false;
         bool                    _partyActive                = false;
         bool                    _followLogic                = true;
 
@@ -203,6 +206,11 @@ namespace elysian {
         void setFollowLogicEnabled(bool val=true);
         void setSlotFollowLogicEnabled(const unsigned int slot, bool enabled=true);
         bool isSlotFollowLogicEnabled(const unsigned int slot) const;
+        void setInputEnabled(bool enabled) { _inputEnabled = enabled; }
+        bool isInputEnabled() const { return _inputEnabled; }
+        void setPartyVisible(bool visible);
+        bool isPartyVisible() const { return _partyVisible; }
+
         void processInput(void);
 
         int     getPlayerIndexFromSlot(int slot) const;

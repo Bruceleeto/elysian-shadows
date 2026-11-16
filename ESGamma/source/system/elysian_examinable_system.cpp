@@ -29,7 +29,7 @@ void ExaminableSystem::processInput(void) {
     Entity* curExamine = nullptr;
     float minDist;
 
-    if(!partyLeader) {
+    if(!partyLeader || !getPartySys()->isInputEnabled() || !getPartySys()->isPartyVisible()) {
         getGuiSys()->setExamineEntity(nullptr);
         _curEntity = nullptr;
         return;

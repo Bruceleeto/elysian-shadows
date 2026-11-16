@@ -376,6 +376,11 @@ void GuiSystem::_renderExamineEntity(void) {
 
 }
 
+void GuiSystem::setPauseMenuEnabled(bool enabled) {
+    _pauseMenuEnabled = enabled;
+    if(!enabled && _pauseMenuActive) setPauseMenuActive(false);
+}
+
 void GuiSystem::setPauseMenuActive(bool val) {
     if(_pauseMenuActive != val) {
         if(val) {
@@ -399,7 +404,7 @@ void GuiSystem::setPauseMenuActive(bool val) {
 }
 
 void GuiSystem::processInput(void) {
-    if(getInputSys()->getController(0)->isTapped(GY_CONTROLLER_BUT_START)) {
+    if(_pauseMenuEnabled && getInputSys()->getController(0)->isTapped(GY_CONTROLLER_BUT_START)) {
         setPauseMenuActive(!_pauseMenuActive);
 
         if(_pauseMenuActive) adventureLog.fade(0.0f, false);

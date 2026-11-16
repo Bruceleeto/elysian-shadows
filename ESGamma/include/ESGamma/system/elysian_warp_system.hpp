@@ -38,6 +38,8 @@ namespace elysian {
 
         STATE   getState(void) const;
         void    setState(STATE state);
+        bool warpTo(const char* levelPath, const char* areaPath);
+        bool usesAreaStartPosition() const { return _useAreaStartPosition; }
         Warp& getCurrentWarp(void);
 
 
@@ -52,6 +54,7 @@ namespace elysian {
 		float _timer			= 0.0f;
         float _walkForce        = 0.0f;
 		STATE _state			= CHECK_WARP;
+        bool _useAreaStartPosition = false;
 		Warp _currentWarp;
 		
 		Sprite _screenRect;

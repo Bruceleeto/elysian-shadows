@@ -29,8 +29,10 @@ namespace elysian {
     }
 
     void Widget::setLayout(TableLayout *layout) {
+        if(_layout == layout) return;
+        delete _layout;
         _layout = layout;
-        _layout->setParent(this);
+        if(_layout) _layout->setParent(this);
     }
 
     void Widget::setParentLayout(TableLayout* layout) {

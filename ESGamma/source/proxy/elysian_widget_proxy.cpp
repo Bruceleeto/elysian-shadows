@@ -7,6 +7,7 @@
 #include <AssetIO/proxy/elysian_entity_proxy.hpp>
 #include <ESGamma/proxy/elysian_layout_proxy.hpp>
 #include <ESGamma/proxy/elysian_widget_proxy.hpp>
+#include <ESGamma/gui/elysian_layout.hpp>
 
 /*!
     \qmltype Widget
@@ -131,6 +132,14 @@ void registerWidget(sol::state_view state) {
     if (state["Widget"].valid()) return;
     using T = elysian::Widget;
     auto type = registerType<T>(state, "Widget");
+    state["Widget"]["FIXED"] = T::FIXED;
+    state["Widget"]["MINIMUM"] = T::MINIMUM;
+    state["Widget"]["MAXIMUM"] = T::MAXIMUM;
+    state["Widget"]["PREFERRED"] = T::PREFERRED;
+    state["Widget"]["EXPANDING"] = T::EXPANDING;
+    state["Widget"]["MINIMUM_EXPANDING"] = T::MINIMUM_EXPANDING;
+    state["Widget"]["IGNORE"] = T::IGNORE;
+
     type["getPosition"] = method<T, Vector2() const>(&T::getPosition);
     type["setPosition"] = method<T, void(Vector2)>(&T::setPosition);
     type["getSize"] = method<T, Vector2() const>(&T::getSize);
@@ -142,7 +151,7 @@ void registerWidget(sol::state_view state) {
     type["setHorizontalSizePolicy"] = method<T, void(uint16_t)>(&T::setHorizontalSizePolicy);
     type["setVerticalSizePolicy"] = method<T, void(uint16_t)>(&T::setVerticalSizePolicy);
     type["setSizePolicy"] = method<T, void(uint16_t, uint16_t)>(&T::setSizePolicy);
-    type["setLayout"] = method<T, void(TableLayout*)>(&T::setLayout);
+    type["setLayout"] = [](T& self, sol::object layout) { self.setLayout(take<TableLayout>(layout)); };
     type["setEnabled"] = method<T, void(bool)>(&T::setEnabled);
     type["getHorizontalSizePolicy"] = method<T, uint16_t() const>(&T::getHorizontalSizePolicy);
     type["getVerticalSizePolicy"] = method<T, uint16_t() const>(&T::getVerticalSizePolicy);

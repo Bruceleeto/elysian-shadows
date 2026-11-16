@@ -32,7 +32,7 @@ namespace elysian {
         char                    _areaPath[ELYSIAN_WARP_AREA_PATH_MAX_CHARS]         = { 0 };
         char                    _levelPath[ELYSIAN_WARP_SEVERITY_PATH_MAX_CHARS]    = { 0 };
         Recti                   _cameraBoundaryRect                                 = Recti(-1);
-        GYVector3               _toPosition;
+        GYVector3               _toPosition = {0, 0, 0};
 
         bool                    _changeArea                                         = false;
         bool                    _changeLevel                                        = false;

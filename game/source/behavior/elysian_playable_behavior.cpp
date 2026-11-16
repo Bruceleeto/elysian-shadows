@@ -30,7 +30,7 @@ void PlayableBehavior::onUpdate(void) {
     const float deltaTime   = Singletons::getTimerSys()->getDeltaTime();
 
         if(System::getEngineState() == Engine::ENGINE_WARPING) return;
-        if(!System::getProcessInput()) return;
+        if(!System::getProcessInput() || !partySys->isInputEnabled()) return;
        // if(partySys->getPartyLeader() != partyMember) return;
 
     if(System::getEngineState() != Engine::ENGINE_WARPING) {

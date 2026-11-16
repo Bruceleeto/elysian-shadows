@@ -182,7 +182,7 @@ bool LevelSystemBase::switchArea(const char *const path) {
     getEventSys()->broadcastEvent(Event(EVENT_AREA_CHANGED));
 
     Vector3 pos;
-    if(getWarpSys()->getState() == WarpSystem::WARP) {
+    if(getWarpSys()->getState() == WarpSystem::WARP && !getWarpSys()->usesAreaStartPosition()) {
         pos = getWarpSys()->getCurrentWarp().getToPosVec();
     } else {
         pos = area->getStartPosition();
