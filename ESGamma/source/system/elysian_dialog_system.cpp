@@ -234,10 +234,11 @@ void DialogSystem::update(void) {
     _border[1]._transform._pos.y = height-ELYSIAN_DIALOG_SYSTEM_HEIGHT*0.5f-1.0f;
 
 	//IF WE'RE SPEAKING TO AN ENTITY ----FUCK
-	if(_curScreen.screen && _curScreen.screen->getEntity()) {
+    const auto* partyLeader = getPartySys()->getPartyLeader();
+    if(_curScreen.screen && _curScreen.screen->getEntity() && partyLeader) {
         _facePlayer();
 
-        const float dist = gyVec3Dist(&getPartySys()->getCharacterPartyMember(0u)->_transform._pos, &_curScreen.screen->getEntity()->_transform._pos);
+        const float dist = gyVec3Dist(&partyLeader->_transform._pos, &_curScreen.screen->getEntity()->_transform._pos);
 
         if(dist > _maxNonmodalDist) {
 			_prevScreen.screen = _curScreen.screen;
@@ -274,7 +275,10 @@ void DialogSystem::update(void) {
 }
 
 void DialogSystem::processInput(void) {
-    Controller* cont = getInputSys()->getController(0);
+    const auto* partyLeader = getPartySys()->getPartyLeader();
+    const int playerIndex = partyLeader? getPartySys()->getPlayerIndexFromPartyMember(partyLeader) : -1;
+    //Scripted dialogs can also run without a party.
+    Controller* cont = getInputSys()->getController(playerIndex >= 0? playerIndex : 0);
 
 	//No active dialog
     if(_curDialog) {
@@ -380,8 +384,9 @@ void DialogSystem::_checkModal(void) const {
 }
 
 void DialogSystem::_facePlayer(void) const {
-    if(!_curScreen.screen || !_curScreen.screen->getEntity() || !_curScreen.screen->getEntity()->getCharacter()) return;
-	_curScreen.screen->getEntity()->getCharacter()->faceEntity(*getPartySys()->getCharacterPartyMember(0u));
+    auto* partyLeader = getPartySys()->getPartyLeader();
+    if(!partyLeader || !_curScreen.screen || !_curScreen.screen->getEntity() || !_curScreen.screen->getEntity()->getCharacter()) return;
+    _curScreen.screen->getEntity()->getCharacter()->faceEntity(*partyLeader);
 }
 
 void DialogSystem::closeDialog(void) {

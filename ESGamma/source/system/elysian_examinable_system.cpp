@@ -25,12 +25,19 @@ namespace elysian {
 
 void ExaminableSystem::processInput(void) {
 
-    Entity*const partyLeader = getPartySys()->getCharacterPartyMember(0u);
+    Entity*const partyLeader = getPartySys()->getPartyLeader();
     Entity* curExamine = nullptr;
     float minDist;
 
-	if(!partyLeader) return;
-	if(getDialogSys()->isOpen()) return;
+    if(!partyLeader) {
+        getGuiSys()->setExamineEntity(nullptr);
+        _curEntity = nullptr;
+        return;
+    }
+    if(getDialogSys()->isOpen()) return;
+    const int playerIndex = getPartySys()->getPlayerIndexFromPartyMember(partyLeader);
+    if(playerIndex < 0) return;
+    const auto* controller = getInputSys()->getController(playerIndex);
 
     //if(input.getTapped(GameInput::BUT_J)) {
 
@@ -57,7 +64,7 @@ void ExaminableSystem::processInput(void) {
         }
 
         if(curExamine) {
-            if(/*partyLeader->getCharacter()->isFacing(curExamine) &&*/ getInputSys()->getController(0)->isTapped(GY_CONTROLLER_BUT_CIRCLE)) {
+            if(/*partyLeader->getCharacter()->isFacing(curExamine) &&*/ controller->isTapped(GY_CONTROLLER_BUT_CIRCLE)) {
                 getBehavSys()->getBehavSys()->onExamine(curExamine, partyLeader);
                 if(curExamine->getExaminable()->getDialog()) {
                    // auto keyfr = getCameraSys()->getKeyFrame();
@@ -70,7 +77,7 @@ void ExaminableSystem::processInput(void) {
         }
 
         if(_curEntity != curExamine) {
-            if(curExamine) getAudioSys()->playSfxChannel(-1, *_examineSfx);
+            if(curExamine && _examineSfx) getAudioSys()->playSfxChannel(-1, *_examineSfx);
             getGuiSys()->setExamineEntity(curExamine);
             _curEntity = curExamine;
         }
