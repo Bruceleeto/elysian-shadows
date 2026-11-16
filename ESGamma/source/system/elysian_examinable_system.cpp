@@ -43,6 +43,7 @@ void ExaminableSystem::processInput(void) {
 
 		//check for examine
         for(auto it: getCurrentArea()->examinables) {
+            if(!it->isEnabled()) continue;
 
             const float dist = gyVec3Dist(&partyLeader->_transform._pos, &it->getEntity()->_transform._pos);
 

@@ -51,6 +51,7 @@ DialogSystem::DialogSystem(void) {
 	_mainCanvas.setVertexColor(2, canvColor3);
 	_mainCanvas.setVertexColor(3, canvColor4);
     _mainCanvas.setVerticesAlpha(100, 100, 100, 100);
+    _mainCanvas.setBlendMode(BlendMode(GY_BLEND_SRC_ALPHA, GY_BLEND_ONE_MINUS_SRC_ALPHA));
 
 	_optionBox.setVertexColor(0, optBoxColor);
 	_optionBox.setVertexColor(1, optBoxColor);
@@ -110,7 +111,7 @@ bool DialogSystem::loadAssets(void) {
 
 //MAKE THESE POSITIONS RELATIVE
 void DialogSystem::render(void) {
-	char buffer[ELYSIAN_DIALOG_PROMPT_OPTION_TEXT_BUFFER_SIZE];
+    char buffer[ELYSIAN_DIALOG_SCREEN_TEXT_BUFFER_SIZE];
     unsigned width, height;
     getGuiSys()->getResolution(width, height);
 
@@ -282,16 +283,18 @@ void DialogSystem::processInput(void) {
 
 	//No active dialog
     if(_curDialog) {
+        const bool advanceTapped = cont->isTapped(GY_CONTROLLER_BUT_X) || cont->isTapped(GY_CONTROLLER_BUT_CIRCLE);
+        const bool advancePressed = cont->isPressed(GY_CONTROLLER_BUT_X) || cont->isPressed(GY_CONTROLLER_BUT_CIRCLE);
         auto* prompt = static_cast<DialogPrompt*>(_curScreen.screen);
 
 		switch(_boxState) {
 			case BOX_OUTPUT:
-                if(cont->isPressed(GY_CONTROLLER_BUT_CIRCLE)) {
+                if(advancePressed) {
                     _characterTimer += _nextCharTime*getTimerSys()->getDeltaTime()*60.0f;
 				}
 				break;
 			case BOX_OUTPUT_END:
-                if(cont->isTapped(GY_CONTROLLER_BUT_CIRCLE)) {
+                if(advanceTapped) {
 					//input prompt
 					if(_curScreen.screen->getScreenType() == DialogScreen::SCREEN_PROMPT) {
 						_boxState = BOX_INPUT;
@@ -320,7 +323,7 @@ void DialogSystem::processInput(void) {
 					}
 				}
 				//select option
-                if(cont->isTapped(GY_CONTROLLER_BUT_CIRCLE)) {
+                if(advanceTapped) {
                     _nextScreen();
 				}
 				break;

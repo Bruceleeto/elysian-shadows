@@ -47,6 +47,14 @@
  */
 
 
+/*!
+ * \qmlmethod bool DialogSystem::isOpen()
+ * Returns whether a conversation is active.
+ */
+/*!
+ * \qmlmethod void DialogSystem::closeDialog()
+ * Closes the current conversation and invokes its completion monitor, if any.
+ */
 namespace elysian::lua {
 using namespace elysian;
 using DialogSystem = elysian::DialogSystem;
@@ -55,6 +63,8 @@ void registerDialogSystem(sol::state_view state) {
     if (state["DialogSystem"].valid()) return;
     using T = elysian::DialogSystem;
     auto type = registerType<T>(state, "DialogSystem");
+    type["isOpen"] = method<T, bool() const>(&T::isOpen);
+    type["closeDialog"] = method<T, void()>(&T::closeDialog);
     type["startDialog"] = [](T& self, std::shared_ptr<Dialog> arg0, sol::object arg1) { return std::invoke(method<T, void(std::shared_ptr<Dialog>, EventMonitor*)>(&T::startDialog), self, arg0, take<EventMonitor>(arg1)); };
 }
 }

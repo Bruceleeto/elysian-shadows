@@ -29,8 +29,8 @@ VerticalLayout = { new = function() return {
     children = {}, addWidget = function(self, child) table.insert(self.children, child) end
 } end }
 SpriteAttrib = { new = function() return { setColor = function() end, loadTexture = function(_, path, w, h, sw, sh)
-    assert(path == "/assets/rewrite/background/placeholder/placeholder_background.png")
-    assert(w == 500 and h == 500 and sw == w and sh == h)
+    assert(path == "/assets/rewrite/background/placeholder/ElysianShadows.png")
+    assert(w == 1200 and h == 500 and sw == w and sh == h)
 end } end }
 Entity = { new = function() return { addRenderable = function()
     return { setSpriteAttrib = function() end }
@@ -60,8 +60,8 @@ local input = {
 }
 local warp = { accept = true, calls = 0 }
 function warp:warpTo(level, area)
-    assert(level == "/assets/level/release/foloi_forest")
-    assert(area == level .. "/area/loren_town")
+    assert(level == "/assets/level/rewrite/01_apartment")
+    assert(area == level .. "/area/apartment")
     self.calls = self.calls + 1
     return self.accept
 end
@@ -118,7 +118,7 @@ assert(self.root.position.x == 512 and self.root.position.y == 384)
 warp.accept = false
 frame(nil, Keyboard.KEY_RETURN)
 assert(warp.calls == 1 and not self.leaving and not party.visible and not gui.pause)
-assert(self.labels[5].text:find("Town unavailable", 1, true))
+assert(self.labels[5].text:find("New Game unavailable", 1, true))
 warp.accept = true
 frame(nil, Keyboard.KEY_RETURN)
 assert(warp.calls == 2 and self.leaving and party.input and party.visible and gui.pause)

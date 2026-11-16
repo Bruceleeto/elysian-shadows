@@ -368,8 +368,8 @@ void Engine::render(void) {
             //Begin rendering overlays
           //  func();
             guiRenderMonitor.resume();
-           // _dialogSystem->render();
             _guiSystem->renderForeground();
+            _dialogSystem->render();
             _warpSystem->render();
             guiRenderMonitor.stop();
 
