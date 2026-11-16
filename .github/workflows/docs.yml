@@ -1,0 +1,60 @@
+name: Documentation
+
+on:
+  push:
+    branches: [rewrite]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install QDoc
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates qt6-documentation-tools
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Generate HTML
+        shell: bash
+        run: |
+          /usr/lib/qt6/bin/qdoc ESToolkit/ESToolkit/ESToolkit.qdocconf --outputdir out/docs 2>&1 | tee /tmp/qdoc.log
+          test -s out/docs/index.html
+          test -s out/docs/estk-user-manual.html
+          test -s out/docs/lua-types.html
+          test -s out/docs/qml-entity.html
+          awk '/warning:/ { count++ } END { printf "QDoc warnings: %d\n", count }' /tmp/qdoc.log >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: out/docs
+
+  deploy:
+    needs: generate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy documentation
+        id: deployment
+        uses: actions/deploy-pages@v4

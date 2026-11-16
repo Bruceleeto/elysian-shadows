@@ -41,6 +41,8 @@ Before you dive in, know what you're getting:
 
 Third-party libraries (sol2, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
 
+Documentation: [Lua API reference and editor manual](https://bruceleeto.github.io/elysian-shadows/).
+
 ## Building
 
 ESToolkit builds with CMake and Qt 6. Linux is the tested platform.

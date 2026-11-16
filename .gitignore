@@ -35,6 +35,7 @@ toolkit_debug.txt
 shadowRenderPasses
 /Project/
 /Docs/Documentation/
+# Generated QDoc HTML (out/docs/) and other local output
 /out/
 
 # IDE / per-user settings

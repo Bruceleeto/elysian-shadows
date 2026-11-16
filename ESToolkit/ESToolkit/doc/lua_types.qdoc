@@ -1,0 +1,16 @@
+/*!
+    \page lua-types.html
+    \title Lua API Types
+
+    These are the engine and editor types exposed to Lua. QDoc labels them
+    "QML types" because the original reference uses QML documentation commands;
+    the scripting language is Lua.
+
+    See the \l {Lua Wrapper API} for scripting concepts and the
+    \l {ESToolkit User Manual} for editor instructions.
+
+    This reference preserves the original documentation. Some signatures,
+    platform descriptions and links may be out of date.
+
+    \generatelist qmltypes
+*/

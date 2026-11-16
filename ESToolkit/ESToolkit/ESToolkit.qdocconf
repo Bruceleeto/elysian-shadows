@@ -1,81 +1,51 @@
-#include(compat.qdocconf)
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/qt-module-defaults.qdocconf)
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/macros.qdocconf) #macros for QDoc commands
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/qt-cpp-defines.qdocconf) #needed by C++ projects
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/compat.qdocconf) #compatibility macros
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/fileextensions.qdocconf) #configuration common among QDoc projects
-#include(/Users/falcogirgis/Qt5/Docs/Qt-5.4/global/qt-html-templates-offline.qdocconf) #offline HTML template for documentation shipped to Qt Creator
-
+# Generate the Lua reference from QDoc comments, without compiling the engine.
 project = ESToolkit
-description = ESToolkit help files, references, examples, and Lua API documentation
+description = Elysian Shadows Lua API and editor manual
+version = 1.6.0
+outputdir = ../../out/docs
+outputformats = HTML
+sourceencoding = UTF-8
+outputencoding = UTF-8
 
-qhp.projects = ESToolkit 
+# These are QML-style descriptions of Lua types, not C++ API documentation.
+# An empty module header disables Clang/PCH parsing (Qt 6.10 compatible).
+moduleheader =
+headerdirs =
+sources.fileextensions = *.cpp *.qdoc
+sourcedirs = ../../AssetIO/source/proxy \
+             ../../ESGamma/source/proxy \
+             doc
+sources = ../../ESGamma/source/lua/elysian_lua_script.cpp \
+          ../../ESGamma/source/lua/elysian_lua_wrappers.cpp \
+          source/ESGamma/tk_lua_wrappers.cpp
+imagedirs = resource/images
 
-qhp.ESToolkit.file				 	= ESToolkit.qhp
-qhp.ESToolkit.namespace           	= elysianshadows.toolkit.help
-qhp.ESToolkit.virtualFolder       	= doc
-qhp.ESToolkit.indexTitle          	= Documentation
-qhp.ESToolkit.sortPages				= true
-qhp.ESToolkit.indexRoot		 =
-
-qhp.ESToolkit.subprojects         = lua manual
-
+qhp.projects = ESToolkit
+qhp.ESToolkit.file = ESToolkit.qhp
+qhp.ESToolkit.namespace = elysianshadows.toolkit.help
+qhp.ESToolkit.virtualFolder = doc
+qhp.ESToolkit.indexTitle = Documentation
+qhp.ESToolkit.indexRoot =
+qhp.ESToolkit.subprojects = lua manual
 qhp.ESToolkit.subprojects.manual.title = ESTk User Manual
 qhp.ESToolkit.subprojects.manual.indexTitle = ESToolkit User Manual
 qhp.ESToolkit.subprojects.manual.selectors = group:estk
 qhp.ESToolkit.subprojects.manual.sortPages = true
-
 qhp.ESToolkit.subprojects.lua.title = Lua API
 qhp.ESToolkit.subprojects.lua.indexTitle = Lua Wrapper API
 qhp.ESToolkit.subprojects.lua.selectors = qmlclass
 qhp.ESToolkit.subprojects.lua.sortPages = true
 
-
-sources.fileextensions = "*.cpp *.qdoc *.mm *.qml *.c"
-headers.fileextensions = "*.h *.ch *.h++ *.hh *.hpp *.hxx"
-
-outputdir   = ./out
-outputformats = HTML
-
-#depends = qtdoc qtcore qtgui qtopengl qtsql
-
-defines += GYRO_PLATFORM GYRO_PLATFORM_Qt \
-	QT_NO_KEYWORDS \
-	QT_NO_DYNAMIC_CAST \
-	ELYSIAN_INPUT_SYSTEM_SENSORS_ENABLED
-
-falsehoods += ELYSIAN_ENGINE
-
-
-Cpp.ignoretokens += Q_SIGNALS \
-	Q_SLOTS \
-	Q_EMIT
-
-headerdirs  += ../../AssetIO/include \
-	../../ESGamma/include \
-	./include \
-	../../libGyro/include \
-	../../Spine/include
-
-
-sourcedirs += source \
-        source/AssetIO \
-        source/ESGamma \
-        source/ESToolkit \
-        ../../QESTkUtils/source \
-		../../AssetIO/source \
-		../../AssetIO/source/component \
-        ../../AssetIO/source/level \
-        ../../AssetIO/source/primitive \
-        ../../AssetIO/source/utility \
-        ../../AssetIO/source/proxy \
-	../../ESGamma/source \
-	../../ESGamma/source/lua \
-	../../ESGamma/source/gui \
-	../../ESGamma/source/system \
-	../../ESGamma/source/utility \
-        ../../ESGamma/source/proxy \
-        doc
-
-
-imagedirs   += resource/images
+# Relative links work both locally and under the GitHub Pages repository path.
+HTML.stylesheets = doc/documentation.css
+HTML.headerstyles = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" \
+                    "<link rel=\"stylesheet\" href=\"style/documentation.css\">\n"
+HTML.endheader = "</head>\n"
+HTML.postheader = "<body>\n<nav aria-label=\"Documentation\">" \
+                  "<a href=\"index.html\">Home</a>" \
+                  "<a href=\"lua-wrapper-api.html\">Lua scripting</a>" \
+                  "<a href=\"lua-types.html\">Lua API types</a>" \
+                  "<a href=\"estk-user-manual.html\">Editor manual</a>" \
+                  "</nav>\n<ul class=\"breadcrumbs\">\n"
+HTML.postpostheader = "</ul>\n"
+qhp.extraFiles = style/documentation.css

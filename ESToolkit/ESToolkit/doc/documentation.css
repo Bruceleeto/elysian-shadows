@@ -1,0 +1,14 @@
+body { max-width: 76rem; margin: auto; padding: 1.5rem; font: 1rem/1.6 system-ui, sans-serif; color: #20252b; background: #fff; }
+a { color: #075a9c; }
+nav { display: flex; flex-wrap: wrap; gap: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #ccd3da; }
+.breadcrumbs { padding-left: 1.2rem; }
+h1, h2, h3 { line-height: 1.25; }
+h2 { margin-top: 2rem; }
+pre { padding: 1rem; overflow-x: auto; background: #f1f4f7; }
+code, pre { font-family: ui-monospace, monospace; }
+table { border-collapse: collapse; }
+td, th { padding: .35rem .7rem; border-bottom: 1px solid #dde2e7; text-align: left; }
+img { max-width: 100%; height: auto; }
+.sidebar { float: right; max-width: 25%; margin: 0 0 1rem 2rem; font-size: .9rem; }
+.redFont { color: #a51d1d; }
+@media (max-width: 48rem) { .sidebar { float: none; max-width: none; margin: 0; } }
