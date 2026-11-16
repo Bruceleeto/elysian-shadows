@@ -448,31 +448,26 @@ void gyVidPresentScene(void) {
     GY_GL_CHECK_ERROR();
 }
 
-int glalVidGlewInit(void) {
+int glalVidGlInit(void) {
     static int once = 0;
 
     if(!once) {
-    //God fucking damnit, Windows....
-#   if defined(__linux__)
-        _gyLog(GY_DEBUG_VERBOSE, "Initializing GLEW...");
+        _gyLog(GY_DEBUG_VERBOSE, "Loading OpenGL entry points...");
         _gyPush();
-        glewExperimental = GL_TRUE; //FUCKING GLEW CANT HANDLE GL CORE CONTEXTS WITHOUT THIS.
-        GLenum err = glewInit();
-        if (err != GLEW_OK) {
-          /* Problem: glewInit failed, something is seriously wrong. */
-            _gyLog(GY_DEBUG_ERROR, "Error: %s", glewGetErrorString(err));
+        const int version = gladLoadGL(glalGetProcAddress);
+        if(!version) {
+            _gyLog(GY_DEBUG_ERROR, "Failed to load OpenGL: no current context?");
+            _gyPop(1);
+            return 0;
         }
-
-        if(GLEW_VERSION_4_1) {
-            _gyLog(GY_DEBUG_VERBOSE, "OpenGL 4.1 Extensions detected");
-        } else {
-            _gyLog(GY_DEBUG_ERROR, "OpenGL 4.1 Extensions NOT detected! Prepare for crash!");
+        _gyLog(GY_DEBUG_VERBOSE, "OpenGL %d.%d loaded", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+        if(!GLAD_GL_VERSION_4_1) {
+            _gyLog(GY_DEBUG_ERROR, "OpenGL 4.1 core is required!");
+            _gyPop(1);
             return 0;
         }
         _gyPop(1);
         once = 1;
-
-#   endif
     }
     return 1;
 }
@@ -570,7 +565,7 @@ int glalVidOglInit(const int viewWidth, const int viewHeight, const int projWidt
         memset(&_dbgInfo, 0, sizeof(GYVidDebugInfo));
 #endif
 
-        success &= glalVidGlewInit();
+        success &= glalVidGlInit();
         if(!success) {
             return 0;
         }

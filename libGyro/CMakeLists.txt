@@ -52,14 +52,16 @@ else()
         source/qt/gyro_file_qt.cpp
         source/qt/gyro_video_qt.cpp
         source/sdl/gyro_controller_sdl.c
-        source/sdl/gyro_net_sdl.c)
+        source/sdl/gyro_net_sdl.c
+        external/glad/src/gl.c)
+    target_include_directories(libGyro PUBLIC external/glad/include)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         target_sources(libGyro PRIVATE source/linux/gyro_system_linux.c)
     endif()
 
     pkg_check_modules(GYRO_DEPS REQUIRED IMPORTED_TARGET
-        sdl2 SDL2_net gl glu glew openal zlib ogg vorbis vorbisenc vorbisfile)
+        sdl2 SDL2_net openal zlib ogg vorbis vorbisenc vorbisfile)
     target_link_libraries(libGyro PUBLIC PkgConfig::GYRO_DEPS Threads::Threads
         Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
 endif()

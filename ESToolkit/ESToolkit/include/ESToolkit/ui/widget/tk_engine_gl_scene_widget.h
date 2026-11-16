@@ -61,6 +61,7 @@ Q_SIGNALS:
 
 private:
     void            _resizeIfNeeded(void);
+    void            _forceOpaque(void);
 
     int                     _width              = 0;
     int                     _height             = 0;

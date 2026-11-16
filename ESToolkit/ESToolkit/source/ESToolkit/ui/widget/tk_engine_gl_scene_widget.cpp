@@ -49,7 +49,7 @@ EngineGLSceneWidget::~EngineGLSceneWidget(void) {
 
 bool EngineGLSceneWidget::ensureContext(void) {
     //QOpenGLWidget only creates its context when it is first painted or grabbed.
-    //The engine needs it before then (GLEW, shaders, textures), so grab once to force it.
+    //The engine needs it before then (GL loading, shaders, textures), so grab once to force it.
     if(!context()) grabFramebuffer();
     return context() && context()->isValid();
 }
@@ -98,6 +98,23 @@ void EngineGLSceneWidget::paintGL(void) {
     renderFrame();
 }
 
+//The engine clears to alpha 0 and leaves it wherever nothing is drawn. X11 ignores
+//window alpha, but Wayland composites with it and the desktop shows through, so
+//set alpha to 1 over the whole frame. Qt's painter keeps it there when it draws
+//the view's items on top.
+void EngineGLSceneWidget::_forceOpaque(void) {
+    GLfloat clear[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear);
+    const GLboolean scissor = glIsEnabled(GL_SCISSOR_TEST);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClearColor(clear[0], clear[1], clear[2], clear[3]);
+    if(scissor) glEnable(GL_SCISSOR_TEST);
+}
+
 void EngineGLSceneWidget::renderFrame(void) {
     if(!getCurrentArea() || !_initialized || !_engineValid) return;
 
@@ -114,6 +131,7 @@ void EngineGLSceneWidget::renderFrame(void) {
     engine->processInput();
     engine->update();
     engine->render();
+    _forceOpaque();
     _monitor.stop();
 
     if(_advanceFrame) {

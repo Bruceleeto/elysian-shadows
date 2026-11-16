@@ -61,7 +61,7 @@ On Debian or Ubuntu:
 
 ```sh
 sudo apt install build-essential cmake pkg-config qt6-base-dev qt6-base-dev-tools liblua5.5-dev \
-    qt6-charts-dev qt6-tools-dev libglew-dev libglu1-mesa-dev \
+    qt6-charts-dev qt6-tools-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
     zlib1g-dev
 ```

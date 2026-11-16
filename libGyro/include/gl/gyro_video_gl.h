@@ -136,7 +136,11 @@ extern const GYVector3 glalRectTangents[GY_RECT_TEX_ORIENT_MAX];
 extern const GYVector3 glalPlaneNormalMapNormals[GY_RECT_PLANE_MAX][GY_RECT_TEX_ORIENT_MAX];
 
 int glalVidOglInit(const int viewWidth, const int viewHeight, const int projWidth, const int projHeight);
-int glalVidGlewInit(void);
+int glalVidGlInit(void);
+
+//Looks up a GL function in the current context. Defined by the windowing layer.
+typedef void (*GYGLProc)(void);
+GYGLProc glalGetProcAddress(const char* name);
 
 void glalVidTangentUpdateUniform(const GYVector3*const tangent);
 void glalVidNormalUpdateUniform(const GYVector3*const normal);

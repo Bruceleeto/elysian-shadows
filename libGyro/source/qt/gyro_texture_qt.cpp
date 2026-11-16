@@ -16,7 +16,7 @@
 #include <QImage>
 
 extern GYInputInitParams    _initParams;
-//glalDefaultFbo() lives in gyro_input_qt.cpp: it needs <QOpenGLContext>, which is incompatible with GLEW.
+//glalDefaultFbo() lives in gyro_input_qt.cpp: it needs <QOpenGLContext>, which can't be mixed with glad's GL header.
 
 static bool _isPowerOfTwo(const int dimension) {
     return dimension > 0 && (dimension & (dimension - 1)) == 0;

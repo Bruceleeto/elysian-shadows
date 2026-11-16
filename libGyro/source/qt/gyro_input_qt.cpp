@@ -27,6 +27,13 @@ uint32_t glalDefaultFbo(void) {
     return static_cast<QOpenGLWidget*>(_initParams.glWidget)->defaultFramebufferObject();
 }
 
+//glad loads libGyro's GL entry points through this (declared in gl/gyro_video_gl.h,
+//which can't be included next to Qt's OpenGL headers).
+extern "C" void (*glalGetProcAddress(const char* name))(void) {
+    QOpenGLContext* ctx = QOpenGLContext::currentContext();
+    return ctx? ctx->getProcAddress(name) : nullptr;
+}
+
 static inline GY_KEY _TranslateKeyFromQt(const int keyCode) {
     switch(keyCode) {
     case Qt::Key_Escape:

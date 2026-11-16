@@ -13,19 +13,10 @@
 extern "C" {
 #endif
 
-//this is no good
-#if GYRO_PLATFORM == GYRO_PLATFORM_x86
-#elif GYRO_PLATFORM == GYRO_PLATFORM_Qt
-
-//#       include <windows.h>
-//#if !defined(__gl_h_) && !defined(__GL_H__) && !defined(__X_GL_H)
-
-#       include <GL/glew.h>
-#define QT_NO_OPENGL_ES_2
-//#       include <GL/gl.h>
-//#       include <GL/glu.h>
-//#endif
-#      // define QOPENGL_H //THIS WILL REEST GLEW OTHERWISE!!!
+//GL 4.1 core entry points, loaded by glad (libGyro/external/glad).
+//glad's header can't be mixed with Qt's OpenGL headers in one file.
+#if GYRO_PLATFORM == GYRO_PLATFORM_Qt
+#   include <glad/gl.h>
 #endif
 
 #ifdef __cplusplus

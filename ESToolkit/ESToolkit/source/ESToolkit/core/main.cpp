@@ -94,16 +94,13 @@ static GYAppCbRet Init(int argc, char **argv) {
    //
     //The engine needs an OpenGL 4.1 core context with a depth buffer.
     QSurfaceFormat fmt;
+    fmt.setRenderableType(QSurfaceFormat::OpenGL);   //Desktop GL: Qt on Wayland defaults to OpenGL ES.
     fmt.setVersion(4, 1);
     fmt.setProfile(QSurfaceFormat::CoreProfile);
     fmt.setDepthBufferSize(24);
     fmt.setStencilBufferSize(0);
     fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     QSurfaceFormat::setDefaultFormat(fmt);
-
-    //libGyro loads GL entry points through GLEW, which resolves them via GLX, so run
-    //on Qt's X11 backend (XWayland on Wayland sessions) unless told otherwise.
-    if(qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "xcb");
 
     QApplication a(argc, argv);
 

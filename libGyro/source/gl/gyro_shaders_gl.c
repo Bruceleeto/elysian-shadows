@@ -237,6 +237,8 @@ void gyVidSpecularMapBind(const GYTexture * const tex) {
 void glalLightingInit(void) {
 
     static int once = 0;
+    //Depth compare against the border reads as "not in shadow".
+    static const GLfloat border[] = { 1.0f, 0.0f, 0.0f, 0.0f };
 
     if(!once) {
         _gyLog(GY_DEBUG_VERBOSE, "Allocating Shadow Map Texture Arrays.");
@@ -246,7 +248,7 @@ void glalLightingInit(void) {
         glGenTextures(1, &glalDirectionalShadowMapTextureArray);
         GY_GL_CHECK_ERROR();
         glBindTexture(GL_TEXTURE_2D_ARRAY, glalDirectionalShadowMapTextureArray);
-        glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
             GY_GL_CHECK_ERROR();
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -261,7 +263,6 @@ void glalLightingInit(void) {
 #ifdef GYRO_GLAL_GL_Desktop
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        GLfloat border[] = {1.0f, 0.0f,0.0f,0.0f };
         glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border);
         GY_GL_CHECK_ERROR();
 #endif
@@ -280,7 +281,7 @@ void glalLightingInit(void) {
 
          glGenTextures(1, &glalSpotShadowMapTextureArray);
          glBindTexture(GL_TEXTURE_2D_ARRAY, glalSpotShadowMapTextureArray);
-         glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE);
+         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
                     GY_GL_CHECK_ERROR();
          //glEnable(GL_TEXTURE_2D);
          //glDisable(GL_TEXTURE_CUBE_MAP);
@@ -302,7 +303,7 @@ void glalLightingInit(void) {
  #endif
  #ifdef GYRO_GLAL_GL_Desktop
         GY_GL_CHECK_ERROR();
-        glTexParameterf(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, 1.0f);
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, border);
  #elif defined(GL_ES_VERSION_3_0)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
 
@@ -314,7 +315,7 @@ void glalLightingInit(void) {
         glGenTextures(1, &glalPointShadowCubeMapTextureArray);
         glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, glalPointShadowCubeMapTextureArray);
                 GY_GL_CHECK_ERROR();
-        glTexStorage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 1, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE*6);
+        glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT24, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE*6, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
                 GY_GL_CHECK_ERROR();
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -333,7 +334,7 @@ void glalLightingInit(void) {
         glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
                 GY_GL_CHECK_ERROR();
 //#if GYRO_PLATFORM != GYRO_PLATFORM_iOS
-        glTexParameterf(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BORDER_COLOR, 1.0f);
+        glTexParameterfv(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_BORDER_COLOR, border);
         //Does this REALLY have to have 6 faces!?
         //glTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, 0, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_SIZE, GLAL_SHADOW_MAP_ARRAY_SIZE*6, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
         GY_GL_CHECK_ERROR();

@@ -795,7 +795,7 @@ bool ESToolkit::openProjectDir(const QString dir) {
     success &= elysian::InputSystem::initialize(&inputParams);
 
     _engineGLView->makeCurrent();
-    success &= glalVidGlewInit();
+    success &= glalVidGlInit();
 
     _engineGLView->startRenderTimer();
 
