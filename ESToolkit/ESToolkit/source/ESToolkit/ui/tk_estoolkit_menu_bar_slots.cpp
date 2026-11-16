@@ -216,11 +216,6 @@ void ESToolkit::on_actionDreamcast_triggered()
 
 }
 
-void ESToolkit::on_actionIPhone_iPad_triggered()
-{
-    m_activePlatform->setIcon(_ui->actionIPhone_iPad->icon());
-}
-
 void ESToolkit::on_actionInvoke_triggered()
 {
 
@@ -238,21 +233,6 @@ void ESToolkit::on_actionInvoke_triggered()
                 _engineSettingsDialog->setFocus();
                 //Debug::Log(Debug::LOG_WARNING, "InvokeEngine(DREAMCAST) failed! Invalid Settings.");
             }
-        }
-        else if(_ui->actionIPhone_iPad->isChecked()) {
-            _assets.getCurrentArea()->save();
-            _engineDialog->show();
-
-            _engineDialog->Invoke(EngineDialog::ENGINE_iOS);
-
-        } else if(_ui->actionIOS_Simulator->isChecked()) {
-            _assets.getCurrentArea()->save();
-            _engineDialog->show();
-            _engineDialog->Invoke(EngineDialog::ENGINE_iOS_Sim);
-        } else if(_ui->actionAndroid_Device->isChecked()) {
-            QMessageBox::information(nullptr, "Shit isn't done yet.", "I haven't gotten around to Droid integration. Get off my dick.");
-            _engineDialog->Invoke(EngineDialog::ENGINE_Droid);
-            //_ui->actionAndroid_Device->setChecked(false);
         }
     } else if(_engineDialog->isVisible()) {
         _engineDialog->kill();
@@ -741,16 +721,6 @@ void ESToolkit::on_actionHidden_Levels_toggled(bool arg1)
     if(_assets.getCurrentProject()) {
         _assets.getCurrentProject()->setIndexHiddenLevels(arg1);
     }
-}
-
-void ESToolkit::on_actionIOS_Simulator_triggered()
-{
-    m_activePlatform->setIcon(_ui->actionIOS_Simulator->icon());
-}
-
-void ESToolkit::on_actionAndroid_Device_triggered()
-{
-    m_activePlatform->setIcon(_ui->actionAndroid_Device->icon());
 }
 
 void ESToolkit::on_actionCamera_View_toggled(bool arg1) {

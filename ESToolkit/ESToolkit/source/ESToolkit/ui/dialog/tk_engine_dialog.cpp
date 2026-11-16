@@ -187,14 +187,6 @@ bool EngineDialog::Invoke(const ENGINE_TYPE type) {
 #endif
         break;
     }
-    case ENGINE_iOS:
-        _engine->setWorkingDirectory(getAssets()->getCurrentProject()->getNodePath() + QString("/bin/"));
-        _engine->start("/bin/sh", QStringList { getAssets()->getCurrentProject()->getNodePath() + "/bin/launchESTkiOSDevice.sh"});
-        break;
-    case ENGINE_iOS_Sim:
-        _engine->start("/bin/sh", QStringList {getAssets()->getCurrentProject()->getNodePath() + "/bin/launchESGammaiOS.sh" });
-    default:
-        break;
     }
 
     _engine->setProcessChannelMode(QProcess::MergedChannels);
@@ -389,12 +381,5 @@ void EngineDialog::onEnginePathx86Changed(QString path) {
  * End external/background tasks and processes used to launch and run builds.
  */
 void EngineDialog::kill(void) {
-    if(_currentType == ENGINE_iOS_Sim) {
-        QProcess::startDetached("killall", QStringList { "iOS Simulator" });
-    } else if(_currentType == ENGINE_iOS) {
-        QProcess::startDetached("killall", QStringList { "deviceconsole"});
-        QProcess::startDetached("killall", QStringList { "instruments"});
-        QProcess::startDetached("killall", QStringList { "ios-deploy"});
-    }
     _engine->kill();
 }

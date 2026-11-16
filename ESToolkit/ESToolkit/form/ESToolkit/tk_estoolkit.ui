@@ -275,9 +275,6 @@
      <addaction name="actionWindows"/>
      <addaction name="actionMac_OS_X"/>
      <addaction name="actionDreamcast"/>
-     <addaction name="actionIPhone_iPad"/>
-     <addaction name="actionIOS_Simulator"/>
-     <addaction name="actionAndroid_Device"/>
     </widget>
     <widget class="QMenu" name="menuGPGPU_Acceleration">
      <property name="enabled">
@@ -723,18 +720,6 @@
    </property>
    <property name="text">
     <string>Dreamcast</string>
-   </property>
-  </action>
-  <action name="actionIPhone_iPad">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../../resource/resource.qrc">
-     <normaloff>:/toolbar/images/ios_logo.png</normaloff>:/toolbar/images/ios_logo.png</iconset>
-   </property>
-   <property name="text">
-    <string>iPhone/iPad Device</string>
    </property>
   </action>
   <action name="actionPan">
@@ -1545,36 +1530,6 @@
    </property>
    <property name="text">
     <string>Hidden Levels</string>
-   </property>
-  </action>
-  <action name="actionIOS_Simulator">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../../resource/resource.qrc">
-     <normaloff>:/toolbar/images/ios_sim.png</normaloff>:/toolbar/images/ios_sim.png</iconset>
-   </property>
-   <property name="text">
-    <string>iOS Simulator</string>
-   </property>
-   <property name="toolTip">
-    <string>Launch Engine on iOS Simualtor</string>
-   </property>
-  </action>
-  <action name="actionAndroid_Device">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../../resource/resource.qrc">
-     <normaloff>:/toolbar/images/droid_logo.png</normaloff>:/toolbar/images/droid_logo.png</iconset>
-   </property>
-   <property name="text">
-    <string>Android Device</string>
-   </property>
-   <property name="toolTip">
-    <string>Send Toolkit to Android Device</string>
    </property>
   </action>
   <action name="actionCamera_View">

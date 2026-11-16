@@ -223,7 +223,6 @@ private Q_SLOTS:
     void on_actionWindows_triggered();
     void on_actionMac_OS_X_triggered();
     void on_actionDreamcast_triggered();
-    void on_actionIPhone_iPad_triggered();
     void on_actionInvoke_triggered();
     void onInvokeEngineStopped();
     void on_actionAsset_View_triggered(bool checked);
@@ -283,8 +282,6 @@ private Q_SLOTS:
     void on_actionReset_Stack_Depth_triggered();
     void on_actionCopy_triggered();
     void on_actionHidden_Levels_toggled(bool arg1);
-    void on_actionIOS_Simulator_triggered();
-    void on_actionAndroid_Device_triggered();
     void on_actionCamera_View_toggled(bool arg1);
     void on_actionInput_Device_Dump_triggered();
     void on_actionAdd_Player_triggered();

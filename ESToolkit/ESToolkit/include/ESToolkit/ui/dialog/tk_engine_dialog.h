@@ -47,7 +47,7 @@ invoke with a copy?
 class EngineDialog: public QMainWindow, public AssetManager {
     Q_OBJECT
 public:
-    enum ENGINE_TYPE { ENGINE_PC, ENGINE_DC, ENGINE_iOS_Sim, ENGINE_iOS, ENGINE_Droid };
+    enum ENGINE_TYPE { ENGINE_PC, ENGINE_DC };
                 EngineDialog(QWidget *parent=0);
     virtual     ~EngineDialog(void) override;
 

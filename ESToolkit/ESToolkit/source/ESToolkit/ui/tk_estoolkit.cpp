@@ -91,9 +91,6 @@ ESToolkit::ESToolkit(QWidget *parent):
     m_platformActionGroup->addAction(_ui->actionWindows);
     m_platformActionGroup->addAction(_ui->actionMac_OS_X);
     m_platformActionGroup->addAction(_ui->actionDreamcast);
-    m_platformActionGroup->addAction(_ui->actionIPhone_iPad);
-    m_platformActionGroup->addAction(_ui->actionIOS_Simulator);
-    m_platformActionGroup->addAction(_ui->actionAndroid_Device);
     m_platformActionGroup->setExclusive(true);
 
     // add QToolButton dropdown for platforms
