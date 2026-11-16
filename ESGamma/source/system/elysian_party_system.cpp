@@ -271,6 +271,7 @@ bool PartySystem::removeCharacterFromParty(const unsigned int slot) {
   Debug::printf(Debug::LOG_VERBOSE, "%s has left the party!", _characterParty[slot]->getName());
   //update positions
     for(unsigned int i = _characterParty.size()-1; i > slot; --i) _characterParty[i]->_transform._pos = _characterParty[i-1]->_transform._pos;
+  getCameraSys()->removeEntity(_characterParty[slot]);
   _characterParty.erase(_characterParty.begin() + slot);
   _resizePartyPathPoints();
     _updateCamera();

@@ -393,11 +393,12 @@ void DialogSystem::_facePlayer(void) const {
 }
 
 void DialogSystem::closeDialog(void) {
+    if(_curScreen.screen) _prevScreen = _curScreen;
+    setCurrentScreen(nullptr);
+    _updateCamera();
 	if(_monitor) _monitor->onFinish();
-	_updateCamera();
 	//if(_dynamicDialog) delete _currentConversationDialog;
 	_curDialog = nullptr;
-    setCurrentScreen(nullptr);
 	_prevScreen.screen = nullptr;
 	_monitor = nullptr;
 	_currentScreen = _currentLine = _currentCharacter = _currentOption = 0;
@@ -413,15 +414,16 @@ void DialogSystem::closeDialog(void) {
 }
 
 void DialogSystem::_updateCamera(void) {
+    auto* previous = _prevScreen.screen ? _prevScreen.screen->getEntity() : nullptr;
+    auto* current = _curScreen.screen ? _curScreen.screen->getEntity() : nullptr;
 
-	if(_curScreen.screen && _curScreen.screen->getEntity()) {
-		getCameraSys()->setBaseScale(2.5f);
-		getCameraSys()->addEntity(_curScreen.screen->getEntity());
-    } else if(_prevScreen.screen && _prevScreen.screen->getEntity()) {
-        getCameraSys()->setBaseScale(1.5f);
-        getCameraSys()->removeEntity(_prevScreen.screen->getEntity());
+    // Track each speaker once, and release them on a speaker change or close.
+    if(previous != current) {
+        if(previous) getCameraSys()->removeEntity(previous);
+        if(current) getCameraSys()->addEntity(current);
     }
-
+    if(current) getCameraSys()->setBaseScale(2.5f);
+    else if(previous) getCameraSys()->setBaseScale(1.5f);
 }
 
 void DialogSystem::_splitText(void) {

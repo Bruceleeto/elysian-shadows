@@ -33,6 +33,18 @@ struct Position {
     void set(int value) { x = value; }
 };
 
+struct CollisionMask {
+    uint32_t value = 0;
+    bool getBit(unsigned index) const { return (value & (uint32_t{1} << index)) != 0; }
+    void setBit(unsigned index, bool enabled) {
+        const auto bit = uint32_t{1} << index;
+        if(enabled) value |= bit;
+        else value &= ~bit;
+    }
+    unsigned getBitCount() const { return 32; }
+    uint32_t getValue() const { return value; }
+};
+
 struct Node {
     Node* child = nullptr;
     int value = 0;
@@ -181,5 +193,28 @@ int main() {
         std::cout << "Asset serialization checks skipped: local assets are absent\n";
     }
     assert(lua_gettop(lua) == 0);
+    if (std::ifstream("assets/scripts/component/bitMask32.lua")) {
+        using Mask = CollisionMask;
+        auto mask = elysian::lua::registerType<Mask>(lua, "BitMask32");
+        mask["new"] = sol::factories(elysian::lua::factory<Mask>());
+        elysian::lua::property(mask, "value", &Mask::getValue);
+        elysian::lua::viewProperty(mask, elysian::lua::array<Mask>("bitFields",
+            &Mask::getBit, &Mask::setBit, &Mask::getBitCount));
+        elysian::lua::finish<Mask>(mask, "BitMask32", [] { return false; });
+        elysian::lua::tableConstructor(mask);
+        auto loaded = lua.safe_script_file("assets/scripts/component/bitMask32.lua", sol::script_pass_on_error);
+        if (!loaded.valid()) { std::cerr << sol::error(loaded).what() << '\n'; std::abort(); }
+        run(R"(
+            local player = BitMask32.playerMask
+            local against = BitMask32.negateMask(player)
+            assert(not player.bitFields[1], 'tile bit must not classify players')
+            assert(against.bitFields[1], 'party members must collide with walls')
+            assert((against.value & player.value) == 0, 'party members must not block one another')
+            assert((against.value & BitMask32.enemyMask.value) ~= 0, 'enemies must still collide')
+            local door = BitMask32:new { bitFields = { [4] = true } }
+            assert((against.value & door.value) ~= 0, 'door warps must still collide')
+        )");
+    }
+
     std::cout << "sol2 binding tests passed\n";
 }
