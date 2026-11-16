@@ -100,8 +100,12 @@ TURFSAPI turfs_silph_scope(const char *vpath, char **path, size_t *len, turfs_pa
     }
 
     //Path was not found, assume it's absolute, and don't shit your fucking pants!!!
-    *path = turfs__strdup(vpath);
-    *len = strlen(temp_path);
+    if (path != NULL) {
+        *path = turfs__strdup(vpath);
+    }
+    if (len != NULL) {
+        *len = strlen(vpath);
+    }
     return TURFS_RET_OK;
 
     //return TURFS_RET_NOT_FOUND;

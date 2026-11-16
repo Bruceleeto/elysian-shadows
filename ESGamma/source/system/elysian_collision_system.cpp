@@ -267,7 +267,7 @@ void CollisionSystem::renderTileColliders(void) const {
             case RENDER_COMBINED:
                 startIndex = 0; stopIndex = 2;
                 break;
-            default: assert(0);
+            default: assert(0); continue;
             }
 
             //bool isOnZPlane = false;

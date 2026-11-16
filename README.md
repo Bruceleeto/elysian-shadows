@@ -43,7 +43,7 @@ Third-party libraries (sol2, the Spine runtime, the Dreamcast SDK bits under `li
 
 ## Building
 
-ESToolkit builds with qmake and Qt 6. Linux is the tested platform.
+ESToolkit builds with CMake and Qt 6. Linux is the tested platform.
 
 ### 1. Get the source
 
@@ -60,7 +60,7 @@ In an existing clone, run `git submodule update --init` instead.
 On Debian or Ubuntu:
 
 ```sh
-sudo apt install build-essential qt6-base-dev qt6-base-dev-tools qmake6 liblua5.5-dev \
+sudo apt install build-essential cmake pkg-config qt6-base-dev qt6-base-dev-tools liblua5.5-dev \
     qt6-charts-dev qt6-tools-dev libglew-dev libglu1-mesa-dev \
     libsdl2-dev libsdl2-net-dev libopenal-dev libogg-dev libvorbis-dev \
     zlib1g-dev
@@ -72,26 +72,29 @@ From the repository root:
 
 ```sh
 mkdir -p build && cd build
-qmake6 ../ESDev.pro
+cmake ..
 make -j$(nproc)
 ```
 
-The toolkit ends up at `build/executable/ESToolkit`. All build output stays in `build/`, so to start over just delete that folder.
+The toolkit ends up at `build/ESToolkit/ESToolkit/ESToolkit` and opens the repo's `assets/` on startup. All build output stays in the build folder, so to start over just delete it.
 
-Optional extras, passed to `qmake`:
+For the Dreamcast, source KallistiOS's `environ.sh` and run `kos-cmake ..` instead of `cmake ..`. That builds `ESGamma.elf`, but the Dreamcast build doesn't work yet.
 
-- `CONFIG+=docs` builds the Lua API docs (not tested recently).
+Optional extras, passed to `cmake`:
+
+- `-DESTK_DOCS=ON` bundles the Lua API docs (not tested recently).
+- `-DCMAKE_BUILD_TYPE=Debug` for a debug build (the default is `RelWithDebInfo`).
 
 ### Lua binding checks
 
-Run `sh tests/run.sh` for the headless ownership, identity, property,
+Run `ctest` in the build folder for the headless ownership, identity, property,
 constructor and Qt conversion tests. Serialization checks also run when the
-local assets are present. Script paths can be passed to the same command for
-Lua 5.5 syntax checks. These checks do not launch the editor.
+assets are checked out. For Lua 5.5 syntax checks, run
+`tests/check_scripts <file.lua>...` from the build folder. None of these launch the editor.
 
 ### Qt Creator
 
-Open `ESDev.pro` from the repository root. Qt Creator's default shadow-build folder works fine.
+Open `CMakeLists.txt` from the repository root.
 
 ## Contributing
 

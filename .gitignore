@@ -2,21 +2,15 @@
 /build/
 build-*/
 
-# In-source qmake builds (if you build next to the sources anyway)
+# In-source CMake builds
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
 Makefile
-Makefile.Debug
-Makefile.Release
-object_script.*
-debug/
-release/
+*_autogen/
 *.o
-*.obj
-moc_*
-qrc_*.cpp
-ui_*.h
-.qmake.stash
-/executable/
-*.app/
+CMakeLists.txt.user
 
 # Compiled binaries. The prebuilt Dreamcast SDK bits and tools are committed
 # on purpose, so keep those directories tracked.
@@ -31,9 +25,6 @@ ui_*.h
 !/libGyro/lib/**
 !/libGyro/tools/**
 
-
-# Generated Spine .pri from qmake
-/Spine/qtcreator/Spine/*.pri
 
 # Runtime logs and generated files
 *.log

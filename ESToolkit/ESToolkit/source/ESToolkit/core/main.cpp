@@ -164,12 +164,8 @@ static GYAppCbRet Init(int argc, char **argv) {
 #endif
         QTimer::singleShot(showDelay, &w, SLOT(showMaximized()));
 
-        //Open a project on startup: --project <dir> if given, otherwise the repo's
-        //assets/ folder (the executable lives in <repo>/build/executable).
-        if(project.isNull()) {
-            const QString repoAssets = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../../assets");
-            if(QDir(repoAssets).exists("level")) project = QDir::cleanPath(repoAssets);
-        }
+        //Open a project on startup: --project <dir> if given, otherwise the repo's assets/ folder.
+        if(project.isNull() && QDir(ESTK_ASSETS_DIR).exists("level")) project = ESTK_ASSETS_DIR;
         if(!project.isNull()) {
             QTimer::singleShot(showDelay, &w, [&w, project, level, area]() {
                 if(!w.openProjectDir(project)) return;
