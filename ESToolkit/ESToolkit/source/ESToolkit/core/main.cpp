@@ -29,6 +29,7 @@
 #include <QPushButton>
 #include <memory>
 #include <AssetIO/utility/elysian_lua_values.hpp>
+#include <ESToolkit/AssetIO/tk_level.h>
 
 enum TK_CRASH_STATE {
     TK_CRASH_BUG_REPORT,
@@ -80,6 +81,14 @@ static TK_CRASH_STATE _tkCrashReport(QStringList& /*args*/) {
     }
 
     return crashState;
+}
+
+//--area takes an area name; setCurrentArea(QString) wants a full asset path.
+static void _tkSetStartArea(ESToolkit& w, const QString& name) {
+    Level* level = w.getAssets().getCurrentLevel();
+    Area* area = level? level->getAreaByName(name) : nullptr;
+    if(area) w.getAssets().setCurrentArea(area);
+    else qWarning() << "Area not found:" << name;
 }
 
 #include <tuple>
@@ -167,7 +176,7 @@ static GYAppCbRet Init(int argc, char **argv) {
             QTimer::singleShot(showDelay, &w, [&w, project, level, area]() {
                 if(!w.openProjectDir(project)) return;
                 if(!level.isNull())     w.getAssets().setCurrentLevel(level);
-                if(!area.isNull())      w.getAssets().setCurrentArea(area);
+                if(!area.isNull())      _tkSetStartArea(w, area);
             });
         }
     } else {
@@ -186,7 +195,7 @@ static GYAppCbRet Init(int argc, char **argv) {
         //Recover previous state
         if(!project.isNull())       w.openProjectDir(project);
         if(!level.isNull())         w.getAssets().setCurrentLevel(level);
-        if(!area.isNull())          w.getAssets().setCurrentArea(area);
+        if(!area.isNull())          _tkSetStartArea(w, area);
     }
 
     return (GYAppCbRet)a.exec();
