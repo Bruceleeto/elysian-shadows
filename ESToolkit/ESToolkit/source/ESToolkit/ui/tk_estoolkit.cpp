@@ -44,10 +44,6 @@
 #include <QESTkUtils/ui/widget/tk_line_chart.h>
 
 
-#ifdef ESTK_UNIT_TESTS
-#include <QtTest>
-#endif
-
 ESToolkit* ESToolkit::_instance = nullptr;
 
 ESToolkit::ESToolkit(QWidget *parent):

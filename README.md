@@ -38,7 +38,6 @@ Before you dive in, know what you're getting:
 | **libGyro** | Cross-platform multimedia C API powering the engine and ESTk |
 | **libGyro-Kinetic** | libGyro backend for the Sega Dreamcast |
 | **QESTkUtils** | Shared Qt utilities and widgets |
-| **UnitTests** | Tests for ESToolkit |
 
 Third-party libraries (sol2, the Spine runtime, the Dreamcast SDK bits under `libGyro/lib/dc/`, and the Dreamcast tools under `libGyro/tools/dc/`) remain under their own licenses.
 
@@ -81,12 +80,11 @@ The toolkit ends up at `build/executable/ESToolkit`. All build output stays in `
 
 Optional extras, passed to `qmake`:
 
-- `CONFIG+=tests` builds the unit tests.
 - `CONFIG+=docs` builds the Lua API docs (not tested recently).
 
 ### Lua binding checks
 
-Run `sh UnitTests/sol2/run.sh` for the headless ownership, identity, property,
+Run `sh tests/run.sh` for the headless ownership, identity, property,
 constructor and Qt conversion tests. Serialization checks also run when the
 local assets are present. Script paths can be passed to the same command for
 Lua 5.5 syntax checks. These checks do not launch the editor.

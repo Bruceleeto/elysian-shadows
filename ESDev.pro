@@ -4,7 +4,7 @@
 # Build out of source, e.g.:
 #   mkdir build && cd build && qmake ../ESDev.pro && make -j$(nproc)
 #
-# Optional: CONFIG+=tests (unit tests), CONFIG+=docs (Lua API docs)
+# Optional: CONFIG+=docs (Lua API docs)
 
 TEMPLATE = subdirs
 CONFIG += ordered
@@ -14,10 +14,6 @@ SUBDIRS += \
     libGyro/qtcreator/libGyro \
     Spine/qtcreator/Spine \
     libGyro-Kinetic
-
-tests {
-    SUBDIRS += UnitTests
-}
 
 SUBDIRS += ESToolkit/ESToolkit
 
@@ -32,6 +28,3 @@ ESToolkit.depends += libGyro \
     Spine \
     LibGyro-Kinetic
 
-tests {
-    ESToolkit.depends += UnitTests
-}

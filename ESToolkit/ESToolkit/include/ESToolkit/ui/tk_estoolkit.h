@@ -66,12 +66,7 @@ namespace QESTkUtils {
     class LineChartView;
 }
 
-namespace tktest {
-    class ESToolkitTest;
-}
-
 class ESToolkit : public QMainWindow, public elysian::LuaManager {
-    friend class tktest::ESToolkitTest;
     Q_OBJECT
 public:
                     ESToolkit(QWidget *parent = nullptr);

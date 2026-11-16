@@ -30,10 +30,6 @@
 #include <memory>
 #include <AssetIO/utility/elysian_lua_values.hpp>
 
-#ifdef ESTK_UNIT_TESTS
-#include <UnitTests/test_estk.h>
-#endif
-
 enum TK_CRASH_STATE {
     TK_CRASH_BUG_REPORT,
     TK_CRASH_RESUME,
@@ -152,12 +148,6 @@ static GYAppCbRet Init(int argc, char **argv) {
             area = *(it+1);
         }
     }
-
-#ifdef ESTK_UNIT_TESTS
-    if(argc != 1 && !relaunching) {
-        return (GYAppCbRet)tktest::main(args);
-    }
-#endif
 
     ESToolkit w;
 

@@ -16,13 +16,6 @@ dreamcast {
 !dreamcast {
     QT += sql gui widgets opengl openglwidgets network help charts
     CONFIG += console
-    tests {
-        DEFINES += ESTK_UNIT_TESTS
-        INCLUDEPATH += ../../UnitTests/include
-        DEPENDPATH += ../../UnitTests/include
-        CONFIG += testcase
-        QT += testlib
-    }
 } else {
     QT -= core gui widgets
 #    deployment.files = ../../assets
@@ -54,8 +47,7 @@ DEPENDPATH += 	../../AssetIO/include \
         $${LIBGYRO_PATH}/api \
         $${ESDEV_ROOT}/AssetIO/include \
         $${ESDEV_ROOT}/ESGamma/include \
-        $${ESDEV_ROOT}/libGyro-Kinetic/api \
-        $${ESDEV_ROOT}/UnitTests/include
+        $${ESDEV_ROOT}/libGyro-Kinetic/api
 }
 
 #SPLIT UP SO ITS STILL PRIORITIZED!!!
@@ -701,17 +693,6 @@ INCLUDEPATH += $$PWD/../../Spine/qtcreator/Spine
 DEPENDPATH += $$PWD/../../Spine/qtcreator/Spine
 
 PRE_TARGETDEPS += $$OUT_PWD/../../Spine/qtcreator/Spine/libSpine.a
-
-tests {
-
-    LIBS += -L$$OUT_PWD/../../UnitTests -lUnitTests
-
-    INCLUDEPATH += $$PWD/../../UnitTests
-    DEPENDPATH += $$PWD/../../UnitTests
-
-    PRE_TARGETDEPS += $$OUT_PWD/../../UnitTests/libUnitTests.a
-
-}
 
 dreamcast {
 

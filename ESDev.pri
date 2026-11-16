@@ -72,8 +72,5 @@ CONFIG += c++17
 CONFIG -= exceptions rtti
 CONFIG += exceptions_off rtti_off
 
-tests {
-    DEFINES += ESTK_UNIT_TESTS
-}
 
 

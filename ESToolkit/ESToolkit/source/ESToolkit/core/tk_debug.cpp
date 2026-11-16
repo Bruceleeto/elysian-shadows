@@ -36,10 +36,6 @@
 #include <ESToolkit/ui/tk_estoolkit.h>
 #include <QThread>
 
-#ifdef ESTK_UNIT_TESTS
-#include <UnitTests/test_estk.h>
-#endif
-
 using namespace QESTkUtils;
 
 TkDebug*            TkDebug::_window = nullptr;
@@ -220,9 +216,6 @@ void TkDebug::push(void) {
     }
 
     _mutex->unlock();
-#ifdef ESTK_UNIT_TESTS
-    tktest::ESTkTest::pushSubTest(_lastString);
-#endif
 }
 
 void TkDebug::pop(const unsigned count) {
@@ -232,9 +225,6 @@ void TkDebug::pop(const unsigned count) {
         if(!_ignoredPushes.pop()) _pendingQueue->enqueue(LogEntry { "POP", LOG_VERBOSE, TOOLKIT, LogEntry::POP });
     }
     _mutex->unlock();
-#ifdef ESTK_UNIT_TESTS
-    tktest::ESTkTest::popSubTest(true);
-#endif
 }
 
 void TkDebug::resetStackDepth(void) {
@@ -387,10 +377,6 @@ void TkDebug::_postToQueue(const TK_SOURCE src, const int level, const QString t
     }
     _mutex->unlock();
 
-#ifdef ESTK_UNIT_TESTS
-    if(level == Debug::LOG_WARNING) tktest::ESTkTest::flagWarning(text);
-    else if(level == Debug::LOG_ERROR) tktest::ESTkTest::flagError(text);
-#endif
 }
 
 //could probably move critical section into the loop, but I kind of like doing it in batches better
