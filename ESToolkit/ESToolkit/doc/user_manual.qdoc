@@ -172,6 +172,15 @@
 
 	Left-drag to orbit, middle- or right-drag to pan, and use the mouse wheel to zoom. Frame area fits the whole map; Focus 2D view centres on tiles near the main view's current camera. The preview is view only and does not take keyboard focus from the map. Continue placing tiles and using the normal editing shortcuts in the 2D view.
 
+	\section1 Blocked squares and Walk Height
+	Toggle Paint blocked at the top of Layer View (also available on the toolbar). Left-click/drag paints blocked squares; right-click/drag clears them. Each drag is one Undo/Redo step. Middle-drag pans and the mouse wheel zooms. Toggle Blocked off to resume normal tile painting. The mode works only while editing, not in Play.
+
+	Marks are stored on layer 0, regardless of the selected painting layer, and saved in map.bin. Painting, erasing, moving or pasting artwork preserves the marks already at the destination. Copies do not carry marks elsewhere. A blocked square supplies a full tile collider for any character, including NPCs and enemies, at every tested elevation. Non-character objects and projectiles ignore this extra mark; ordinary tile colliders still apply to them. The character footprint is projected into the same map squares as the overlay: map Y is world Y minus feet Z. The mark applies continuously through a jump, including fractional elevations.
+
+	Blocked painting enables Layer View > Decorations > Walk Height. Leave that view enabled while painting normal tiles to keep seeing the red. Blocked squares have a solid red tint, including empty squares and hidden layer 0. Unblocked ground-level tiles have no tint or number. Raised standable tiles have a light blue tint and their standing height in 32-unit tiles when zoomed in enough. FRONT adds one tile to the standing height, following the runtime floor rule. There are no hatches, zero labels or inferred jump barriers.
+
+	The absence of red means no painted barrier; it does not remove existing tile/entity collision or promise floor support. Raised labels describe standing surfaces, not pathfinding. Existing maps contain no blocked marks until painted.
+
 	\section1 Selecting Tiles
 	Tiles can be selected by holding the right mouse button and dragging a rectangular region provided the current layer within Layer View is a tile layer and not the entity layer. Holding CTRL (CMD on Mac) allows you to continue selecting more regions when the right mouse button is lifted, allowing you to make irregularly sized tile selections.
 

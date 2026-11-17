@@ -82,3 +82,17 @@ target_compile_options(area_preview PRIVATE -Werror)
 add_test(NAME area_preview COMMAND area_preview)
 set_tests_properties(area_preview PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen" SKIP_RETURN_CODE 77 TIMEOUT 30)
+
+# Walk Height uses the same editor analysis in rendering and offline fixtures.
+add_executable(walk_height walk_height.cpp ${PROJECT_SOURCE_DIR}/AssetIO/source/level/elysian_tile.cpp)
+target_include_directories(walk_height PRIVATE ${PROJECT_SOURCE_DIR}/ESToolkit/ESToolkit/include ${PROJECT_SOURCE_DIR}/AssetIO/include)
+target_link_libraries(walk_height PRIVATE libGyroKinetic)
+target_compile_options(walk_height PRIVATE -Werror)
+add_test(NAME walk_height COMMAND walk_height)
+
+# Shared runtime collider selection, editor paint strokes and raw map persistence.
+add_executable(blocked_tiles blocked_tiles.cpp ${PROJECT_SOURCE_DIR}/AssetIO/source/level/elysian_tile.cpp)
+target_include_directories(blocked_tiles PRIVATE ${PROJECT_SOURCE_DIR}/ESToolkit/ESToolkit/include ${PROJECT_SOURCE_DIR}/AssetIO/include)
+target_link_libraries(blocked_tiles PRIVATE libGyroKinetic Qt6::Gui)
+target_compile_options(blocked_tiles PRIVATE -Werror)
+add_test(NAME blocked_tiles COMMAND blocked_tiles)

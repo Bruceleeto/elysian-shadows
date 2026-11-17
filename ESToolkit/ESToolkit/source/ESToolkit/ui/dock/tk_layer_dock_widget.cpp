@@ -41,6 +41,18 @@ void LayerDockWidget::ToggleDefaultItem(bool selected)
     }
 }
 
+void LayerDockWidget::setBlockedPaintAction(QAction* action) {
+    ui->blockedPaintButton->setDefaultAction(action);
+}
+
+void LayerDockWidget::showWalkHeight() {
+    auto* decorations = ui->m_layerTreeWidget->topLevelItem(4);
+    for(int i=0; i<decorations->childCount(); ++i) {
+        auto* item = decorations->child(i);
+        if(item->whatsThis(0).toInt()==12) item->setCheckState(0,Qt::Checked);
+    }
+}
+
 void LayerDockWidget::on_m_layerTreeWidget_itemChanged(QTreeWidgetItem *item, int /*column*/)
 {
 #if 0 //Ain't got no parent layers anymore!
@@ -62,60 +74,18 @@ void LayerDockWidget::on_m_layerTreeWidget_itemChanged(QTreeWidgetItem *item, in
     }
 #endif
 
-    if(item->checkState(0) == Qt::Unchecked) {
-		Q_EMIT LayerVisibilityChanged(item->whatsThis(0).toInt(), false);
+    const int id=item->whatsThis(0).toInt();
+    const bool checked=item->checkState(0)==Qt::Checked;
+    const auto isDecoration=[](int value) { return value==7 || value==8 || value==10 || value==11 || value==12; };
+    if(checked && isDecoration(id)) {
+        auto* group=item->parent();
+        for(int i=0;group && i<group->childCount();++i) {
+            auto* other=group->child(i);
+            if(other!=item && isDecoration(other->whatsThis(0).toInt())) other->setCheckState(0,Qt::Unchecked);
+        }
     }
-
-    else {
-		Q_EMIT LayerVisibilityChanged(item->whatsThis(0).toInt(), true);
-
-		//handle mutually-exclusive decorations
-		switch(item->whatsThis(0).toInt()) {
-		case 7: //elevation
-			//indeces
-			ui->m_layerTreeWidget->topLevelItem(4)->child(3)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(8, false);
-			//flip/rot
-			ui->m_layerTreeWidget->topLevelItem(4)->child(5)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(10, false);
-            //normal
-           // ui->m_layerTreeWidget->topLevelItem(4)->child(6)->setCheckState(0, Qt::Unchecked);
-          //  Q_EMIT LayerVisibilityChanged(11, false);
-			break;
-		case 8: //indeces
-			//elevation
-			ui->m_layerTreeWidget->topLevelItem(4)->child(2)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(7, false);
-			//flip/rot
-			ui->m_layerTreeWidget->topLevelItem(4)->child(5)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(10, false);
-            ui->m_layerTreeWidget->topLevelItem(4)->child(6)->setCheckState(0, Qt::Unchecked);
-           Q_EMIT LayerVisibilityChanged(11, false);
-			break;
-		case 10: //flip/rot
-			//elevation
-			ui->m_layerTreeWidget->topLevelItem(4)->child(2)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(7, false);
-			//indeces
-			ui->m_layerTreeWidget->topLevelItem(4)->child(3)->setCheckState(0, Qt::Unchecked);
-			Q_EMIT LayerVisibilityChanged(8, false);
-            //normal dir
-            ui->m_layerTreeWidget->topLevelItem(4)->child(6)->setCheckState(0, Qt::Unchecked);
-           Q_EMIT LayerVisibilityChanged(11, false);
-			break;
-        case 11: //normal dir
-            //elevation
-            ui->m_layerTreeWidget->topLevelItem(4)->child(2)->setCheckState(0, Qt::Unchecked);
-           Q_EMIT LayerVisibilityChanged(7, false);
-            //indeces
-            ui->m_layerTreeWidget->topLevelItem(4)->child(3)->setCheckState(0, Qt::Unchecked);
-           Q_EMIT LayerVisibilityChanged(8, false);
-            //flip/rot
-            ui->m_layerTreeWidget->topLevelItem(4)->child(5)->setCheckState(0, Qt::Unchecked);
-           Q_EMIT LayerVisibilityChanged(10, false);
-            break;
-		}
-	}
+    // Emit the newly enabled mode last, after disabled siblings have finished.
+    Q_EMIT LayerVisibilityChanged(id,checked);
 	//if(item->whatsThis(0).toInt() == 7) ui->m_layerTreeWidget->setCurrentItem(_lastItem);
 }
 

@@ -5,6 +5,8 @@
  */
 
 #include <QMouseEvent>
+#include <cmath>
+#include <ESToolkit/core/tk_blocked_paint_stroke.h>
 #include <QDebug>
 #include <QMenu>
 #include <QPainter>
@@ -50,6 +52,7 @@ MapView::MapView(QWidget *parent): DestView<TileEntry>::DestView(parent) {
 }
 
 MapView::~MapView(void) {
+    delete _blockedStroke;
     delete _mimeDropManager;
 }
 
@@ -70,6 +73,7 @@ void MapView::onSelectionChanged(const Selectable::TYPE type, Selectable* const)
 }
 
 void MapView::onAreaChanging(Area * const /*area*/) {
+    _finishBlockedStroke();
     if(getAssets()->getCurrentArea()) getAssets()->getCurrentArea()->removeEntity(_cursorEntity);
 }
 
@@ -422,7 +426,48 @@ void MapView::wheelEvent(QWheelEvent* event) {
     event->ignore();
 }
 
+bool MapView::_canPaintBlocked() const {
+    return _blockedPaint && getCurrentArea() &&
+        getAssets()->getEngine()->getEngineState() == elysian::System::ENGINE_ESTK_STOP;
+}
+
+void MapView::setBlockedPaint(bool enabled) {
+    _finishBlockedStroke();
+    if(enabled) {
+        // Remove the floating tile preview before editing its destination marks.
+        deleteSelectionItemGroup();
+        getAssets()->setCurrentSelection(nullptr);
+    }
+    _endPan();
+    _blockedPaint = enabled;
+    setFocus();
+}
+
+void MapView::_paintBlocked(const QPoint& viewPos) {
+    QPointF position;
+    _mapViewPosToScenePos(viewPos, position);
+    _blockedStroke->paint(QPoint(static_cast<int>(std::floor((position.x()+16)/32)),
+                                static_cast<int>(std::floor((position.y()+16)/32))));
+    _forceSceneUpdate();
+}
+
+void MapView::_finishBlockedStroke() {
+    if(!_blockedStroke) return;
+    auto* stroke = _blockedStroke;
+    _blockedStroke = nullptr;
+    _blockedButton = Qt::NoButton;
+    if(stroke->empty()) delete stroke;
+    else _getUndoStack()->push(stroke);
+}
+
 void MapView::mouseMoveEvent(QMouseEvent *event) {
+    if(_canPaintBlocked() && !_panning) {
+        if(event) { _viewMousePos=event->position().toPoint(); _updateSceneMousePos(); }
+        if(event && _blockedStroke) _paintBlocked(event->position().toPoint());
+        if(event) event->accept();
+        return;
+    }
+
 
     //DIRTY-ASS HACK TO KEEP SHIT SYNCED WITH ENGINE
     //_zoomLabel->setText(QString::number((int)(getAssets()->getEngine()->getCameraSys()->getKeyFrame().getScale()*getAssets()->getEngine()->getCameraSys()->getStaticScale()*100.0f))+QString("%"));
@@ -471,6 +516,20 @@ void MapView::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void MapView::mouseReleaseEvent(QMouseEvent *event) {
+    if(_canPaintBlocked() && event->button()==Qt::MiddleButton) {
+        _endPan(); event->accept(); return;
+    }
+    if(_blockedStroke && event->button() == _blockedButton) {
+        _paintBlocked(event->position().toPoint());
+        _finishBlockedStroke();
+        event->accept();
+        return;
+    }
+    if(_canPaintBlocked() && (event->button()==Qt::LeftButton || event->button()==Qt::RightButton)) {
+        event->accept();
+        return;
+    }
+
 
     if(event->button() == Qt::RightButton && _underCursorEntity) {
         if(_tileSelectionRects.size() == 0 ||
@@ -491,6 +550,21 @@ void MapView::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void MapView::mousePressEvent(QMouseEvent *event) {
+    if(_canPaintBlocked() && event->button()==Qt::MiddleButton) {
+        _finishBlockedStroke();
+        _viewMousePos=event->position().toPoint();
+        _startPan(); event->accept(); return;
+    }
+    if(_canPaintBlocked() && (event->button()==Qt::LeftButton || event->button()==Qt::RightButton)) {
+        _finishBlockedStroke();
+        _endPan();
+        _blockedButton = event->button();
+        _blockedStroke = new BlockedPaintStroke<TkArea>(getCurrentArea(), _blockedButton==Qt::LeftButton);
+        _paintBlocked(event->position().toPoint());
+        event->accept();
+        return;
+    }
+
     if(event->button() == Qt::RightButton && getAssets()->getCurrentLayer() != Assets::LAYER_ENTITY && !getCurrentLevel()->validSheets()) return;
     DestView<TileEntry>::mousePressEvent(event);
 

@@ -58,6 +58,20 @@
      <number>0</number>
     </property>
     <item>
+     <widget class="QToolButton" name="blockedPaintButton">
+      <property name="sizePolicy"><sizepolicy hsizetype="Expanding" vsizetype="Fixed"><horstretch>0</horstretch><verstretch>0</verstretch></sizepolicy></property>
+      <property name="focusPolicy"><enum>Qt::NoFocus</enum></property>
+      <property name="toolButtonStyle"><enum>Qt::ToolButtonTextOnly</enum></property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="blockedPaintHint">
+      <property name="text"><string>Left: block · Right: clear</string></property>
+      <property name="wordWrap"><bool>true</bool></property>
+      <property name="margin"><number>4</number></property>
+     </widget>
+    </item>
+    <item>
      <widget class="QTreeWidget" name="m_layerTreeWidget">
       <property name="font">
        <font>
@@ -281,6 +295,13 @@ height: 24px;
         <property name="flags">
          <set>ItemIsUserCheckable|ItemIsEnabled</set>
         </property>
+       </item>
+       <item>
+        <property name="text"><string>Walk Height</string></property>
+        <property name="whatsThis"><string>12</string></property>
+        <property name="toolTip"><string>Red: painted character barrier. Light blue and a number: raised standing surface. Ground level has no tint or number. Existing tile and entity collision still applies.</string></property>
+        <property name="checkState"><enum>Unchecked</enum></property>
+        <property name="flags"><set>ItemIsUserCheckable|ItemIsEnabled</set></property>
        </item>
       </item>
      </widget>

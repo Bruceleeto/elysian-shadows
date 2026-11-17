@@ -5,6 +5,10 @@
  */
 
 #include <ESToolkit/ESGamma/tk_map_system.h>
+#include <ESToolkit/core/tk_walk_height.h>
+#include <cstdio>
+#include <vector>
+#include <ESGamma/crtp/elysian_camera_system.hpp>
 
 elysian::Material* TkMapSystem::_bgMat  = nullptr;
 elysian::Material* TkMapSystem::_selMat = nullptr;
@@ -70,4 +74,67 @@ void TkMapSystem::_renderMapBorders(void) const {
 
     gyVidQuadListEnd();
     //gyVidDepthTest(false);
+}
+
+void TkMapSystem::_renderWalkHeight(unsigned count, const TkMapDepthBuffEntryImpl array[]) const {
+    if(getLightSys()->isShadowPass()) return;
+    const auto* area=elysian::System::getCurrentArea();
+    const auto* level=elysian::System::getCurrentLevel();
+    if(!area || !level) return;
+    gyVidVertexBatchFlush(); gyVidVertexBatchEnd();
+    const auto read=[&](unsigned layer,int x,int y) {
+        const auto entry=area->getTileEntry(layer,x,y);
+        const auto& type=level->tileset[entry.getIndex()];
+        return WalkHeight::decode(entry.getValue(),type.standOn,type.getColliderType());
+    };
+    const auto* camera=getCameraSys()->getCurrentState();
+    const bool labels=32*std::abs(camera->getScale().x*camera->staticScale)>=24;
+    const GYColor4 raised={100,175,255,65}, blocked={255,25,35,155};
+    const GYVidPipelineState state={0,nullptr,nullptr,nullptr,GY_ALPHA_FULL,
+        GY_BLEND_SRC_ALPHA,GY_BLEND_ONE_MINUS_SRC_ALPHA,0,GY_VID_DEPTH_ALWAYS,{0,0,0,0}};
+    const auto tint=[&](int x,int y,float z,const GYColor4& color) {
+        gyVidMaterialBind(_bgMat);
+        gyVidPipelineState(&state);
+        gyVidRectPlaneType(GY_RECT_PLANE_BOTTOM);
+        gyVidRectTexOrient(GY_RECT_TEX_ORIENT_NORMAL);
+        gyVidQuadListBegin(&color);
+        gyMatPush(); gyMatLoadIdentity();
+        gyMatTranslateScale(x*32.0f,y*32.0f+z,z,32,32,1);
+        gyVidRect(-1);
+        gyMatPop(); gyVidQuadListEnd();
+    };
+    auto& font=getGuiSys()->pragmata18;
+    font._transform.setSize(12,24,24);
+    for(unsigned i=0;i<count;++i) {
+        const auto& entry=array[i];
+        if(entry.x>=area->width || entry.y>=area->height) continue;
+        if(area->getTileEntry(0,entry.x,entry.y).getBlocked()) continue;
+        if(!getAssets()->getLayerVisible(static_cast<Assets::LAYER_TYPE>(entry.layer))) continue;
+        if(!entry.mapEntry.getIndex() || entry.mapEntry.getIndex()>=level->tileAmount) continue;
+        const auto& type=level->tileset[entry.mapEntry.getIndex()];
+        const auto tile=WalkHeight::decode(entry.mapEntry.getValue(),type.standOn,type.getColliderType());
+        const auto surface=WalkHeight::surface(tile,entry.x,entry.y);
+        if(!surface || surface->top<=0) continue;
+        const auto floor=WalkHeight::support(area->width,area->height,read,
+            entry.x*32.0f,surface->nearY+8,surface->top);
+        if(!floor || floor->top!=surface->top) continue;
+        const float z=entry.mapEntry.getElev()*32.0f+entry.layer*ELYSIAN_AREA_LAYER_DEPTH_EPSILON;
+        tint(entry.x,entry.y,z,raised);
+        if(labels) {
+            char text[8];
+            std::snprintf(text,sizeof(text),"%u",static_cast<unsigned>(surface->top/32));
+            font._transform.setPos(entry.x*32.0f+1,entry.y*32.0f+z+1,z);
+            font.setColor(0,0,0,255); font.drawString(elysian::Font::C_ALIGN,text);
+            font._transform.setPos(entry.x*32.0f,entry.y*32.0f+z,z);
+            font.setColor(255,255,255,255); font.drawString(elysian::Font::C_ALIGN,text);
+        }
+    }
+    // Marks belong to the square, not the artwork: show even empty/hidden layer 0.
+    for(unsigned i=0;i<count;++i) {
+        const auto& entry=array[i];
+        if(entry.layer!=0 || entry.x>=area->width || entry.y>=area->height) continue;
+        if(area->getTileEntry(0,entry.x,entry.y).getBlocked()) tint(entry.x,entry.y,0,blocked);
+    }
+    gyVidVertexBatchFlush(); gyVidVertexBatchEnd();
+    gyVidRectPlaneType(GY_RECT_PLANE_BOTTOM);
 }

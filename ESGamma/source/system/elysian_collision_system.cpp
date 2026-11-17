@@ -4,6 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
+#include <AssetIO/level/elysian_tile_collision.hpp>
 #include <AssetIO/crtp/elysian_depth_buff_entry.hpp>
 #include <AssetIO/level/elysian_zcoords.hpp>
 #include <AssetIO/crtp/elysian_collidable.hpp>
@@ -435,7 +436,8 @@ void CollisionSystem::detectCollisions(void) {
         for(i = 0; i < _curArea->collidables.size(); ++i) {
             if(!_curArea->collidables[i]->_active || !_curArea->collidables[i]->_worldSpace) continue;
             _detectEntityTileZCollisionCoarse(*_curArea->collidables[i]);
-            if(_curArea->collidables[i]->getAttrib()->getFlags()->getTypeAgainst().getValue() & CollisionFlags::TILE) {
+            if(_curArea->collidables[i]->getEntity()->getCharacter() ||
+               (_curArea->collidables[i]->getAttrib()->getFlags()->getTypeAgainst().getValue() & CollisionFlags::TILE)) {
                 _detectEntityTileCollisionCoarse(*_curArea->collidables[i]);
             }
         }
@@ -868,28 +870,13 @@ inline void CollisionSystem::_detectCollidableColliderCollision(Collidable &coll
 void CollisionSystem::_detectEntityTileCollisionFine(Collidable &collidable, const unsigned x, const unsigned y, const unsigned char elev) {
     GYBoxCollider boxCollider;
     TileEntry tileEntry[3];
-    Tile::COLLIDER_TYPE colType = Tile::COLLIDER_NONE;
-
+    // The coarse pass supplies the same projected map row used by normal tiles.
+    // Reject out-of-map slices rather than aliasing another row/layer.
+    if(x >= _curArea->width || y >= _curArea->height) return;
     tileEntry[0] = _curArea->getTileEntry(0, x, y);
     tileEntry[1] = _curArea->getTileEntry(1, x, y);
     tileEntry[2] = _curArea->getTileEntry(2, x, y);
-
-        //Iterate over tile layers and combine their colliders
-        for(unsigned i = 0; i < 3; ++i) {
-
-    #if 0
-            if(tileEntry[i].getElev() > EntityElev + 1 ||
-                tileEntry[i].getElev() < EntityElev) continue;
-    #else
-            if(tileEntry[i].getElev() != elev) continue;
-    #endif
-
-            //if((collidable._onZTran || collidable.getZTranState() == Collidable::ZTRAN_ACTIVE) && tileEntry[i].getElev() != EntityElev) continue;
-            Tile::COLLIDER_TYPE colType2 = _curLevel->tileset[tileEntry[i].getIndex()].colliderType;
-            colType2 = Tile::reorientCollider(colType2, tileEntry[i].getOrient());
-            //Combine and accumulate
-            colType = Tile::combineColliders(colType, colType2);
-        }
+    const auto colType = tileCollider(tileEntry, _curLevel->tileset, elev);
 
         //Do not allow collider to move to location without a tile at its elevation
         //UNLESS he's z-transitioning!
@@ -985,6 +972,30 @@ void CollisionSystem::_detectEntityTileCollisionFine(Collidable &collidable, con
 }
 
 void CollisionSystem::_detectEntityTileCollisionCoarse(Collidable &collidable, const ENTITY_TILE_CHECK checkFlag) {
+    const auto bodyType=collidable.getAttrib()->getColliderType();
+    if(bodyType==GY_COLLIDER_AABB || bodyType==GY_COLLIDER_OBB) {
+        const auto blocked=blockedTileContact(collidable._collider.box.worldVert,
+            _curArea->width, _curArea->height, collidable.getEntity()->getCharacter()!=nullptr,
+            [this](int x,int y) { return _curArea->getTileEntry(0,x,y); });
+        if(blocked.depth>0) {
+            assert(_contactAmount < ELYSIAN_COLLISION_CONTACT_LIST_SIZE);
+            auto& contact=_contactPool[_contactAmount++];
+            contact=CollisionContact{};
+            const auto center=collidable.getCenterWorldPos();
+            contact.worldPos={center.x,center.y};
+            contact.normal=blocked.normal;
+            contact.depth=blocked.depth;
+            contact.collider[0]=&collidable._collider.col;
+            contact.staticAttrib[0]=collidable.getAttrib()->getStaticAttrib();
+            contact._bodyA=&collidable;
+            contact._resolvePen=collidable._resolvePen;
+            contact.setZDepth(ELYSIAN_COLLISION_CONTACT_Z_DEPTH_MAX+1.0f);
+            ++collidable._contactCount;
+        }
+    }
+
+    // Character barriers apply even when ordinary tile collisions are masked out.
+    if(!(collidable.getAttrib()->getFlags()->getTypeAgainst().getValue() & CollisionFlags::TILE)) return;
 
     // ==== ZTRAN LOGIC ====
 #if 0

@@ -367,11 +367,17 @@
    <addaction name="separator"/>
    <addaction name="actionReset_Layout"/>
    <addaction name="separator"/>
+   <addaction name="actionBlockedPaint"/>
    <addaction name="actionInvoke"/>
    <addaction name="actionAdvance_Frame"/>
    <addaction name="actionManual_Camera"/>
    <addaction name="actionEnable_Audio"/>
   </widget>
+  <action name="actionBlockedPaint">
+   <property name="text"><string>Paint blocked</string></property>
+   <property name="checkable"><bool>true</bool></property>
+   <property name="toolTip"><string>Paint character barriers: left-drag blocks; right-drag clears. Toggle off to paint tiles.</string></property>
+  </action>
   <action name="actionFileQuit">
    <property name="text">
     <string>Quit</string>

@@ -92,7 +92,10 @@ public:
     using               AreaBase::getActiveEntityCount;
     using               AreaBase::setActiveEntityByIndex;
     using               AreaBase::getTileEntry;
-    using               AreaBase::setTileEntry;
+    void setTileEntry(unsigned layer, unsigned x, unsigned y, elysian::TileEntry entry) {
+        AreaBase::setTileEntry(layer, x, y, elysian::paintTileEntry(entry, AreaBase::getTileEntry(layer,x,y), layer));
+    }
+    void setBlocked(QPoint loc, bool blocked);
     using               AreaBase::load;
 
                         TkArea(Level *const level=nullptr);
@@ -202,45 +205,35 @@ inline uint32_t TkArea::getTileValue(const QPoint loc, const Assets::LAYER_TYPE 
 }
 
 inline void TkArea::setTileValue(const QPoint loc, const Assets::LAYER_TYPE layer, const uint32_t value) {
-    Q_ASSERT(loc.x() < ELYSIAN_AREA_MAP_WIDTH && loc.y() < ELYSIAN_AREA_MAP_HEIGHT);
-    MapChange change;
-
-    if(_emitMapChange) {
-        change.oldEntry = getTileEntry(loc.x(), loc.y(), layer);
-        change.newEntry = TileEntry(value);
-        change.loc      = loc;
-        change.layer    = layer;
-        _mapChanges.push_back(change);
-
-        if(!_batchMapUpdate) {
-            Q_EMIT mapChanged(this, _mapChanges);
-            _mapChanges.clear();
-        }
-    }
-
-    setTileEntry((unsigned)layer, loc.x(), loc.y(), TileEntry(value));
+    setTileEntry(loc, layer, TileEntry(value));
 }
 
 inline void TkArea::setTileEntry(const QPoint loc, const Assets::LAYER_TYPE layer, const TileEntry entry) {
-    Q_ASSERT(loc.x() < ELYSIAN_AREA_MAP_WIDTH && loc.y() < ELYSIAN_AREA_MAP_HEIGHT);
-    MapChange change;
-
+    const auto oldEntry = getTileEntry(loc, layer);
+    const auto newEntry = elysian::paintTileEntry(entry, oldEntry, static_cast<unsigned>(layer));
+    AreaBase::setTileEntry(static_cast<unsigned>(layer), loc.x(), loc.y(), newEntry);
     if(_emitMapChange) {
-        change.oldEntry = getTileEntry(loc.x(), loc.y(), layer);
-        change.newEntry = entry;
-        change.loc      = loc;
-        change.layer    = layer;
-        _mapChanges.push_back(change);
-
+        _mapChanges.push_back(MapChange{loc, oldEntry, newEntry, layer});
         if(!_batchMapUpdate) {
             Q_EMIT mapChanged(this, _mapChanges);
             _mapChanges.clear();
         }
     }
+}
 
-    setTileEntry((unsigned)layer, loc.x(), loc.y(), entry);
-
-
+inline void TkArea::setBlocked(QPoint loc, bool blocked) {
+    const auto oldEntry = AreaBase::getTileEntry(0, loc.x(), loc.y());
+    auto entry = oldEntry;
+    entry.setBlocked(blocked);
+    // No geometry changed: update only the stored word, without touching GL state.
+    tiles[loc.y()*width+loc.x()] = entry;
+    if(_emitMapChange) {
+        _mapChanges.push_back(MapChange{loc, oldEntry, entry, Assets::LAYER_TILE1});
+        if(!_batchMapUpdate) {
+            Q_EMIT mapChanged(this, _mapChanges);
+            _mapChanges.clear();
+        }
+    }
 }
 
 inline TileEntry TkArea::getTileEntry(const QPoint loc, const Assets::LAYER_TYPE layer) const {

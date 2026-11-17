@@ -18,7 +18,7 @@ class TkMapSystem:  public MapViewTileGraphicsItem,
     friend class ESToolkit;
     typedef elysian::MapSystemBase MapSystemBase;
 public:
-    enum TILE_DECOR_TYPE { TILE_DECOR_NONE, TILE_DECOR_INDEX, TILE_DECOR_ELEV, TILE_DECOR_ORIENT, TILE_DECOR_PLANE, TILE_DECOR_MAX };
+    enum TILE_DECOR_TYPE { TILE_DECOR_NONE, TILE_DECOR_INDEX, TILE_DECOR_ELEV, TILE_DECOR_ORIENT, TILE_DECOR_PLANE, TILE_DECOR_WALK_HEIGHT, TILE_DECOR_MAX };
 
 protected:
     TILE_DECOR_TYPE             _tileDecor              = TILE_DECOR_NONE;
@@ -29,6 +29,7 @@ protected:
 
     void        _renderCustomPass(const unsigned count, const TkMapDepthBuffEntryImpl array[], const elysian::NORMAL_TYPE normalType) const;
     void        _renderMapBorders(void) const;
+    void        _renderWalkHeight(unsigned count, const TkMapDepthBuffEntryImpl array[]) const;
 
     bool        _useCustomPass(void) const;
 public:
@@ -43,6 +44,7 @@ public:
     void        getObjectLayerEntry(const unsigned x, const unsigned y, TkMapDepthBuffEntryImpl &entry);
 
     void        setTileDecor(const TILE_DECOR_TYPE type);
+    TILE_DECOR_TYPE getTileDecor() const { return _tileDecor; }
     void        setPlaneDecor(const bool val);
     static void setRenderMapBackground(const bool val);
     static bool getRenderMapBackground(void);
@@ -70,15 +72,19 @@ inline void TkMapSystem::renderCustomPassImmediate(void) {
 
                 int elevation = curMapEntry.mapEntry.getElev();//-1;
 
-                if(elevation == 0 && !curMapEntry.mapEntry.getPlane()) { //render tile immediately at elevation -1 (below entities)
+                if(_tileDecor == TILE_DECOR_WALK_HEIGHT || (elevation == 0 && !curMapEntry.mapEntry.getPlane())) { //render tile immediately at elevation -1 (below entities)
                     //Immediate render, or buffer if it requires multiple passes
-                    _objectBuffImmediate[++count] = curMapEntry;
+                    _objectBuffImmediate[count++] = curMapEntry;
                 }
             }
         }
     }
-    if(count)
+    if(count) {
+        // renderScene has already drawn the tiles. The old elevation buckets
+        // are empty in this renderer, so Walk Height visits all visible tiles here.
+        if(_tileDecor == TILE_DECOR_WALK_HEIGHT) _renderWalkHeight(count, _objectBuffImmediate);
         _renderCustomPass(count, _objectBuffImmediate, elysian::NORMAL_FLAT);
+    }
 }
 
 inline void TkMapSystem::renderCustomPassAtElev(const int elev, const elysian::NORMAL_TYPE normalType) const {
@@ -105,7 +111,7 @@ inline void TkMapSystem::_renderCustomPass(const unsigned count, const TkMapDept
         { 255, 255, 0, 100},
         { 255, 0, 255, 100}
     };
-//    enum TILE_DECOR_TYPE { TILE_DECOR_NONE, TILE_DECOR_INDEX, TILE_DECOR_ELEV, TILE_DECOR_ORIENT, TILE_DECOR_PLANE, TILE_DECOR_MAX };
+//    enum TILE_DECOR_TYPE { TILE_DECOR_NONE, TILE_DECOR_INDEX, TILE_DECOR_ELEV, TILE_DECOR_ORIENT, TILE_DECOR_PLANE, TILE_DECOR_WALK_HEIGHT, TILE_DECOR_MAX };
     /*
     static const GYColor4 elevDecorColors[TILE_DECOR_MAX] = {
         { 0, 0, 0, 0 },
@@ -134,7 +140,7 @@ inline void TkMapSystem::_renderCustomPass(const unsigned count, const TkMapDept
 
     gyVidRectPlaneType(planeType);
 
-    if(_tileDecor != TILE_DECOR_NONE) {
+    if(_tileDecor != TILE_DECOR_NONE && _tileDecor != TILE_DECOR_WALK_HEIGHT) {
 #if 0
         GYVidPipelineState pipelineState = {
             0,

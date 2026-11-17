@@ -324,17 +324,18 @@ bool Area::saveAs(const QString path) {
     }
 
 /*
-    Any instance of tile index 0 on the map should not have other attributes. Rendering code checks for tile value 0 to skip render calls,
-    and applying other attributes to tile entry with index 0 will reest this. The Toolkit should be preventing this from happening,
-    but this is just in case and to fix legacy levels.
+    Empty artwork has no orientation/elevation/plane attributes. A square may
+    still carry its independent blocked mark, which must survive saving.
 */
 #ifdef AREA_SAVE_MAP_TILE_0_REEST_CHECK
     bool passed = true;
     qDebug() << "PERFORMING MAP TILE #0 REEST CHECK:";
-    for(unsigned i = 0; i <= Assets::LAYER_LIGHT; ++i) {
+    for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS; ++i) {
         for(unsigned y = 0; y < getMapHeight(); ++y) {
             for(unsigned x = 0; x < getMapWidth(); ++x) {
-                if(getTileIndex(QPoint(x, y), (Assets::LAYER_TYPE)i) == 0 && getTileValue(QPoint(x, y), (Assets::LAYER_TYPE)i) != 0) {
+                auto artwork = getTileEntry(i,x,y);
+                artwork.setBlocked(false);
+                if(artwork.getIndex() == 0 && artwork.getValue() != 0) {
                     qDebug() << "\tDereesting Map Loc - <" << x << ", " << y << ">";
                     setTileValue(QPoint(x, y), (Assets::LAYER_TYPE)i, 0);
                     passed = false;

@@ -128,6 +128,16 @@ ESToolkit::ESToolkit(QWidget *parent):
     // create/initialize LAYER dock and widget
     _layerDockWidget = new LayerDockWidget(this);
     addDockWidget(Qt::LeftDockWidgetArea, _layerDockWidget);
+    _layerDockWidget->setBlockedPaintAction(_ui->actionBlockedPaint);
+    connect(_ui->actionBlockedPaint, &QAction::toggled, this, [this](bool enabled) {
+        _ui->mapView->setBlockedPaint(enabled);
+        if(enabled) _layerDockWidget->showWalkHeight();
+    });
+
+    connect(_ui->actionInvoke, &QAction::toggled, this, [this](bool playing) {
+        if(playing) _ui->actionBlockedPaint->setChecked(false);
+        _ui->actionBlockedPaint->setEnabled(!playing && _assets.getCurrentArea());
+    });
 
     // create/initialize SHEET dock and widget
     _sheetDockWidget        = new SheetDockWidget;
@@ -337,6 +347,8 @@ void ESToolkit::toggleProjectActions(bool enabled)
 {
     _ui->actionFileSaveCurrentProject->setEnabled(enabled);
     _ui->actionSelect->setEnabled(enabled);
+    _ui->actionBlockedPaint->setEnabled(enabled);
+    if(!enabled) _ui->actionBlockedPaint->setChecked(false);
     _ui->actionPan->setEnabled(enabled);
     _ui->actionZoom->setEnabled(enabled);
     _ui->actionActionSecret->setEnabled(enabled);
@@ -611,11 +623,16 @@ void ESToolkit::OnSubLayerVisibilityChanged(int index, bool visible)
         TileEntry::renderPlane = visible;
         if(visible) _assets.getEngine()->getMapSys()->setTileDecor(TkMapSystem::TILE_DECOR_PLANE);
         break;
+    case 12:
+        if(visible) _assets.getEngine()->getMapSys()->setTileDecor(TkMapSystem::TILE_DECOR_WALK_HEIGHT);
+        else if(_assets.getEngine()->getMapSys()->getTileDecor()==TkMapSystem::TILE_DECOR_WALK_HEIGHT)
+            _assets.getEngine()->getMapSys()->setTileDecor(TkMapSystem::TILE_DECOR_NONE);
+        break;
     default:
         break;
     }
 
-    if(!Area::getInactiveTransparency() && !TileEntry::renderElev && !TileEntry::renderIndeces && !TileEntry::renderFlipRot && !TileEntry::renderPlane)
+    if(_assets.getEngine()->getMapSys()->getTileDecor()!=TkMapSystem::TILE_DECOR_WALK_HEIGHT && !TileEntry::renderElev && !TileEntry::renderIndeces && !TileEntry::renderFlipRot && !TileEntry::renderPlane)
         _assets.getEngine()->getMapSys()->setTileDecor(TkMapSystem::TILE_DECOR_NONE);
 
     _layerDockWidget->setCurrentLayer(_assets.getCurrentLayer());

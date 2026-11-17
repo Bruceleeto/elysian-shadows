@@ -24,6 +24,7 @@ typedef TkArea Area;
 class TkEntity;
 class MapViewPlaceTileGroupUndoItem;
 class MimeDropManager;
+template<class AreaType> class BlockedPaintStroke;
 
 class MapView : public DestView<TileEntry>,
                 public AssetManager,
@@ -48,6 +49,12 @@ private:
     MimeDropManager*                _mimeDropManager        = nullptr;
     QPointF                         _cursorDragOffset       = QPointF(0.0f, 0.0f);
     bool                            _entityDrag             = false;
+    bool                            _blockedPaint = false;
+    BlockedPaintStroke<TkArea>*      _blockedStroke = nullptr;
+    Qt::MouseButton                 _blockedButton = Qt::NoButton;
+    void _paintBlocked(const QPoint& viewPos);
+    void _finishBlockedStroke();
+    bool _canPaintBlocked() const;
     bool                            _cutClipboard           = true;
 
     void                    _registerDropEventCallbacks(void);
@@ -103,6 +110,7 @@ public:
     bool isTerrainLayer(void) const;
     bool isEntityLayer(void) const;
     void selectAll(void);
+    void setBlockedPaint(bool enabled);
     void selectEraserTile(void);
     void deleteSelection(void);
 

@@ -11,6 +11,7 @@
 #include <ESToolkit/core/tk_asset_manager.h>
 
 class QTreeWidgetItem;
+class QAction;
 
 namespace Ui {
     class LayerDockWidget;
@@ -26,6 +27,8 @@ public:
     virtual ~LayerDockWidget();
     void ToggleDefaultItem(bool selected);
     int GetCurrentLayerIndex();
+    void showWalkHeight();
+    void setBlockedPaintAction(QAction* action);
 	void setTopLevelItemCheckState(const unsigned index, const bool value);
 public Q_SLOTS:
         void setCurrentLayer(const LAYER_TYPE layer);
