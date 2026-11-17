@@ -17,6 +17,7 @@
 #include <ESGamma/crtp/elysian_map_system.hpp>
 #include <ESToolkit/core/tk_entity_selectable.h>
 #include <ESGamma/system/elysian_party_system.hpp>
+#include <ESGamma/crtp/elysian_camera_system.hpp>
 #include <ESToolkit/AssetIO/tk_behavior.h>
 #include <ESToolkit/core/tk_file_utilities.h>
 #include <ESGamma/crtp/elysian_input_system.hpp>
@@ -423,6 +424,11 @@ Area* Assets::reloadArea(Area* area) {
    auto* newArea = area->getLevel()->reloadArea(area);
    if(!areaPath.isNull()) {
         setCurrentArea(newArea);
+        // Entering the area puts the party back on its start position; bring the
+        // camera with them so the view doesn't stay wherever the player had fallen.
+        if(auto* leader = _engine->getPartySys()->getPartyLeader()) {
+            _engine->getCameraSys()->centerOnEntity(*leader);
+        }
    } else {
        //Force views and widgets to have correct selection
         setCurrentArea(getCurrentArea());

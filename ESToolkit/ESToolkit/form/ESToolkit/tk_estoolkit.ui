@@ -369,6 +369,7 @@
    <addaction name="separator"/>
    <addaction name="actionBlockedPaint"/>
    <addaction name="actionInvoke"/>
+   <addaction name="actionReload"/>
    <addaction name="actionAdvance_Frame"/>
    <addaction name="actionManual_Camera"/>
    <addaction name="actionEnable_Audio"/>
@@ -1245,6 +1246,9 @@
   <action name="actionReload">
    <property name="text">
     <string>Reload</string>
+   </property>
+   <property name="toolTip">
+    <string>Reload the area from its last save: everyone back to their starting places</string>
    </property>
   </action>
   <action name="actionReload_2">

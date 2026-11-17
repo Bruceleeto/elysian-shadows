@@ -145,7 +145,11 @@ AreaBase::~AreaBase(void) {
     DbgEvent dbg("Deleting Area [%s].", path);
     behaviorsOnUnload();
     //DELETE COMPONENT/ENTITY SHIT@!!!!
-    for(auto it: entities) {
+    // An entity's destructor deactivates it, which erases it from `entities`.
+    // Iterating that vector directly skipped every other entity and ran off the end.
+    std::vector<Entity*> owned;
+    owned.swap(entities);
+    for(auto it: owned) {
         delete it;
     }
     freeMap();
