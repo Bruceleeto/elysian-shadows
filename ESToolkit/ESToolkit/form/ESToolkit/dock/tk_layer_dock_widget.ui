@@ -65,12 +65,7 @@
        </font>
       </property>
       <property name="styleSheet">
-       <string notr="true">QTreeWidget {
-background-color: rgb(237, 237, 237);
-selection-color: rgb(0, 0, 0);
-selection-background-color: rgb(225, 202, 251);
-}
-QTreeWidget::indicator {
+       <string notr="true">QTreeWidget::indicator {
 width: 16px; height: 16px;
 }
 QTreeWidget::indicator:unchecked {

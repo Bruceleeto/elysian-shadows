@@ -308,10 +308,10 @@ void MapView::_externalSelectionCreate(void) {
     }
     if(startX < 0) startX = 0;
     if(startY < 0) startY = 0;
-    if(endX >= getAssets()->getCurrentArea()->width) endX = getAssets()->getCurrentArea()->width;
-    if(endY >= getAssets()->getCurrentArea()->height) endY = getAssets()->getCurrentArea()->height;
+    if(endX >= getAssets()->getCurrentArea()->width) endX = getAssets()->getCurrentArea()->width-1;
+    if(endY >= getAssets()->getCurrentArea()->height) endY = getAssets()->getCurrentArea()->height-1;
     if(endX < startX || endY < startY) {
-   //     return; //JESUS FUCKING CHRIST, QT!!!
+        return;
     }
 
     TileSelectable *selection = new TileSelectable(QRect(startX, startY, endX-startX+1, endY-startY+1), _tileSelectionArray, getCurrentArea(), getCurrentLevel(), getAssets()->getCurrentLayer());
