@@ -72,3 +72,13 @@ if(EXISTS "${PROJECT_SOURCE_DIR}/assets/level/rewrite/00_title/area/title/title_
     target_compile_options(title_menu PRIVATE -Werror)
     add_test(NAME title_menu COMMAND title_menu WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 endif()
+
+# The editor preview owns its GL resources; test it without launching ESToolkit.
+add_executable(area_preview area_preview.cpp
+    ${PROJECT_SOURCE_DIR}/ESToolkit/ESToolkit/source/ESToolkit/ui/widget/tk_area_preview.cpp)
+target_include_directories(area_preview PRIVATE ${PROJECT_SOURCE_DIR}/ESToolkit/ESToolkit/include)
+target_link_libraries(area_preview PRIVATE Qt6::Widgets Qt6::OpenGL Qt6::OpenGLWidgets)
+target_compile_options(area_preview PRIVATE -Werror)
+add_test(NAME area_preview COMMAND area_preview)
+set_tests_properties(area_preview PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen" SKIP_RETURN_CODE 77 TIMEOUT 30)
