@@ -15,6 +15,7 @@
 #include <ESGamma/crtp/elysian_input_system.hpp>
 #include <ESGamma/system/elysian_event_system.hpp>
 #include <ESGamma/device/elysian_keyboard_device.hpp>
+#include <ESGamma/device/elysian_controller_device.hpp>
 #include <ESGamma/crtp/elysian_render_system.hpp>
 
 namespace elysian {
@@ -418,7 +419,9 @@ void CameraSystemBase::popState(void) {
 
 void CameraSystemBase::processInput(const Keyboard* input) {
 
-    if(input->isTapped(GY_KEY_P)) {
+    // P on the keyboard or Select on the controller toggles the 3D debug view.
+    const auto* cont = getInputSys()->getController(0);
+    if(input->isTapped(GY_KEY_P) || (cont && cont->isTapped(GY_CONTROLLER_BUT_SELECT))) {
         _debugActive = !_debugActive;
 
         if(_debugActive) { //enable
