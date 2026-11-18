@@ -588,6 +588,23 @@ void MapView::_forceSceneUpdate(void) {
     if(viewport()) viewport()->update();
 }
 
+void MapView::set3DHoverTile(QPoint tile, bool standing) {
+    _hover3DTile=tile; _hover3DStanding=standing;
+    if(tile.x()>=0 && getAssets()->getEngine() &&
+       getAssets()->getEngine()->getEngineState()==elysian::System::ENGINE_ESTK_STOP) {
+        auto* camera=getAssets()->getEngine()->getCameraSys();
+        const GYVector3 center{tile.x()*32.0f,tile.y()*32.0f,0};
+        GYVector3 screen;
+        camera->transform(&screen,&center);
+        if(!viewport()->rect().adjusted(20,20,-20,-20).contains(QPoint(int(screen.x),int(screen.y)))) {
+            auto position=camera->getCurrentState()->_pos;
+            position.x=center.x; position.y=center.y;
+            camera->setPosition(position);
+        }
+    }
+    _forceSceneUpdate();
+}
+
 //The engine renders the map itself. The view has no scene of its own (QGraphicsView would
 //skip painting entirely), so render here; a scene, if one is ever set, is drawn over it.
 void MapView::paintEvent(QPaintEvent* event) {
@@ -596,6 +613,19 @@ void MapView::paintEvent(QPaintEvent* event) {
         painter.beginNativePainting();
         engineView->renderFrame();
         painter.endNativePainting();
+        if(_hover3DTile.x()>=0 && getCurrentArea() && getAssets()->getEngine() &&
+           getAssets()->getEngine()->getEngineState()==elysian::System::ENGINE_ESTK_STOP) {
+            QPolygonF outline;
+            for(const auto offset:{QPoint(-16,-16),QPoint(16,-16),QPoint(16,16),QPoint(-16,16)}) {
+                const GYVector3 point{_hover3DTile.x()*32.0f+offset.x(),_hover3DTile.y()*32.0f+offset.y(),0};
+                GYVector3 screen;
+                getAssets()->getEngine()->getCameraSys()->transform(&screen,&point);
+                outline << QPointF(screen.x,screen.y);
+            }
+            painter.setBrush(Qt::NoBrush);
+            painter.setPen(QPen(_hover3DStanding ? Qt::cyan : Qt::yellow,2));
+            painter.drawPolygon(outline);
+        }
     }
     if(scene()) DestView<TileEntry>::paintEvent(event);
 }

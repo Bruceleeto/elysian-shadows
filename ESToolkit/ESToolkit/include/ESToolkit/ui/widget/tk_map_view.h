@@ -49,6 +49,8 @@ private:
     MimeDropManager*                _mimeDropManager        = nullptr;
     QPointF                         _cursorDragOffset       = QPointF(0.0f, 0.0f);
     bool                            _entityDrag             = false;
+    QPoint                          _hover3DTile{-1,-1};
+    bool                            _hover3DStanding=false;
     bool                            _blockedPaint = false;
     BlockedPaintStroke<TkArea>*      _blockedStroke = nullptr;
     Qt::MouseButton                 _blockedButton = Qt::NoButton;
@@ -111,6 +113,7 @@ public:
     bool isEntityLayer(void) const;
     void selectAll(void);
     void setBlockedPaint(bool enabled);
+    void set3DHoverTile(QPoint tile, bool standing);
     void selectEraserTile(void);
     void deleteSelection(void);
 

@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MIT
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
-#include <ESToolkit/ui/dock/tk_area_preview_dock.h>
+#include <ESToolkit/ui/widget/tk_area_editor.h>
+#include <ESToolkit/ui/widget/tk_area_editor_layout.h>
+#include <ESToolkit/ui/widget/tk_map_view.h>
 #include <ESToolkit/ui/widget/tk_area_preview.h>
 #include <ESToolkit/core/tk_assets.h>
 #include <ESToolkit/core/tk_file_utilities.h>
@@ -13,6 +15,12 @@
 #include <ESGamma/crtp/elysian_camera_system.hpp>
 #include <QDockWidget>
 #include <QHBoxLayout>
+#include <QGridLayout>
+#include <QSplitter>
+#include <QToolBar>
+#include <QMenu>
+#include <QStatusBar>
+#include <QAction>
 #include <QLabel>
 #include <QMainWindow>
 #include <QPointer>
@@ -27,8 +35,8 @@ namespace {
 // vertex construction. GPU resources and the camera belong to AreaPreview.
 class PreviewSource final : public QObject {
 public:
-    PreviewSource(QDockWidget* dock, Assets* assets, AreaPreview* view, QLabel* status):
-        QObject(dock), _dock(dock), _assets(assets), _view(view), _status(status) {
+    PreviewSource(QWidget* pane, Assets* assets, AreaPreview* view, QLabel* status):
+        QObject(pane), _assets(assets), _view(view), _status(status) {
         _refresh.setSingleShot(true);
         connect(&_refresh,&QTimer::timeout,this,[this]{refresh();});
         connect(assets,&Assets::mapChanged,this,[this](Area* area,const QVector<MapChange>&) {
@@ -38,14 +46,14 @@ public:
         connect(assets,&Assets::areaChanged,this,[this](Area*){_refresh.start(0);});
         connect(assets,&Assets::levelChanged,this,[this](Level*){_atlasDirty=true;_refresh.start(0);});
         connect(assets,&Assets::projectRemoved,this,[this](Project*){clear();});
-        connect(dock,&QDockWidget::visibilityChanged,this,[this](bool visible){
-            if(visible) { _poll.start(); _refresh.start(0); } else _poll.stop();
-        });
         // Selection previews and some property edits suppress mapChanged. A
         // read-only comparison catches those too; rebuild only when data differs.
         _poll.setInterval(100);
         connect(&_poll,&QTimer::timeout,this,[this]{refresh();});
-        if(dock->isVisible()) _poll.start();
+    }
+    void setActive(bool active) {
+        _active=active;
+        if(active) { _poll.start(); refresh(); } else { _poll.stop(); _view->clearHover(); }
     }
     void focusMapView() {
         refresh();
@@ -68,7 +76,7 @@ private:
         _view->setScene({},QImage(),false); _status->setText(tr("Open an area to preview its tiles."));
     }
     void refresh() {
-        if(!_dock->isVisible()) return;
+        if(!_active || !_view->isVisible()) return;
         auto* area=_assets->getCurrentArea();
         auto* level=area? area->getLevel() : nullptr;
         if(!area || !area->tiles || !level || !level->tileSheet || !level->tileSheet->_coord) {
@@ -92,6 +100,7 @@ private:
             _atlasDirty=false;
         }
         std::vector<AreaPreviewVertex> mesh;
+        std::vector<AreaPreviewFace> faces;
         unsigned skipped=0, tiles=0;
         const auto countPresent=std::count_if(_entries.begin(),_entries.end(),[](uint32_t value){return (value&511)!=0;});
         mesh.reserve(static_cast<size_t>(countPresent)*6);
@@ -105,14 +114,15 @@ private:
             const auto normal=QVector3D::crossProduct(position(1)-position(0),position(2)-position(0)).normalized();
             for(unsigned i:{0u,1u,2u,2u,1u,3u})
                 mesh.push_back({position(i),{quad[i].texCoord.u,quad[i].texCoord.v},normal});
+            faces.push_back({int(x),int(y),int(l),int(tile.getElev()),int(tile.getPlane())});
             ++tiles;
         }
-        _view->setScene(std::move(mesh),_atlas,reset);
+        _view->setScene(std::move(mesh),_atlas,reset,std::move(faces));
         if(_atlas.isNull()) _status->setText(tr("Tilesheet unavailable; showing untextured geometry."));
         else if(skipped) _status->setText(tr("%1 tiles · %2 invalid tile entries skipped").arg(tiles).arg(skipped));
-        else _status->setText(tr("%1 tiles · Live, view only").arg(tiles));
+        else _status->setText(tr("%1 tiles · Hover to inspect").arg(tiles));
     }
-    QDockWidget* _dock;
+    bool _active=false;
     Assets* _assets;
     AreaPreview* _view;
     QLabel* _status;
@@ -127,27 +137,80 @@ private:
 };
 }
 
-QDockWidget* createAreaPreviewDock(QMainWindow* window, Assets* assets) {
-    auto* dock=new QDockWidget(QObject::tr("3D Preview"),window);
-    dock->setObjectName("area3DPreviewDock");
-    auto* content=new QWidget(dock);
-    auto* layout=new QVBoxLayout(content);
-    layout->setContentsMargins(4,4,4,4);
+void installAreaEditor(QMainWindow* window, Assets* assets, MapView* map,
+                       QToolBar* toolbar, QMenu* menu, QAction* play, QDockWidget* palette) {
+    auto* grid=qobject_cast<QGridLayout*>(window->centralWidget()->layout());
+    auto* splitter=createAreaEditorSplitter(grid,map);
+
+    auto* pane=new QWidget(splitter);
+    pane->setObjectName("map3DEditor");
+    auto* layout=new QVBoxLayout(pane);
+    layout->setContentsMargins(0,0,0,0);
     auto* buttons=new QHBoxLayout;
-    auto* fit=new QPushButton(QObject::tr("Frame area"),content);
-    auto* focus=new QPushButton(QObject::tr("Focus 2D view"),content);
+    auto* select=new QLabel(QObject::tr("Select · 3D"),pane);
+    auto* fit=new QPushButton(QObject::tr("Frame area"),pane);
+    auto* focus=new QPushButton(QObject::tr("Focus 2D view"),pane);
     fit->setFocusPolicy(Qt::NoFocus); focus->setFocusPolicy(Qt::NoFocus);
-    buttons->addWidget(fit); buttons->addWidget(focus); buttons->addStretch();
+    buttons->addWidget(select); buttons->addStretch(); buttons->addWidget(fit); buttons->addWidget(focus);
     layout->addLayout(buttons);
-    auto* view=new AreaPreview(content);
+    auto* view=new AreaPreview(pane);
+    view->setObjectName("map3DView");
     layout->addWidget(view,1);
-    auto* help=new QLabel(QObject::tr("Drag: orbit · Middle/right drag: pan · Wheel: zoom"),content);
+    auto* help=new QLabel(QObject::tr("Drag: orbit · Middle/right drag: pan · Wheel: zoom · Hover: inspect tile"),pane);
     help->setWordWrap(true); layout->addWidget(help);
-    auto* status=new QLabel(QObject::tr("Open an area to preview its tiles."),content);
-    status->setWordWrap(true); layout->addWidget(status);
-    dock->setWidget(content);
-    auto* source=new PreviewSource(dock,assets,view,status);
+    auto* status=new QLabel(pane);
+    layout->addWidget(status);
+    splitter->addWidget(pane);
+    splitter->addWidget(map);
+    splitter->setStretchFactor(0,3); splitter->setStretchFactor(1,1);
+    pane->hide();
+    auto* source=new PreviewSource(pane,assets,view,status);
     QObject::connect(fit,&QPushButton::clicked,view,&AreaPreview::frameArea);
     QObject::connect(focus,&QPushButton::clicked,source,[source]{source->focusMapView();});
-    return dock;
+
+    auto* hoverStatus=new QLabel(window);
+    hoverStatus->setObjectName("map3DHoverStatus");
+    window->statusBar()->addWidget(hoverStatus,1);
+    view->onHover=[map,hoverStatus](const AreaPreviewFace* face) {
+        if(!face) { map->set3DHoverTile({-1,-1},false); hoverStatus->clear(); return; }
+        const QString plane=face->plane==0 ? QObject::tr("flat") :
+            face->standing() ? QObject::tr("standing") : QObject::tr("slope");
+        hoverStatus->setText(QObject::tr("Tile (%1, %2) · Layer %3 · Height %4 · %5")
+            .arg(face->x).arg(face->y).arg(face->layer).arg(face->elevation).arg(plane));
+        map->set3DHoverTile({face->x,face->y},face->standing());
+    };
+
+    auto* toggle=new QAction(QObject::tr("3D mode"),window);
+    toggle->setObjectName("action3DMode");
+    toggle->setCheckable(true); toggle->setShortcut(QKeySequence("Ctrl+3"));
+    toggle->setToolTip(QObject::tr("Switch the main map between 2D and 3D (Ctrl+3)"));
+    toggle->setEnabled(false);
+    toolbar->addSeparator(); toolbar->addAction(toggle); menu->addAction(toggle);
+    auto previousPaletteArea=std::make_shared<Qt::DockWidgetArea>(Qt::BottomDockWidgetArea);
+    auto previousPaletteFloating=std::make_shared<bool>(false);
+    QObject::connect(toggle,&QAction::toggled,window,[=](bool enabled) {
+        pane->setVisible(enabled);
+        hoverStatus->setVisible(enabled);
+        if(enabled) {
+            *previousPaletteArea=window->dockWidgetArea(palette);
+            *previousPaletteFloating=palette->isFloating();
+            palette->setFloating(false); window->addDockWidget(Qt::LeftDockWidgetArea,palette); palette->show();
+            const int width=std::max(640,splitter->width());
+            splitter->setSizes({width*3/4,width/4});
+        } else {
+            window->addDockWidget(*previousPaletteArea,palette);
+            palette->setFloating(*previousPaletteFloating);
+            map->setFocus();
+        }
+        source->setActive(enabled);
+    });
+    hoverStatus->hide();
+    const auto availability=[=] {
+        const bool available=assets->getCurrentArea() && !play->isChecked();
+        if(!available) toggle->setChecked(false);
+        toggle->setEnabled(available);
+    };
+    QObject::connect(assets,&Assets::areaChanged,window,[=](Area*) { view->clearHover(); availability(); });
+    QObject::connect(assets,&Assets::projectRemoved,window,[=](Project*) { toggle->setChecked(false); toggle->setEnabled(false); });
+    QObject::connect(play,&QAction::toggled,window,[=](bool) { availability(); });
 }

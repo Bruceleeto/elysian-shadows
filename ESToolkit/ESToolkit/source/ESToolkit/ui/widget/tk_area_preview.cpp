@@ -38,6 +38,44 @@ QVector3D eyeOffset(float yaw, float pitch) {
 }
 }
 
+int pickAreaPreviewFace(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas,
+                        const QMatrix4x4& matrix, const QPointF& mouse, const QSize& viewport) {
+    if(viewport.width()<=0 || viewport.height()<=0 || mouse.x()<0 || mouse.y()<0 ||
+       mouse.x()>=viewport.width() || mouse.y()>=viewport.height()) return -1;
+    bool invertible=false;
+    const auto inverse=matrix.inverted(&invertible);
+    if(!invertible) return -1;
+    const float x=2*float(mouse.x())/viewport.width()-1, y=1-2*float(mouse.y())/viewport.height();
+    const auto origin=toView((inverse*QVector4D(x,y,-1,1)).toVector3DAffine());
+    const auto far=toView((inverse*QVector4D(x,y,1,1)).toVector3DAffine());
+    const auto direction=(far-origin).normalized();
+    float nearest=(far-origin).length();
+    int hit=-1;
+    for(size_t i=0;i+2<mesh.size();i+=3) {
+        const auto& a=mesh[i]; const auto& b=mesh[i+1]; const auto& c=mesh[i+2];
+        const auto edge1=b.position-a.position, edge2=c.position-a.position;
+        const auto cross=QVector3D::crossProduct(direction,edge2);
+        const float determinant=QVector3D::dotProduct(edge1,cross);
+        if(std::abs(determinant)<1e-7f) continue;
+        const auto offset=origin-a.position;
+        const float u=QVector3D::dotProduct(offset,cross)/determinant;
+        if(u<0 || u>1) continue;
+        const auto q=QVector3D::crossProduct(offset,edge1);
+        const float v=QVector3D::dotProduct(direction,q)/determinant;
+        if(v<0 || u+v>1) continue;
+        const float distance=QVector3D::dotProduct(edge2,q)/determinant;
+        if(distance<0 || distance>nearest+0.0001f) continue;
+        if(!atlas.isNull()) {
+            const auto uv=a.uv*(1-u-v)+b.uv*u+c.uv*v;
+            const int tx=std::clamp(int(std::floor(uv.x()*atlas.width())),0,atlas.width()-1);
+            const int ty=std::clamp(int(std::floor(uv.y()*atlas.height())),0,atlas.height()-1);
+            if(atlas.pixelColor(tx,ty).alphaF()<0.1f) continue;
+        }
+        nearest=distance; hit=int(i/6);
+    }
+    return hit;
+}
+
 void AreaPreviewCamera::frame(const QVector3D& minimum, const QVector3D& maximum, float aspect) {
     target = toView((minimum+maximum)*0.5f);
     const float radius = std::max(32.0f, (maximum-minimum).length()*0.5f);
@@ -84,8 +122,11 @@ void main() {
 in vec2 uv;
 in vec3 n;
 uniform sampler2D atlas;
+uniform bool outline;
+uniform vec4 outlineColor;
 out vec4 color;
 void main() {
+    if(outline) { color=outlineColor; return; }
     vec4 tex=texture(atlas,uv);
     if(tex.a<0.1) discard;
     float shade=0.65+0.35*abs(dot(normalize(n),normalize(vec3(0.3,-0.4,1))));
@@ -95,8 +136,11 @@ void main() {
        !_program->addShaderFromSourceCode(QOpenGLShader::Fragment,fragment) || !_program->link()) {
         _error=_program->log(); return false;
     }
-    if(!_vao.create() || !_vbo.create()) { _error="Could not allocate preview geometry."; return false; }
+    if(!_vao.create() || !_vbo.create() || !_edges.create()) { _error="Could not allocate preview geometry."; return false; }
     QOpenGLVertexArrayObject::Binder vao(&_vao);
+    _edges.bind();
+    const GLuint edges[]={0,1,5,2};
+    _edges.allocate(edges,sizeof edges);
     _vbo.bind();
     _program->bind();
     _program->enableAttributeArray(0); _program->enableAttributeArray(1); _program->enableAttributeArray(2);
@@ -107,7 +151,7 @@ void main() {
     return true;
 }
 void AreaPreviewRenderer::release() {
-    _texture.reset(); _program.reset(); _vbo.destroy(); _vao.destroy(); _count=0; _atlasKey=0;
+    _texture.reset(); _program.reset(); _vbo.destroy(); _edges.destroy(); _vao.destroy(); _count=0; _atlasKey=0;
 }
 void AreaPreviewRenderer::upload(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas) {
     const auto bytes=mesh.size()*sizeof(AreaPreviewVertex);
@@ -122,7 +166,7 @@ void AreaPreviewRenderer::upload(const std::vector<AreaPreviewVertex>& mesh, con
         _atlasKey=atlas.cacheKey();
     }
 }
-void AreaPreviewRenderer::draw(const QSize& pixels, const QMatrix4x4& matrix) {
+void AreaPreviewRenderer::draw(const QSize& pixels, const QMatrix4x4& matrix, int highlighted, bool standing) {
     glViewport(0,0,pixels.width(),pixels.height());
     glDisable(GL_SCISSOR_TEST); glDisable(GL_STENCIL_TEST); glDisable(GL_BLEND); glDisable(GL_CULL_FACE);
     glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE); glDepthMask(GL_TRUE);
@@ -133,12 +177,22 @@ void AreaPreviewRenderer::draw(const QSize& pixels, const QMatrix4x4& matrix) {
     _program->bind(); _program->setUniformValue("matrix",matrix); _program->setUniformValue("atlas",0);
     _texture->bind(0);
     QOpenGLVertexArrayObject::Binder vao(&_vao);
+    _program->setUniformValue("outline",false);
+    glEnable(GL_POLYGON_OFFSET_FILL); glPolygonOffset(1,1);
     glDrawArrays(GL_TRIANGLES,0,_count);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    if(highlighted>=0 && highlighted<_count/6) {
+        _program->setUniformValue("outline",true);
+        _program->setUniformValue("outlineColor",standing ? QVector4D(0,1,1,1) : QVector4D(1,1,0,1));
+        glLineWidth(1);
+        glDrawElementsBaseVertex(GL_LINE_LOOP,4,GL_UNSIGNED_INT,nullptr,highlighted*6);
+    }
     _texture->release(0); _program->release();
 }
 
 AreaPreview::AreaPreview(QWidget* parent):QOpenGLWidget(parent) {
     setMinimumSize(240,200);
+    setMouseTracking(true);
     setFocusPolicy(Qt::NoFocus); // Mouse navigation must not steal game keyboard input.
     setToolTip(tr("Left drag: orbit · Middle/right drag: pan · Wheel: zoom"));
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
@@ -162,9 +216,11 @@ void AreaPreview::initializeGL() {
     _ready=_renderer.initialize(); _dirty=true;
     connect(context(),&QOpenGLContext::aboutToBeDestroyed,this,[this]{cleanup();});
 }
-void AreaPreview::setScene(std::vector<AreaPreviewVertex> mesh, QImage atlas, bool resetCamera) {
+void AreaPreview::setScene(std::vector<AreaPreviewVertex> mesh, QImage atlas, bool resetCamera, std::vector<AreaPreviewFace> faces) {
+    clearHover(); _faces=std::move(faces);
     _mesh=std::move(mesh); _atlas=std::move(atlas); _dirty=true;
     if(resetCamera) frameArea();
+    if(underMouse()) pickAt(mapFromGlobal(QCursor::pos()));
     update();
 }
 void AreaPreview::frameArea() {
@@ -191,7 +247,8 @@ void AreaPreview::paintGL() {
     }
     const qreal dpr=devicePixelRatioF();
     _renderer.draw(QSize(qRound(width()*dpr),qRound(height()*dpr)),
-        _camera.matrix(static_cast<float>(width())/std::max(1,height())));
+        _camera.matrix(static_cast<float>(width())/std::max(1,height())),_hovered,
+        hoveredFace() && hoveredFace()->standing());
 }
 void AreaPreview::mousePressEvent(QMouseEvent* event) {
     _lastMouse=event->position(); event->accept();
@@ -200,10 +257,30 @@ void AreaPreview::mouseMoveEvent(QMouseEvent* event) {
     const QPointF delta=event->position()-_lastMouse; _lastMouse=event->position();
     if(event->buttons() & (Qt::MiddleButton|Qt::RightButton)) _camera.pan(delta,height());
     else if(event->buttons() & Qt::LeftButton) _camera.orbit(delta);
+    pickAt(event->position());
     update(); event->accept();
 }
 void AreaPreview::mouseReleaseEvent(QMouseEvent* event) { event->accept(); }
 void AreaPreview::wheelEvent(QWheelEvent* event) {
     const float steps=event->pixelDelta().isNull()? event->angleDelta().y()/120.0f : event->pixelDelta().y()/40.0f;
-    _camera.zoom(steps); update(); event->accept();
+    _camera.zoom(steps); pickAt(event->position()); update(); event->accept();
 }
+
+const AreaPreviewFace* AreaPreview::hoveredFace() const {
+    return _hovered>=0 && size_t(_hovered)<_faces.size() ? &_faces[size_t(_hovered)] : nullptr;
+}
+void AreaPreview::pickAt(const QPointF& point) {
+    int hit=pickAreaPreviewFace(_mesh,_atlas,_camera.matrix(float(width())/std::max(1,height())),point,size());
+    if(hit>=int(_faces.size())) hit=-1;
+    if(hit==_hovered) return;
+    _hovered=hit;
+    if(onHover) onHover(hoveredFace());
+    update();
+}
+void AreaPreview::clearHover() {
+    _hovered=-1;
+    if(onHover) onHover(nullptr);
+    update();
+}
+void AreaPreview::leaveEvent(QEvent* event) { clearHover(); QOpenGLWidget::leaveEvent(event); }
+void AreaPreview::resizeGL(int, int) { clearHover(); }

@@ -17,6 +17,7 @@
 #include <QVector2D>
 #include <QVector3D>
 #include <memory>
+#include <functional>
 #include <vector>
 
 struct AreaPreviewVertex {
@@ -24,6 +25,15 @@ struct AreaPreviewVertex {
     QVector2D uv;
     QVector3D normal;
 };
+
+struct AreaPreviewFace {
+    int x=0, y=0, layer=0, elevation=0, plane=0;
+    bool standing() const { return plane>=1 && plane<=3; }
+};
+
+// Returns the nearest visible six-vertex face; transparent atlas pixels are not hits.
+int pickAreaPreviewFace(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas,
+                        const QMatrix4x4& matrix, const QPointF& mouse, const QSize& viewport);
 
 // Input positions remain in engine world coordinates (Y down, Z up).
 struct AreaPreviewCamera {
@@ -45,13 +55,14 @@ public:
     bool initialize();
     void release();
     void upload(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas);
-    void draw(const QSize& pixels, const QMatrix4x4& matrix);
+    void draw(const QSize& pixels, const QMatrix4x4& matrix, int highlighted=-1, bool standing=false);
     QString error() const { return _error; }
 private:
     std::unique_ptr<QOpenGLShaderProgram> _program;
     std::unique_ptr<QOpenGLTexture> _texture;
     QOpenGLVertexArrayObject _vao;
     QOpenGLBuffer _vbo{QOpenGLBuffer::VertexBuffer};
+    QOpenGLBuffer _edges{QOpenGLBuffer::IndexBuffer};
     int _count = 0;
     qint64 _atlasKey = 0;
     QString _error;
@@ -61,10 +72,14 @@ class AreaPreview : public QOpenGLWidget {
 public:
     explicit AreaPreview(QWidget* parent = nullptr);
     ~AreaPreview() override;
-    void setScene(std::vector<AreaPreviewVertex> mesh, QImage atlas, bool frameArea);
+    void setScene(std::vector<AreaPreviewVertex> mesh, QImage atlas, bool frameArea,
+                  std::vector<AreaPreviewFace> faces = {});
     void frameArea();
     void focusWorldPoint(const QVector3D& point, float radius = 192);
     const std::vector<AreaPreviewVertex>& mesh() const { return _mesh; }
+    const AreaPreviewFace* hoveredFace() const;
+    std::function<void(const AreaPreviewFace*)> onHover;
+    void clearHover();
 protected:
     bool event(QEvent* event) override;
     void initializeGL() override;
@@ -73,11 +88,16 @@ protected:
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+    void resizeGL(int width, int height) override;
 private:
     void cleanup();
+    void pickAt(const QPointF& point);
     AreaPreviewRenderer _renderer;
     AreaPreviewCamera _camera;
     std::vector<AreaPreviewVertex> _mesh;
+    std::vector<AreaPreviewFace> _faces;
+    int _hovered = -1;
     QImage _atlas;
     bool _dirty = true;
     bool _ready = false;

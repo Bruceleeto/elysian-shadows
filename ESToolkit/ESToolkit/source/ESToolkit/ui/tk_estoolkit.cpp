@@ -4,7 +4,7 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 
-#include <ESToolkit/ui/dock/tk_area_preview_dock.h>
+#include <ESToolkit/ui/widget/tk_area_editor.h>
 #include <ESToolkit/ui//tk_estoolkit.h>
 #include "ui_tk_estoolkit.h"
 #include "ui_tk_sheet_dock_widget.h"
@@ -148,10 +148,8 @@ ESToolkit::ESToolkit(QWidget *parent):
     _selectionDockWidget = new SelectionDockWidget(this);
     addDockWidget(Qt::RightDockWidgetArea, _selectionDockWidget);
 
-    auto* previewDock = createAreaPreviewDock(this, &_assets);
-    addDockWidget(Qt::RightDockWidgetArea, previewDock);
-    splitDockWidget(_selectionDockWidget, previewDock, Qt::Vertical);
-    _ui->menuView->addAction(previewDock->toggleViewAction());
+    installAreaEditor(this, &_assets, _ui->mapView, _ui->mainToolBar,
+                      _ui->menuView, _ui->actionInvoke, _sheetDockWidget);
 
 
     // create/initialize HISTORY dock and widget

@@ -4,6 +4,9 @@
  * Additional permission for Elysian Shadows Kickstarter backers: see LICENSE.
  */
 #include <ESToolkit/ui/widget/tk_area_preview.h>
+#include <ESToolkit/ui/widget/tk_area_editor_layout.h>
+#include <QGraphicsView>
+#include <QTabBar>
 #include <QApplication>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
@@ -50,6 +53,60 @@ static void cameraChecks() {
     camera.zoom(10000); require(camera.distance==16,"zoom minimum");
     camera.zoom(-10000); require(camera.distance==100000,"zoom maximum");
 }
+static void layoutChecks() {
+    QWidget central;
+    central.setAttribute(Qt::WA_DontShowOnScreen);
+    central.resize(1220,610);
+    auto* grid=new QGridLayout(&central);
+    grid->setContentsMargins(0,0,0,0);
+    auto* tabs=new QTabBar(&central); tabs->addTab("loren_town");
+    grid->addWidget(tabs,0,0,Qt::AlignLeft|Qt::AlignCenter);
+    auto* map=new QGraphicsView(&central); grid->addWidget(map,1,0);
+    grid->addItem(new QSpacerItem(0,0),2,0,Qt::AlignBottom);
+    auto* splitter=createAreaEditorSplitter(grid,map);
+    auto* threeD=new QWidget(splitter); threeD->setMinimumSize(240,200);
+    splitter->addWidget(threeD); splitter->addWidget(map); threeD->hide();
+    // ReadSettings calls adjustSize after creating the central map layout.
+    map->adjustSize(); central.show(); QApplication::processEvents();
+    require(splitter->height()>central.height()-70 && map->height()==splitter->height(),
+            "2D map fills the central area instead of collapsing to a 192-pixel strip");
+    threeD->show(); splitter->setSizes({900,300}); QApplication::processEvents();
+    require(threeD->height()==splitter->height() && map->height()==splitter->height(),
+            "both 3D and 2D panes fill the central height");
+    require(threeD->width()>map->width(),"3D is the main view with 2D alongside");
+    threeD->hide(); central.resize(1000,800); QApplication::processEvents();
+    require(map->height()>730 && map->width()==splitter->width(),"returning to 2D restores the whole map area after resize");
+    std::puts("PASS: central 2D/3D splitter layout, toggle and resize");
+}
+static void pickingChecks() {
+    QMatrix4x4 projection; projection.ortho(-1,1,-1,1,-10,10);
+    const QSize size(200,200);
+    const auto pick=[&](const std::vector<AreaPreviewVertex>& mesh,const QImage& image,QPointF point) {
+        return pickAreaPreviewFace(mesh,image,projection,point,size);
+    };
+    require(pick(quad(),atlas(),{100,100})==0,"ray picks a flat face");
+    require(pick(quad(),atlas(),{0,0})==-1,"empty space has no tile");
+    require(pick(quad(),atlas(),{-1,100})==-1,"outside viewport has no tile");
+    auto mesh=quad(2); const auto ground=quad();
+    mesh.insert(mesh.end(),ground.begin(),ground.end());
+    require(pick(mesh,atlas(),{100,100})==0,"near raised face wins over later ground");
+    auto sameDepth=quad(); sameDepth.insert(sameDepth.end(),ground.begin(),ground.end());
+    require(pick(sameDepth,atlas(),{100,100})==1,"equal-depth picking matches last rendered layer");
+    QImage cutout(2,1,QImage::Format_RGBA8888); cutout.setPixelColor(0,0,Qt::transparent); cutout.setPixelColor(1,0,Qt::white);
+    for(size_t i=0;i<mesh.size();++i) mesh[i].uv={i<6?.25f:.75f,.5f};
+    require(pick(mesh,cutout,{100,100})==1,"transparent front texels reveal the tile behind");
+    QMatrix4x4 invalid; invalid.fill(0);
+    require(pickAreaPreviewFace(mesh,cutout,invalid,{100,100},size)==-1,"singular camera cannot produce a pick");
+    auto wall=quad();
+    for(auto& v:wall) {const float y=v.position.y(); v.position.setY(0); v.position.setZ(y);}
+    AreaPreviewCamera camera; camera.frame({-1,-1,-1},{1,1,1},1);
+    const auto projected=camera.matrix(1)*QVector4D(0,0,0,1);
+    const QPointF center((projected.x()/projected.w()+1)*100,(1-projected.y()/projected.w())*100);
+    require(pickAreaPreviewFace(wall,atlas(),camera.matrix(1),center,size)==0,"perspective ray picks a standing wall");
+    require(AreaPreviewFace{31,13,2,0,0}.standing()==false && AreaPreviewFace{31,7,1,2,1}.standing(),
+            "flat and standing face metadata are distinct");
+    std::puts("PASS: flat/wall picking, nearest layer, transparent pixels, misses and camera transforms");
+}
 static int renderChecks(const QSurfaceFormat& format) {
     QOpenGLContext mainContext;
     mainContext.setFormat(format);
@@ -85,6 +142,20 @@ static int renderChecks(const QSurfaceFormat& format) {
     require(image.pixelColor(32,32).red()>150 && image.pixelColor(32,32).blue()<5,"top-left texel orientation");
     require(image.pixelColor(96,32).green()>150,"top-right texel orientation");
     require(image.pixelColor(32,96).blue()>150,"bottom-left texel orientation");
+
+    const auto outlineCount=[&](bool standing) {
+        renderer.draw({128,128},projection,0,standing);
+        const auto outlined=previewFbo->toImage();
+        unsigned count=0;
+        for(int y=0;y<outlined.height();++y) for(int x=0;x<outlined.width();++x) {
+            const auto pixel=outlined.pixelColor(x,y);
+            if(pixel.green()>245 && (standing ? (pixel.blue()>245 && pixel.red()<5) :
+                                               (pixel.red()>245 && pixel.blue()<5))) ++count;
+        }
+        return count;
+    };
+    require(outlineCount(false)>200,"flat tile gets a yellow perimeter");
+    require(outlineCount(true)>200,"standing tile gets a cyan perimeter");
 
     auto front=quad(1), behind=quad();
     for(auto& vertex:front) vertex.uv={.25f,.75f}; // blue, closer to the camera
@@ -144,6 +215,18 @@ static int widgetChecks() {
     require(first!=second,"widget receives live scene updates");
     require(mainView->grabFramebuffer()==mainImage,"main widget survives preview updates");
     require(preview->focusPolicy()==Qt::NoFocus,"preview does not acquire keyboard focus");
+    preview->setScene(quad(),atlas(),true,{{31,13,2,0,0}});
+    bool hovered=false;
+    preview->onHover=[&](const AreaPreviewFace* face) {
+        hovered=face && face->x==31 && face->y==13 && face->layer==2 && face->elevation==0;
+    };
+    const QPointF center=preview->rect().center();
+    QMouseEvent hover(QEvent::MouseMove,center,center,Qt::NoButton,Qt::NoButton,Qt::NoModifier);
+    QApplication::sendEvent(preview,&hover);
+    require(hovered,"mouse hover reports the actual tile coordinates and layer");
+    QEvent leave(QEvent::Leave); QApplication::sendEvent(preview,&leave);
+    require(!hovered && !preview->hoveredFace(),"leaving the view clears shared hover");
+    preview->onHover={};
     const auto beforeOrbit=preview->grabFramebuffer();
     QMouseEvent press(QEvent::MouseButtonPress,{100,100},{100,100},Qt::LeftButton,Qt::LeftButton,Qt::NoModifier);
     QMouseEvent move(QEvent::MouseMove,{170,130},{170,130},Qt::NoButton,Qt::LeftButton,Qt::NoModifier);
@@ -162,9 +245,12 @@ static int widgetChecks() {
 }
 int main(int argc,char** argv) {
     QSurfaceFormat format;
+    format.setRenderableType(QSurfaceFormat::OpenGL);
     format.setVersion(3,3); format.setProfile(QSurfaceFormat::CoreProfile); format.setDepthBufferSize(24);
     QSurfaceFormat::setDefaultFormat(format);
     QApplication app(argc,argv);
     cameraChecks();
+    pickingChecks();
+    layoutChecks();
     return app.arguments().contains("--widgets") ? widgetChecks() : renderChecks(format);
 }

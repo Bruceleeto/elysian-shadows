@@ -357,7 +357,7 @@ endif()
 
 set(ESTK_SOURCES
     ESToolkit/ESToolkit/source/ESToolkit/ui/widget/tk_area_preview.cpp
-    ESToolkit/ESToolkit/source/ESToolkit/ui/dock/tk_area_preview_dock.cpp
+    ESToolkit/ESToolkit/source/ESToolkit/ui/widget/tk_area_editor.cpp
     ESToolkit/ESToolkit/source/AssetIO/tk_area.cpp
     ESToolkit/ESToolkit/source/ESToolkit/core/tk_asset_manager.cpp
     ESToolkit/ESToolkit/source/ESToolkit/core/tk_assets.cpp
