@@ -412,7 +412,9 @@ int glalVidViewportResize(const int initialization, const int viewWidth, const i
     //create and attach depth buffer render target to FBO
     glGenRenderbuffers(1, &_glalDepthBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, _glalDepthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, viewWidth, viewHeight);
+    // Perspective views need enough depth precision to keep adjoining terrain
+    // faces from overwriting each other at the debug camera's viewing distance.
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, viewWidth, viewHeight);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _glalDepthBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     GY_GL_CHECK_ERROR();

@@ -109,6 +109,70 @@ static void checkSize(int width, int height) {
     CHECK(errors == 0);
 }
 
+/* Perspective terrain seams: neighbouring faces can be less than a world unit
+ * apart near their shared edge. Test the game's actual scene FBO and shader,
+ * including reallocation, and require the nearer face to win in either order. */
+static void checkPerspectiveDepth(void) {
+    for(int resize = 0; resize < 2; ++resize) {
+        const int size = resize ? 79 : 64;
+        CHECK(glalVidOglInit(size, size, size, size));
+        gyVidSetDefaultShaderProgram();
+        const GLuint program = glalLightingShader.program->program;
+        GYMatrix4 projection;
+        gyVidPerspectiveMat(projection, 45.0f, 1.0f, 0.5f, 9000.0f);
+        glUniformMatrix4fv(glGetUniformLocation(program, "uProjViewMat"), 1, GL_FALSE, &projection[0][0]);
+        glUniform1i(glGetUniformLocation(program, "uTextureEnabled"), 0);
+        glUniform1i(glGetUniformLocation(program, "uNormalMapEnabled"), 0);
+        glUniform1i(glGetUniformLocation(program, "uSpecularMapEnabled"), 0);
+        glUniform4f(glGetUniformLocation(program, "uMaterial.ambientColor"), 1, 1, 1, 1);
+        glUniform4f(glGetUniformLocation(program, "uMaterial.emissiveColor"), 0, 0, 0, 0);
+        glUniform4f(glGetUniformLocation(program, "uAmbience"), 1, 1, 1, 1);
+        GLuint vao, vbo;
+        glGenVertexArrays(1, &vao);
+        gyVidVertexArrayBind(vao);
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        const GLuint position = glalLightingShader.attribLoc[GLAL_SHADER_POS];
+        glEnableVertexAttribArray(position);
+        glVertexAttribPointer(position, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), NULL);
+        glBindFramebuffer(GL_FRAMEBUFFER, _glalMainFbo);
+        glViewport(0, 0, size, size);
+        glDisable(GL_BLEND);
+        glDisable(GL_SCISSOR_TEST);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+        glClearDepth(1);
+        for(int distance = 400; distance <= 800; distance += 100) {
+            for(int order = 0; order < 2; ++order) {
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                for(int face = 0; face < 2; ++face) {
+                    const int behind = face ^ order;
+                    const float z = -(distance + (behind ? 0.25f : 0.0f));
+                    const GLfloat vertices[][4] = {
+                        {-100, -100, z, 1}, {100, -100, z, 1},
+                        {-100, 100, z, 1}, {100, 100, z, 1}
+                    };
+                    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STREAM_DRAW);
+                    glVertexAttrib4f(glalLightingShader.attribLoc[GLAL_SHADER_COLOR], behind, !behind, 0, 1);
+                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                }
+                unsigned char pixel[4];
+                glReadBuffer(GL_COLOR_ATTACHMENT0);
+                glReadPixels(size / 2, size / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+                CHECK(pixel[0] == 0 && pixel[1] > 0);
+            }
+        }
+        gyVidVertexArrayBind(0);
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
+        gyVidPipelineInvalidate();
+        CHECK(errors == 0 && glGetError() == GL_NO_ERROR);
+    }
+    puts("Perspective depth: nearer surfaces win in both draw orders before and after resize");
+}
+
 static void checkLightingOutput(void) {
     CHECK(glalVidOglInit(16, 16, 16, 16));
     gyVidSetDefaultShaderProgram();
@@ -570,6 +634,7 @@ int main(int argc, char** argv) {
         CHECK(glalVidUninitializeBloom());
         CHECK(glalVidInitializeBloom());
         checkSize(64, 64);
+        checkPerspectiveDepth();
         checkLightingOutput();
         checkMovingPointLight();
     }
