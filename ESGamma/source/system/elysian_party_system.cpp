@@ -8,6 +8,7 @@
 #include <ESGamma/crtp/elysian_debug.hpp>
 #include <AssetIO/crtp/elysian_entity.hpp>
 #include <AssetIO/crtp/elysian_character.hpp>
+#include <AssetIO/crtp/elysian_rigid_body.hpp>
 #include <ESGamma/crtp/elysian_camera_system.hpp>
 #include <ESGamma/crtp/elysian_timer_system.hpp>
 #include <AssetIO/crtp/elysian_collidable.hpp>
@@ -229,7 +230,7 @@ void PartySystem::addCharacterToParty(Entity* entity) {
 
     Debug::printf(Debug::LOG_VERBOSE, "%s has joined the party!", entity->getName());
     _characterParty.push_back(entity);
-    if(_characterParty.size() > 1) entity->_transform.setPos(_partyPathPoint[_partyPathPoint.size()-1]);
+    if(_characterParty.size() > 1) entity->_transform.setPos(_partyPathPoint.back().position);
     _updateCamera();
 
     if(_characterParty.size() > 1) {
@@ -301,7 +302,7 @@ void PartySystem::_resetPartyPathPoints(void) {
     auto* leader = getPartyLeader();
     if(leader) {
         for(int i = 0; i < (int)_partyPathPoint.size(); ++i) {
-            _partyPathPoint[i] = GYVector2 { leader->getTransform().getPosX(), leader->getTransform().getPosY() };
+            _partyPathPoint[i] = {leader->getTransform().getPos(), 0.0f};
         }
     }
 }
@@ -315,9 +316,9 @@ void PartySystem::_resizePartyPathPoints(void) {
 
   //allocate more
   if(pathPointAmount > (int)_partyPathPoint.size()) {
-    GYVector2 lastPoint;
+    PartyTrailPoint lastPoint;
     if(_partyPathPoint.size() == 0) {
-            lastPoint = (_playableParty.size() != 0)? GYVector2 {_playableParty[0]->_transform._pos.x, _playableParty[0]->_transform._pos.y } : GYVector2 {_characterParty[0]->_transform._pos.x, _characterParty[0]->_transform._pos.y };
+            lastPoint.position = (_playableParty.size() != 0)? _playableParty[0]->_transform._pos : _characterParty[0]->_transform._pos;
     } else {
       lastPoint = _partyPathPoint[_partyPathPoint.size()-1];
     }
@@ -341,27 +342,13 @@ void PartySystem::updatePartyPaths(void) {
   if(_playableParty.size() == 0 && _characterParty.size() == 0) return;
   if(_playableParty.size() == 1 && _characterParty.size() == 0) return;
 
-  //Keep distance between party
-#if 1
   auto* leader = getPartyLeader();
   if(!leader) return;
-  if(_playableParty.size()) {
-        if(fabs(_partyPathPoint[0].x - leader->_transform._pos.x) < 1.0f && fabs(_partyPathPoint[0].y - leader->_transform._pos.y) < 1.0f) return;
-  }
-  else if(_characterParty.size()) {
-        if(fabs(_partyPathPoint[0].x - leader->_transform._pos.x) < 1.0f && fabs(_partyPathPoint[0].y - leader->_transform._pos.y) < 1.0f) return;
-  }
-#endif
-
-  //update chain of points
-  for(i = _partyPathPoint.size()-1; i > 0; --i) {
-    _partyPathPoint[i] = _partyPathPoint[i-1];
-  }
-
-  //add leader's current position
-    _partyPathPoint[0] = (_playableParty.size() > 0)?
-                GYVector2{leader->_transform._pos.x, leader->_transform._pos.y } :
-                GYVector2 {leader->_transform._pos.x, leader->_transform._pos.y };
+  const auto* leaderBody = leader->getRigidBody();
+  // Followers replay the leader's 3D route, including jumps. XY alone can
+  // place them underneath a terrace which the leader jumped onto.
+  if(!recordPartyTrail(_partyPathPoint, {leader->_transform._pos,
+                       leaderBody ? leaderBody->getVelocity().z : 0.0f})) return;
 
   unsigned int currentIndex = 2;
   //update playables
@@ -373,9 +360,9 @@ void PartySystem::updatePartyPaths(void) {
     currentIndex += _pointsPerCharacter-1;
         //Debug::Print(Debug::NORMAL, "%d\n", currentIndex);
     //Debug::Print(Debug::NORMAL, "x - %d, y - %d\n", currentIndex, currentIndex);
-    gyVec2Sub(&dist, &_partyPathPoint[currentIndex-2], &_partyPathPoint[currentIndex-1]);
+    dist = { _partyPathPoint[currentIndex-2].position.x - _partyPathPoint[currentIndex-1].position.x,
+             _partyPathPoint[currentIndex-2].position.y - _partyPathPoint[currentIndex-1].position.y };
         partyMember->getCharacter()->moveByDist(dist);
-      //  _playableParty[i]->_transform.setPos(_partyPathPoint[currentIndex-1]);
   }
   //update characters
   //--currentIndex;
@@ -387,10 +374,17 @@ void PartySystem::updatePartyPaths(void) {
     GYVector2 dist;
     currentIndex += _pointsPerCharacter-1;
     //Debug::Print(Debug::NORMAL, "%d\n", currentIndex);
-    gyVec2Sub(&dist, &_partyPathPoint[currentIndex-2], &_partyPathPoint[currentIndex-1]);
+    dist = { _partyPathPoint[currentIndex-2].position.x - _partyPathPoint[currentIndex-1].position.x,
+             _partyPathPoint[currentIndex-2].position.y - _partyPathPoint[currentIndex-1].position.y };
        // _characterParty[i]->getCharacter()->animateWalk(dist);
     partyMember->getCharacter()->moveByDist(dist);
-       partyMember->_transform.setPos(_partyPathPoint[currentIndex-1]);
+    const auto& point = _partyPathPoint[currentIndex-1];
+    partyMember->_transform.setPos(point.position);
+    if(auto* body = partyMember->getRigidBody()) {
+        auto velocity = body->getVelocity();
+        velocity.z = point.verticalVelocity;
+        body->setVelocity(velocity);
+    }
   }
 }
 

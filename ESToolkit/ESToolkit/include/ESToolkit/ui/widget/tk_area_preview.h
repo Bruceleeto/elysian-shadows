@@ -6,7 +6,10 @@
 #ifndef TK_AREA_PREVIEW_H
 #define TK_AREA_PREVIEW_H
 
+#include <ESToolkit/ui/widget/tk_area_face.h>
+#include <ESToolkit/core/tk_tile_placement.h>
 #include <QImage>
+#include <QSet>
 #include <QMatrix4x4>
 #include <QOpenGLBuffer>
 #include <QOpenGLFunctions_3_3_Core>
@@ -17,6 +20,8 @@
 #include <QVector2D>
 #include <QVector3D>
 #include <memory>
+#include <optional>
+#include <array>
 #include <functional>
 #include <vector>
 
@@ -26,14 +31,35 @@ struct AreaPreviewVertex {
     QVector3D normal;
 };
 
-struct AreaPreviewFace {
-    int x=0, y=0, layer=0, elevation=0, plane=0;
-    bool standing() const { return plane>=1 && plane<=3; }
-};
-
 // Returns the nearest visible six-vertex face; transparent atlas pixels are not hits.
 int pickAreaPreviewFace(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas,
                         const QMatrix4x4& matrix, const QPointF& mouse, const QSize& viewport);
+
+struct AreaPaintTarget {
+    AreaPreviewFace face;
+    int existingIndex=-1;
+    QString error;
+    bool replacesTile=false;
+    std::array<AreaPreviewVertex,6> vertices;
+};
+using AreaPlacementCheck=std::function<bool(AreaPreviewFace&)>;
+std::optional<AreaPaintTarget> pickAreaPaintTarget(const std::vector<AreaPreviewVertex>& mesh,
+    const std::vector<AreaPreviewFace>& faces,const QImage& atlas,const QMatrix4x4& matrix,
+    QPointF mouse,QSize viewport,bool extend,const AreaPlacementCheck& canPlace,int preferredPlane=-1,
+    const AreaPaintTarget* anchor=nullptr);
+
+// Intersects a chosen surface's tile grid, independent of nearby surfaces.
+// Invalid placements retain their geometry and explain why they cannot be painted.
+std::optional<AreaPaintTarget> pickAreaSurfaceTarget(const AreaPaintTarget& surface,
+    const std::vector<AreaPreviewVertex>& mesh,const std::vector<AreaPreviewFace>& faces,
+    const QImage& atlas,const QMatrix4x4& matrix,QPointF mouse,QSize viewport,
+    const AreaPlacementCheck& canPlace,bool erase=false);
+
+// Builds an upright face along the nearest edge of a flat surface. Existing
+// upright faces can still be painted or extended with the Wall tool.
+std::optional<AreaPaintTarget> pickAreaWallTarget(const std::vector<AreaPreviewVertex>& mesh,
+    const std::vector<AreaPreviewFace>& faces,const QImage& atlas,const QMatrix4x4& matrix,
+    QPointF mouse,QSize viewport,const AreaPlacementCheck& canPlace);
 
 // Input positions remain in engine world coordinates (Y down, Z up).
 struct AreaPreviewCamera {
@@ -55,7 +81,8 @@ public:
     bool initialize();
     void release();
     void upload(const std::vector<AreaPreviewVertex>& mesh, const QImage& atlas);
-    void draw(const QSize& pixels, const QMatrix4x4& matrix, int highlighted=-1, bool standing=false);
+    void draw(const QSize& pixels, const QMatrix4x4& matrix, int highlighted=-1, bool standing=false,
+              const std::vector<AreaPreviewVertex>& ghost = {}, bool invalidGhost=false, bool replacesTile=false);
     QString error() const { return _error; }
 private:
     std::unique_ptr<QOpenGLShaderProgram> _program;
@@ -63,6 +90,8 @@ private:
     QOpenGLVertexArrayObject _vao;
     QOpenGLBuffer _vbo{QOpenGLBuffer::VertexBuffer};
     QOpenGLBuffer _edges{QOpenGLBuffer::IndexBuffer};
+    QOpenGLVertexArrayObject _ghostVao;
+    QOpenGLBuffer _ghostVbo{QOpenGLBuffer::VertexBuffer};
     int _count = 0;
     qint64 _atlasKey = 0;
     QString _error;
@@ -70,7 +99,33 @@ private:
 
 class AreaPreview : public QOpenGLWidget {
 public:
+    enum class Tool { Select, Paint, Wall, Erase };
     explicit AreaPreview(QWidget* parent = nullptr);
+    void setTool(Tool tool);
+    Tool tool() const { return _tool; }
+    std::function<void(Tool)> onToolChanged;
+    void setPlacementPlane(int plane);
+    void setLayerCount(int count) { _layerCount=count; }
+    void setPaintLayer(int layer);
+    int paintLayer() const { return _paintLayer; }
+    std::function<std::array<TilePlacementSlot,4>(int,int)> placementSlots;
+    int placementPlane() const { return _placementPlane; }
+    std::function<void(int)> onPlacementPlaneChanged;
+    void finishStroke();
+    void pickSurface();
+    void clearSurface();
+    bool pickingSurface() const { return _pickingSurface; }
+    const AreaPreviewFace* lockedSurface() const { return _surface ? &_surface->face : nullptr; }
+    std::function<void()> onSurfaceChanged;
+    std::function<void(const QString&)> onPlacementHint;
+    std::function<bool(bool)> onStrokeBegin;
+    std::function<bool(const AreaPreviewFace&)> onPaint;
+    std::function<bool(const AreaPreviewFace&)> onSampleTile;
+    std::function<QString(const AreaPreviewFace&)> onPlacementError;
+    std::function<void()> onStrokeEnd;
+    AreaPlacementCheck canPlace;
+    std::function<std::vector<AreaPreviewVertex>(const AreaPreviewFace&)> onBrushPreview;
+    std::function<std::vector<AreaPreviewVertex>(const AreaPreviewFace&)> onFacePreview;
     ~AreaPreview() override;
     void setScene(std::vector<AreaPreviewVertex> mesh, QImage atlas, bool frameArea,
                   std::vector<AreaPreviewFace> faces = {});
@@ -90,9 +145,32 @@ protected:
     void wheelEvent(QWheelEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void resizeGL(int width, int height) override;
+    void keyPressEvent(QKeyEvent* event) override;
 private:
     void cleanup();
     void pickAt(const QPointF& point);
+    void paintAt(const QPointF& point);
+    std::optional<AreaPaintTarget> targetAt(const QPointF& point,bool stroke) const;
+    void chooseSurface(const QPointF& point);
+    void applyPlacementPlane(AreaPaintTarget& target) const;
+    void resolveDestination(AreaPaintTarget& target,bool stroke) const;
+    int _layerCount=3;
+    int _paintLayer=-1;
+    int _placementPlane=-1; // Match the pointed surface unless explicitly chosen.
+    std::optional<AreaPaintTarget> _surface, _strokeSurface;
+    bool _pickingSurface=false;
+    Tool _tool=Tool::Select;
+    Qt::MouseButton _strokeButton=Qt::NoButton;
+    enum class Navigation { None, Orbit, Pan };
+    Navigation _navigation=Navigation::None;
+    std::vector<AreaPreviewVertex> _strokeMesh;
+    std::vector<AreaPreviewFace> _strokeFaces;
+    QImage _strokeAtlas;
+    QMatrix4x4 _strokeMatrix;
+    QSet<quint64> _paintedFaces;
+    bool _erasing=false;
+    std::optional<AreaPaintTarget> _target, _paintAnchor;
+    std::vector<AreaPreviewVertex> _ghost;
     AreaPreviewRenderer _renderer;
     AreaPreviewCamera _camera;
     std::vector<AreaPreviewVertex> _mesh;

@@ -82,11 +82,6 @@ void TkMapSystem::_renderWalkHeight(unsigned count, const TkMapDepthBuffEntryImp
     const auto* level=elysian::System::getCurrentLevel();
     if(!area || !level) return;
     gyVidVertexBatchFlush(); gyVidVertexBatchEnd();
-    const auto read=[&](unsigned layer,int x,int y) {
-        const auto entry=area->getTileEntry(layer,x,y);
-        const auto& type=level->tileset[entry.getIndex()];
-        return WalkHeight::decode(entry.getValue(),type.standOn,type.getColliderType());
-    };
     const auto* camera=getCameraSys()->getCurrentState();
     const bool labels=32*std::abs(camera->getScale().x*camera->staticScale)>=24;
     const GYColor4 raised={100,175,255,65}, blocked={255,25,35,155};
@@ -111,18 +106,15 @@ void TkMapSystem::_renderWalkHeight(unsigned count, const TkMapDepthBuffEntryImp
         if(area->getTileEntry(0,entry.x,entry.y).getBlocked()) continue;
         if(!getAssets()->getLayerVisible(static_cast<Assets::LAYER_TYPE>(entry.layer))) continue;
         if(!entry.mapEntry.getIndex() || entry.mapEntry.getIndex()>=level->tileAmount) continue;
-        const auto& type=level->tileset[entry.mapEntry.getIndex()];
-        const auto tile=WalkHeight::decode(entry.mapEntry.getValue(),type.standOn,type.getColliderType());
+        const auto tile=WalkHeight::decode(entry.mapEntry.getValue());
         const auto surface=WalkHeight::surface(tile,entry.x,entry.y);
         if(!surface || surface->top<=0) continue;
-        const auto floor=WalkHeight::support(area->width,area->height,read,
-            entry.x*32.0f,surface->nearY+8,surface->top);
-        if(!floor || floor->top!=surface->top) continue;
         const float z=entry.mapEntry.getElev()*32.0f+entry.layer*ELYSIAN_AREA_LAYER_DEPTH_EPSILON;
         tint(entry.x,entry.y,z,raised);
         if(labels) {
-            char text[8];
-            std::snprintf(text,sizeof(text),"%u",static_cast<unsigned>(surface->top/32));
+            char text[16];
+            if(surface->ramp) std::snprintf(text,sizeof(text),"%u-%u",tile.getElev(),tile.getElev()+1);
+            else std::snprintf(text,sizeof(text),"%u",tile.getElev());
             font._transform.setPos(entry.x*32.0f+1,entry.y*32.0f+z+1,z);
             font.setColor(0,0,0,255); font.drawString(elysian::Font::C_ALIGN,text);
             font._transform.setPos(entry.x*32.0f,entry.y*32.0f+z,z);

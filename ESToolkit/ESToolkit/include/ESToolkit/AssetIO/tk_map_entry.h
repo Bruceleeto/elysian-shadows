@@ -37,7 +37,7 @@ struct TileEntry: public elysian::TileEntry, public AssetManager {
 	inline TileEntry(const elysian::TileEntry e): elysian::TileEntry(e.value) {}
 	inline TileEntry(const uint32_t val): elysian::TileEntry(val) {}
 	void renderDecoration(QPainter *const painter, const unsigned x, const unsigned y) const;
-	static void renderCollider(QPainter *const painter, const elysian::Tile::COLLIDER_TYPE collider);
+	void renderCollider(QPainter *const painter) const;
 };
 
 #endif // TK_MAP_ENTRY_H

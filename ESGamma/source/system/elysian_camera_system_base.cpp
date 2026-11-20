@@ -5,6 +5,7 @@
  */
 
 #include <ESGamma/crtp/elysian_camera_system.hpp>
+#include <ESGamma/utility/elysian_camera_framing.hpp>
 #include <AssetIO/crtp/elysian_entity.hpp>
 #include <ESGamma/crtp/elysian_gui_system.hpp>
 #include <ESGamma/crtp/elysian_debug.hpp>
@@ -171,8 +172,9 @@ void CameraSystemBase::_updateState(Camera*const state, const float /*deltaTime*
         float newYDist = 0.5f*minHeight;
 
         auto fitEntity = [&](const Entity*const entity) {
-            float xDist = fabs(entity->_transform._pos.x-state->_pos.x);
-            float yDist = fabs(entity->_transform._pos.y-state->_pos.y);
+            const auto distance = cameraEntityDistance(entity->_transform._pos, state->_pos);
+            const float xDist = distance.x;
+            const float yDist = distance.y;
 
             //we can fit this fucker onscreen
              if(xDist <= maxXDist && yDist <= maxYDist) {
@@ -297,6 +299,7 @@ void CameraSystemBase::initializeProjMatrix(void) {
     unsigned w, h;
     //Initialize default camera
     gyVidResolution(&w, &h);
+    const float aspect = (w && h) ? static_cast<float>(w) / h : 1.0f;
     //w = 640; h = 480;
     gyVidCamOrthoProj(_curState, 0.0f, (float)w, (float)h, 0.0f, -1500.0f, 1500.0f);
     gyVidCamOrthoLookAt(_curState, &_curState->_pos, 1.0f, 0.0f, &_curState->_orient);
@@ -310,7 +313,7 @@ void CameraSystemBase::initializeProjMatrix(void) {
     _debugState.setOrient(orient.x, orient.y, orient.z);
     const GYVector3 zeroPos = { 0.0f, 0.0f, 0.0f };
     gyVidCamFrustumLookAt(&_debugState, &zeroPos, &_debugState._orient, &_debugState.up);
-    gyVidCamFrustum(&_debugState, 45.0f, 1.0f, 0.5f, 9000.0f);
+    gyVidCamFrustum(&_debugState, 45.0f, aspect, 0.5f, 9000.0f);
 
     _curState->updateViewVolumeBoundingRegion();
     //_curState->clipBoundingRegion(0, getCurrentArea()->getMapWidth()*32, 0, getCurrentArea()->getMapHeight()*32);
@@ -425,6 +428,9 @@ void CameraSystemBase::processInput(const Keyboard* input) {
         _debugActive = !_debugActive;
 
         if(_debugActive) { //enable
+            unsigned width, height;
+            gyVidResolution(&width, &height);
+            const float aspect = (width && height) ? static_cast<float>(width) / height : 1.0f;
 #if 1
             _debugState.focalEntity = _curState->focalEntity;
 
@@ -438,12 +444,12 @@ void CameraSystemBase::processInput(const Keyboard* input) {
             //setPerspectiveFrustum(90.0f, 1.0f, 0.5f, 900.0f);
             //setEngineState(ENGINE_CAMERA_DEBUG);
             pushCustomCamera(&_debugState);
-            gyVidCamFrustum(_curState, 45.0f, 1.0f, 0.5f, 900.0f);
+            gyVidCamFrustum(_curState, 45.0f, aspect, 0.5f, 900.0f);
             _curState->updateViewVolumeBoundingRegion();
             _curState->clipBoundingRegion(0, getCurrentArea()->getMapWidth()*32, 0, getCurrentArea()->getMapHeight()*32);
 
 #else
-        gyVidCamFrustum(_curState, 45.0f, 1.0f, 0.5f, 900.0f);
+        gyVidCamFrustum(_curState, 45.0f, aspect, 0.5f, 900.0f);
         _curState->updateViewVolumeBoundingRegion();
         _curState->clipBoundingRegion(0, getCurrentArea()->getMapWidth()*32, 0, getCurrentArea()->getMapHeight()*32);
 

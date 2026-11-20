@@ -21,6 +21,7 @@ private:
 
 public:
 
+    unsigned getTileLayerCount() const { return getCurrentArea()->getLayerCount(); }
     //=== Implemented from elysian::MapDepthBuffer ===
     void        getOnscreenTileRegion(int &startX, int &startY, int &endX, int &endY) const;
     float       getBaseZCoord(void) const;

@@ -32,7 +32,7 @@ Q_MOC_INCLUDE(<ESToolkit/AssetIO/tk_area.h>)
 class Assets: public QObject, public elysian::LevelManager {
     Q_OBJECT
 public:
-    enum LAYER_TYPE { LAYER_TILE1, LAYER_TILE2, LAYER_TILE3, LAYER_LIGHT, LAYER_COLLISION, LAYER_ENTITY, LAYER_MAX };
+    enum LAYER_TYPE { LAYER_TILE1, LAYER_TILE2, LAYER_TILE3, LAYER_TILE4, LAYER_LIGHT, LAYER_COLLISION, LAYER_ENTITY, LAYER_MAX };
 
                         Assets(void);
     virtual             ~Assets(void);

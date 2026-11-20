@@ -130,7 +130,7 @@ extern int                          glalVersionMajor;
 extern int                          glalVersionMinor;
 extern GYGLInfo                     glalGlInfo;
 
-extern const GYVector4 glalRectVerts[GY_RECT_PLANE_MAX][4];
+#include <common/gyro_tile_geometry.h>
 extern const GYVector3 glalPlaneNormals[GY_RECT_PLANE_MAX];
 extern const GYVector3 glalRectTangents[GY_RECT_TEX_ORIENT_MAX];
 extern const GYVector3 glalPlaneNormalMapNormals[GY_RECT_PLANE_MAX][GY_RECT_TEX_ORIENT_MAX];

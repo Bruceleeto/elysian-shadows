@@ -580,6 +580,7 @@ void ESToolkit::OnTabChanged(int index) {
 
 void ESToolkit::OnSubLayerVisibilityChanged(int index, bool visible)
 {
+    if(index==13) { _assets.setLayerVisible(Assets::LAYER_TILE4,visible); return; }
 
     switch(index) {
     case 1:
@@ -638,6 +639,12 @@ void ESToolkit::OnSubLayerVisibilityChanged(int index, bool visible)
 }
 
 void ESToolkit::OnActiveLayerChanged(int index) {
+   if(index==13) {
+       if(!_assets.getCurrentArea() || _assets.getCurrentArea()->getLayerCount()<4) return;
+       OnLayerChanged(Assets::LAYER_TILE4);
+       if(TileEntry::renderColliders) _assets.getEngine()->getCollisionSys()->setRenderLayer(elysian::CollisionSystem::RENDER_LAYER_4);
+       return;
+   }
    switch(index) {
     case 1:
         //_layerDockWidget->SetCurrentLayerIndex();
@@ -880,7 +887,8 @@ void ESToolkit::OnSelectionChanged(const Selectable::TYPE type, Selectable *cons
     case Selectable::TILE:
         if(_assets.getCurrentLayer() != Assets::LAYER_TILE1 &&
                 _assets.getCurrentLayer() != Assets::LAYER_TILE2 &&
-                _assets.getCurrentLayer() != Assets::LAYER_TILE3) {
+                _assets.getCurrentLayer() != Assets::LAYER_TILE3 &&
+                _assets.getCurrentLayer() != Assets::LAYER_TILE4) {
             _assets.setCurrentLayer(Assets::LAYER_TILE1);
         }
          _ui->mapView->createSelectionItemGroup();

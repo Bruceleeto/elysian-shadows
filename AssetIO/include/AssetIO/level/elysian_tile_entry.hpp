@@ -29,11 +29,17 @@
 #define ELYSIAN_TILE_ENTRY_BLOCKED_BIT_POS 21
 #define ELYSIAN_TILE_ENTRY_BLOCKED_BIT_MASK 1u
 
+// Per placed surface: zero keeps old maps solid by default.
+#define ELYSIAN_TILE_ENTRY_COLLISION_OFF_BIT_POS 22
+#define ELYSIAN_TILE_ENTRY_COLLISION_OFF_BIT_MASK 1u
+
 namespace elysian {
     struct TileEntry {
         TileEntry(void);
         TileEntry(const uint32_t val);
 
+        bool                    getSolid(void) const { return getIndex()!=0 && !(value & (1u<<ELYSIAN_TILE_ENTRY_COLLISION_OFF_BIT_POS)); }
+        void                    setSolid(bool solid) { value = solid ? value & ~(1u<<ELYSIAN_TILE_ENTRY_COLLISION_OFF_BIT_POS) : value | (1u<<ELYSIAN_TILE_ENTRY_COLLISION_OFF_BIT_POS); }
         bool                    getBlocked(void) const;
         void                    setBlocked(bool blocked);
 

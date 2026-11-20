@@ -62,12 +62,13 @@ void GLMapSystemCrtp::deactivateArea(void) {
    // gyVidVertexBatchEnd();
 }
 
-void GLMapSystemCrtp::_orphanVbo(void) {
+void GLMapSystemCrtp::_orphanVbo(std::size_t indexCount) {
+    if(indexCount==0) return;
 #ifdef GYRO_GLAL
   //  if(!_elements) return;
     //glFlushMappedBufferRange(GL_ELEMENT_ARRAY_BUFFER, _lastOffset, );
   //  glFlushBuffer
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE, nullptr, ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*indexCount, nullptr, ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE);
 #endif
 }
 

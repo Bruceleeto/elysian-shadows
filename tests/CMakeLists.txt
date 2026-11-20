@@ -96,3 +96,39 @@ target_include_directories(blocked_tiles PRIVATE ${PROJECT_SOURCE_DIR}/ESToolkit
 target_link_libraries(blocked_tiles PRIVATE libGyroKinetic Qt6::Gui)
 target_compile_options(blocked_tiles PRIVATE -Werror)
 add_test(NAME blocked_tiles COMMAND blocked_tiles)
+
+# Verify camera proportions without launching the game or creating a GL context.
+add_executable(camera_projection camera_projection.cpp)
+target_include_directories(camera_projection PRIVATE ${PROJECT_SOURCE_DIR}/ESGamma/include)
+target_link_libraries(camera_projection PRIVATE libGyro)
+target_compile_options(camera_projection PRIVATE -Werror)
+add_test(NAME camera_projection COMMAND camera_projection)
+
+# Preserve the small bank/stair fixture independently of the editable test level.
+add_executable(terrain_motion terrain_motion.cpp ${PROJECT_SOURCE_DIR}/AssetIO/source/level/elysian_tile.cpp)
+target_include_directories(terrain_motion PRIVATE ${PROJECT_SOURCE_DIR}/AssetIO/include ${PROJECT_SOURCE_DIR}/ESGamma/include)
+target_link_libraries(terrain_motion PRIVATE libGyroKinetic)
+target_compile_options(terrain_motion PRIVATE -Werror)
+add_test(NAME terrain_motion COMMAND terrain_motion WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+set_tests_properties(terrain_motion PROPERTIES SKIP_RETURN_CODE 77)
+add_test(NAME prototype_collision COMMAND terrain_motion --prototype WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+set_tests_properties(prototype_collision PROPERTIES SKIP_RETURN_CODE 77)
+
+find_package(Python3 QUIET COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME terrain_layout COMMAND ${Python3_EXECUTABLE}
+        ${PROJECT_SOURCE_DIR}/tools/create_terrain_reference.py)
+    set_tests_properties(terrain_layout PROPERTIES SKIP_RETURN_CODE 77)
+endif()
+
+add_executable(map_layers map_layers.cpp ${PROJECT_SOURCE_DIR}/AssetIO/source/level/elysian_tile.cpp)
+target_include_directories(map_layers PRIVATE ${PROJECT_SOURCE_DIR}/AssetIO/include ${PROJECT_SOURCE_DIR}/ESToolkit/ESToolkit/include)
+target_link_libraries(map_layers PRIVATE libGyroKinetic Qt6::Gui)
+target_compile_options(map_layers PRIVATE -Werror)
+add_test(NAME map_layers COMMAND map_layers WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+add_executable(terrain_geometry terrain_geometry.cpp)
+target_include_directories(terrain_geometry PRIVATE ${PROJECT_SOURCE_DIR}/AssetIO/include)
+target_link_libraries(terrain_geometry PRIVATE libGyroKinetic)
+target_compile_options(terrain_geometry PRIVATE -Werror)
+add_test(NAME terrain_geometry COMMAND terrain_geometry)

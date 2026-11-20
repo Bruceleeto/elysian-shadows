@@ -51,6 +51,7 @@ private:
     bool                            _entityDrag             = false;
     QPoint                          _hover3DTile{-1,-1};
     bool                            _hover3DStanding=false;
+    bool                            _painting3D=false;
     bool                            _blockedPaint = false;
     BlockedPaintStroke<TkArea>*      _blockedStroke = nullptr;
     Qt::MouseButton                 _blockedButton = Qt::NoButton;
@@ -114,6 +115,7 @@ public:
     void selectAll(void);
     void setBlockedPaint(bool enabled);
     void set3DHoverTile(QPoint tile, bool standing);
+    void set3DPaintActive(bool active);
     void selectEraserTile(void);
     void deleteSelection(void);
 

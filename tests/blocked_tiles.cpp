@@ -4,6 +4,11 @@
  */
 #include <AssetIO/level/elysian_tile_collision.hpp>
 #include <ESToolkit/core/tk_blocked_paint_stroke.h>
+#include <ESToolkit/core/tk_3d_paint_stroke.h>
+#include <ESToolkit/core/tk_tile_placement.h>
+#include <ESToolkit/core/tk_3d_tile_brush.h>
+#include <gl/gyro_video_gl.h>
+#include <map>
 #include <libGyro-Kinetic/gyro_kinetic_collision.h>
 #include <libGyro-Kinetic/gyro_kinetic_contact.h>
 #include <libGyro-Kinetic/gyro_kinetic_kinetic.h>
@@ -29,6 +34,19 @@ struct Map {
     void endMapUpdate() {}
     void paint(unsigned layer,int x,int y,TileEntry entry) { at(layer,x,y)=elysian::paintTileEntry(entry,at(layer,x,y),layer); }
 };
+// Ordinary tile colliders retain their existing elevation/orientation rules.
+template<std::size_t N>
+inline Tile::COLLIDER_TYPE legacyTileCollider(const TileEntry (&entries)[N], const Tile* types, unsigned elevation, unsigned count=N) {
+    auto result = Tile::COLLIDER_NONE;
+    for(unsigned layer=0;layer<count;++layer) {
+        const auto entry=entries[layer];
+        if(entry.getElev() != elevation) continue;
+        const auto shape = Tile::reorientCollider(types[entry.getIndex()].colliderType, entry.getOrient());
+        result = Tile::combineColliders(result, shape);
+    }
+    return result;
+}
+
 static Tile types[2];
 struct Hit { bool blocked=false; float depth=0; GYVector2 correction{}; };
 // Feed an independently specified map-space footprint into the runtime query,
@@ -84,11 +102,11 @@ static Hit projectedContact(const Map& map,float x,float mapY,float z,bool chara
                     if(col<0 || col>=Map::width || mapRow<0 || mapRow>=Map::height) continue;
                     TileEntry entries[3];
                     for(unsigned l=0;l<3;++l) entries[l]=map.getTileEntry(l,col,mapRow);
-                    auto shape=tileMask ? elysian::tileCollider(entries,types,elev) : Tile::COLLIDER_NONE;
+                    auto shape=tileMask ? legacyTileCollider(entries,types,elev) : Tile::COLLIDER_NONE;
                     if(legacyBarriers && character && entries[0].getBlocked()) shape=Tile::COLLIDER_FULL;
                     if(shape==Tile::COLLIDER_NONE) continue;
                     check(shape==Tile::COLLIDER_FULL,"fixture uses full-square colliders");
-                    box(col*32.0f,row*32.0f-(z-first*32));
+                    box(col*32.0f,row*32.0f-(legacyBarriers ? z-first*32 : 0.0f));
                 }
             }
         }
@@ -222,7 +240,190 @@ static void regionShapesRegression() {
     std::printf("blocked regions: %u overlapping positions resolved across rows, columns, corners, holes and rotated bodies\n",checked);
 }
 
+// The stroke owns normal per-layer commands. This in-memory adapter exercises
+// its grouping/live writes without constructing an editor engine or loading assets.
+class MemoryTileCommand {
+public:
+    MemoryTileCommand(Map& map,int layer):_map(map),_layer(layer) {}
+    void setCombine(bool) {}
+    bool addTile(QPoint point,TileEntry after) {
+        if(point.x()<0 || point.y()<0 || point.x()>=Map::width || point.y()>=Map::height) return false;
+        const auto key=std::make_pair(point.x(),point.y());
+        auto [it,inserted]=_changes.emplace(key,std::make_pair(_map.getTileEntry(_layer,point.x(),point.y()),after));
+        if(!inserted) it->second.second=after;
+        return true;
+    }
+    void undo() { for(const auto& [p,data]:_changes) _map.paint(_layer,p.first,p.second,data.first); }
+    void redo() { for(const auto& [p,data]:_changes) _map.paint(_layer,p.first,p.second,data.second); }
+private:
+    Map& _map;
+    int _layer;
+    std::map<std::pair<int,int>,std::pair<TileEntry,TileEntry>> _changes;
+};
+static void paint3DChecks() {
+    Map map; QUndoStack history;
+    TileEntry floor; floor.setIndex(1); floor.setElev(10); floor.setBlocked(true);
+    TileEntry roof; roof.setIndex(2); roof.setElev(14);
+    map.at(0,2,3)=floor; map.at(1,2,3)=roof;
+    const auto baseline=map.tiles;
+    using Stroke=TilePaint3DStroke<MemoryTileCommand>;
+    const auto stroke=[&](bool erase) {
+        return std::make_unique<Stroke>(erase,
+            [&](int layer){return std::make_unique<MemoryTileCommand>(map,layer);},
+            [&](int layer,QPoint p){return map.getTileEntry(layer,p.x(),p.y());},
+            [&](int layer,QPoint p,TileEntry value){map.paint(layer,p.x(),p.y(),value);});
+    };
+    const auto resolve=[&](AreaPreviewFace face,bool erase=false) {
+        std::array<TilePlacementSlot,3> slots;
+        for(unsigned l=0;l<3;++l) { const auto entry=map.getTileEntry(l,face.x,face.y); slots[l]={entry.getIndex()!=0,int(entry.getElev()),int(entry.getPlane())}; }
+        return resolveTilePlacement(face,slots,1,erase);
+    };
+    TileEntry brush; brush.setIndex(9); brush.setElev(19); brush.setPlane(GY_RECT_PLANE_FRONT); brush.setOrient(GY_RECT_TEX_ORIENT_FLIP_HORIZ);
+    auto destination=resolve({2,3,0,10,0});
+    check(destination.action==TilePlacementAction::Repaint && destination.face.layer==0,"water repaint ignores the unrelated roof in the preferred layer");
+    auto paint=stroke(false); check(paint->paint(destination.face,brush),"repaint existing surface");
+    check(!paint->paint(destination.face,brush),"same drag does not repaint the slot repeatedly");
+    history.push(paint.release());
+    check(map.at(0,2,3).getElev()==10 && map.at(0,2,3).getPlane()==0 && map.at(0,2,3).getBlocked() && map.at(1,2,3)==roof,
+          "water artwork changes but its geometry, blocked mark and roof remain intact");
+    const auto afterWater=map.tiles;
+    destination=resolve({2,3,0,10,1});
+    check(destination.action==TilePlacementAction::Add && destination.face.layer==2,"new wall is assigned empty storage after choosing its direction");
+    auto wall=stroke(false); check(wall->paint(destination.face,brush),"write allocated wall"); history.push(wall.release());
+    check(map.at(0,2,3)==afterWater[(3*Map::width)+2] && map.at(1,2,3)==roof && map.at(2,2,3).getPlane()==1,
+          "wall addition preserves water and roof byte for byte");
+    const auto afterWall=map.tiles;
+    history.undo(); check(map.tiles==afterWater,"undo wall restores complete map");
+    history.redo(); check(map.tiles==afterWall,"redo wall restores exact allocation");
+    destination=resolve({2,3,0,10,2});
+    check(destination.action==TilePlacementAction::Reject && destination.failure==TilePlacementFailure::Full,"fourth distinct face cannot overwrite occupied storage");
+    auto unsafe=stroke(false);
+    check(!unsafe->paint({2,3,1,10,0},brush) && unsafe->empty() && map.tiles==afterWall,
+          "write boundary independently rejects moving the roof into the water even if the resolver is bypassed");
+    auto unsafeErase=stroke(true);
+    check(!unsafeErase->paint({2,3,1,10,0},brush) && unsafeErase->empty() && map.tiles==afterWall,
+          "stale erase cannot delete a different surface");
+    destination=resolve({2,3,2,10,1},true);
+    auto erase=stroke(true); check(erase->paint(destination.face,brush),"erase allocated wall"); history.push(erase.release());
+    check(map.tiles==afterWater,"erasing wall leaves water and roof untouched");
+    history.undo(); check(map.tiles==afterWall,"undo erase restores all entries");
+    history.undo(); history.undo(); check(map.tiles==baseline,"whole edit sequence undoes to the original map");
+    history.redo(); history.redo(); check(map.tiles==afterWall,"whole edit sequence redoes exactly");
+    // Use the unchanged map.bin layout for a complete round trip after editing.
+    FILE* file=std::tmpfile(); check(file!=nullptr,"temporary map round trip");
+    const char names[100]={}; const uint16_t size[]={Map::width,Map::height};
+    check(std::fwrite(names,sizeof names,1,file)==1 && std::fwrite(size,sizeof size,1,file)==1 &&
+          std::fwrite(map.tiles.data(),sizeof(map.tiles),1,file)==1,"save edited map with original format");
+    check(std::fseek(file,104,SEEK_SET)==0,"seek saved tiles"); Map loaded;
+    check(std::fread(loaded.tiles.data(),sizeof(loaded.tiles),1,file)==1 && loaded.tiles==afterWall,"save/load preserves every surface, plane and mark");
+    std::fclose(file);
+    std::puts("3D placement: water/roof regression, safe wall allocation, writer guards, complete undo/redo and save/load passed");
+}
+static void placementPolicyChecks() {
+    // Captured from the user's saved Loren map, independent of private assets:
+    // (50,80) has two roof entries at 14, and an empty third slot. Filling water
+    // at 10 must use that empty slot even when Layer 2 is selected.
+    const std::array<TilePlacementSlot,3> roofSlots{{{true,14,0},{true,14,0},{}}};
+    const auto water=resolveTilePlacement({50,80,0,10,0},roofSlots,1);
+    check(water.action==TilePlacementAction::Add && water.face.layer==2 && water.face.elevation==10,
+          "saved water gap allocates empty storage beneath both existing roof entries");
+    const std::array<TilePlacementSlot,3> fullSlots{{{true,13,0},{true,13,1},{true,13,1}}};
+    check(resolveTilePlacement({66,78,0,10,0},fullSlots,1).failure==TilePlacementFailure::Full,
+          "saved full square cannot silently lose roof or wall geometry");
+    constexpr std::array<TilePlacementSlot,8> cases{{{false,0,0},{true,0,0},{true,3,0},{true,0,1},{true,3,1},{true,3,2},{true,3,3},{true,3,4}}};
+    unsigned count=0;
+    for(const auto& a:cases) for(const auto& b:cases) for(const auto& c:cases) {
+        const std::array<TilePlacementSlot,3> slots{a,b,c};
+        for(int height:{0,3,14}) for(int plane=0;plane<7;++plane) for(int preferred=0;preferred<3;++preferred) for(int source=0;source<3;++source) {
+            const AreaPreviewFace face{2,3,source,height,plane};
+            const auto placement=resolveTilePlacement(face,slots,preferred);
+            bool matching=false,free=false;
+            for(const auto& slot:slots) {free|=!slot.occupied;matching|=slot.occupied && slot.elevation==height && slot.plane==plane;}
+            if(placement.action==TilePlacementAction::Repaint) {
+                const auto& slot=slots[placement.face.layer];
+                check(slot.occupied && slot.elevation==height && slot.plane==plane,"repaint preserves geometry in every allocation combination");
+            } else if(placement.action==TilePlacementAction::Add) check(!slots[placement.face.layer].occupied && !matching,"new geometry uses only empty storage and never duplicates an existing face");
+            else check(!matching && !free && placement.failure==TilePlacementFailure::Full,"rejection occurs only at actual capacity");
+            const auto erase=resolveTilePlacement(face,slots,preferred,true);
+            const bool exists=slots[source].occupied && slots[source].elevation==height && slots[source].plane==plane;
+            check((erase.action==TilePlacementAction::Erase)==exists,"erase targets exactly the requested existing surface");
+            ++count;
+        }
+    }
+    std::printf("placement policy: %u allocation/geometry cases passed\n",count);
+}
+
+static void brushChecks() {
+    // Check stamp adjacency against the renderer's actual vertices, including
+    // left/right walls where multiple faces need slots in the same saved square.
+    for(int plane=0;plane<7;++plane) {
+        const AreaPreviewFace anchor{3,5,0,8,plane};
+        const auto world=[](const AreaPreviewFace& f,int corner) {
+            const auto v=gyTilePlaneVerts[f.plane][corner];
+            return std::array<float,3>{f.x+v.x,f.y+f.elevation+v.y,f.elevation+v.z};
+        };
+        check(world(tileBrushFace3D(anchor,1,0),0)==world(anchor,1),"brush columns join real rendered face edges on every plane");
+        check(world(tileBrushFace3D(anchor,0,1),0)==world(anchor,2),"brush rows join real rendered face edges on every plane");
+    }
+    Map map; QUndoStack history;
+    TileEntry roof; roof.setIndex(99); roof.setElev(14); map.at(1,2,3)=roof;
+    map.setBlocked({2,3},true);
+    const auto original=map.tiles;
+    TileBrush3D brush; brush.width=2; brush.height=2;
+    for(int y=0;y<2;++y) for(int x=0;x<2;++x) {
+        TileEntry e; e.setIndex(10+y*2+x); e.setOrient(GY_RECT_TEX_ORIENT_FLIP_HORIZ);
+        brush.cells.push_back({x,y,e});
+    }
+    using Stroke=TilePaint3DStroke<MemoryTileCommand>;
+    auto stroke=std::make_unique<Stroke>(false,
+        [&](int layer){return std::make_unique<MemoryTileCommand>(map,layer);},
+        [&](int layer,QPoint p){return map.getTileEntry(layer,p.x(),p.y());},
+        [&](int layer,QPoint p,TileEntry entry){map.paint(layer,p.x(),p.y(),entry);});
+    const auto plan=[&](const TileBrush3D& b,AreaPreviewFace f) {
+        return planTileBrush3D(b,f,Map::width,Map::height,0,[&](int layer,int x,int y){return map.getTileEntry(layer,x,y);});
+    };
+    const auto apply=[&](const TileBrushPlan3D& p) {
+        if(!p.valid()) return;
+        for(const auto& tile:p.tiles) stroke->paint(tile.face,tile.entry,true);
+    };
+    auto p=plan(brush,{2,3,0,3,0}); check(p.valid() && p.tiles.size()==4,"four-tile floor brush fits around existing roof"); apply(p);
+    for(int y=0;y<2;++y) for(int x=0;x<2;++x)
+        check(map.at(0,2+x,3+y).getIndex()==unsigned(10+2*y+x) && map.at(0,2+x,3+y).getOrient()==GY_RECT_TEX_ORIENT_FLIP_HORIZ,
+              "stamp preserves artwork order and texture orientation");
+    check(map.at(0,2,3).getBlocked() && map.at(1,2,3)==roof,"stamp preserves blocked marks and other surfaces");
+    apply(plan(brush,{3,3,0,3,0}));
+    check(map.at(0,3,3).getIndex()==10,"overlapping stamps update visited cells to the latest brush artwork");
+    history.push(stroke.release()); const auto painted=map.tiles;
+    history.undo(); check(map.tiles==original,"one Undo restores entire overlapping multi-tile stroke");
+    history.redo(); check(map.tiles==painted,"Redo restores all stamp tiles and preserves unrelated entries");
+    // Last cell blocked by capacity: earlier cells must not be written either.
+    map=Map{};
+    for(int l=0;l<3;++l) {map.at(l,3,4).setIndex(99); map.at(l,3,4).setElev(10+l);}
+    const auto full=map.tiles;
+    p=plan(brush,{2,3,0,3,0});
+    check(!p.valid() && p.failure==TileBrushPlan3D::Failure::Full && p.failedFace.x==3 && p.failedFace.y==4,
+          "whole stamp refuses when its last cell is full");
+    check(map.tiles==full,"brush preflight does not write a partial stamp");
+    check(!plan(brush,{7,11,0,3,0}).valid(),"whole stamp refuses crossing the map edge");
+    check(!plan(brush,{2,3,0,0,1}).valid(),"upright stamp refuses extending below supported height");
+    map=Map{};
+    p=plan(brush,{2,3,0,3,1}); check(p.valid(),"front wall stamp fits");
+    check(p.tiles[2].face.x==2 && p.tiles[2].face.y==4 && p.tiles[2].face.elevation==2,"wall stamp rows descend along the wall");
+    p=plan(brush,{2,3,0,3,2}); check(p.valid(),"left wall stamp reserves separate slots for shared map squares");
+    check(p.tiles[1].face.y==p.tiles[2].face.y && p.tiles[1].face.layer!=p.tiles[2].face.layer,
+          "different wall elevations at the same saved square never overwrite one another");
+    TileBrush3D diagonal; diagonal.width=4; diagonal.height=4;
+    for(int i=0;i<4;++i) diagonal.cells.push_back({i,3-i,brush.cells[0].entry});
+    check(!plan(diagonal,{2,3,0,5,2}).valid(),"four wall faces requiring one saved square are rejected before painting");
+    brush.cells[1].entry.setIndex(0);
+    p=plan(brush,{2,3,0,3,0}); check(p.valid() && p.tiles.size()==3,"empty brush cells leave existing content alone");
+    std::puts("3D brush: renderer adjacency, whole-stamp preflight, overlap, undo/redo and storage reservations passed");
+}
+
 int main() {
+    brushChecks();
+    paint3DChecks();
+    placementPolicyChecks();
     recordedSeamRegression();
     regionShapesRegression();
     projectedBarrierRegression();

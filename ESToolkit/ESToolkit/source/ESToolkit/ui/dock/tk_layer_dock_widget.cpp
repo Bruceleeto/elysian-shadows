@@ -1,3 +1,9 @@
+#include <ESToolkit/AssetIO/tk_area.h>
+#include <ESToolkit/ui/widget/tk_engine_gl_scene_widget.h>
+#include <QPushButton>
+#include <ESGamma/system/elysian_engine.hpp>
+#include <QVBoxLayout>
+#include <QPointer>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -15,8 +21,54 @@ LayerDockWidget::LayerDockWidget(QWidget *parent) :
     ui(new Ui::LayerDockWidget)
 {
     ui->setupUi(this);
+    auto* fourth=new QTreeWidgetItem;
+    fourth->setText(0,tr("Tile Layer 4")); fourth->setWhatsThis(0,"13");
+    fourth->setFlags(Qt::ItemIsSelectable|Qt::ItemIsUserCheckable|Qt::ItemIsEnabled);
+    fourth->setCheckState(0,Qt::Checked);
+    ui->m_layerTreeWidget->insertTopLevelItem(1,fourth);
+    auto* add=new QPushButton(tr("Add fourth tile layer"),this);
+    add->setFocusPolicy(Qt::NoFocus);
+    widget()->layout()->addWidget(add);
+    const auto refresh=[this,fourth,add] {
+        auto* area=getAssets()->getCurrentArea();
+        const bool hasFourth=area && area->getLayerCount()==4;
+        if(fourth->isDisabled()==hasFourth) fourth->setDisabled(!hasFourth);
+        const auto* engine=getAssets()->getEngine();
+        add->setEnabled(area && !hasFourth && engine && engine->getEngineState()==elysian::System::ENGINE_ESTK_STOP);
+        if(!hasFourth && getAssets()->getCurrentLayer()==Assets::LAYER_TILE4)
+            getAssets()->setCurrentLayer(Assets::LAYER_TILE1);
+    };
+    connect(getAssets(),&Assets::areaChanged,this,[this,refresh](Area* area) {
+        disconnect(_layerUndoConnection);
+        if(area) _layerUndoConnection=connect(&area->getUndoStack(),&QUndoStack::indexChanged,this,refresh);
+        refresh();
+    });
+    connect(getAssets(),&Assets::engineUpdated,this,refresh);
+    connect(add,&QPushButton::clicked,this,[this,refresh] {
+        auto* area=getAssets()->getCurrentArea();
+        if(!area || area->getLayerCount()!=3 || !getAssets()->getEngine() ||
+           getAssets()->getEngine()->getEngineState()!=elysian::System::ENGINE_ESTK_STOP) return;
+        class AddLayer final : public QUndoCommand {
+            QPointer<TkArea> _area;
+            void apply(unsigned count) {
+                if(!_area) return;
+                EngineGLSceneWidget::makeCurrentContext();
+                if(!_area->setLayerCount(count)) { setObsolete(true); return; }
+                _area->updateScene();
+                Q_EMIT _area->mapChanged(_area,{});
+            }
+        public:
+            explicit AddLayer(TkArea* area):_area(area) { setText(QObject::tr("Add fourth tile layer")); }
+            void redo() override { apply(4); }
+            void undo() override { apply(3); }
+        };
+        area->getUndoStack().push(new AddLayer(area));
+        refresh();
+        getAssets()->setCurrentLayer(Assets::LAYER_TILE4);
+    });
+    refresh();
 	//ui->m_layerTreeWidget->expandAll();
-	ui->m_layerTreeWidget->setCurrentItem(ui->m_layerTreeWidget->topLevelItem(3));
+	ui->m_layerTreeWidget->setCurrentItem(ui->m_layerTreeWidget->topLevelItem(4));
     _Q_EMITActiveLayerChanged(4);
 
     connect(getAssets(), SIGNAL(layerChanged(LAYER_TYPE)), this, SLOT(setCurrentLayer(LAYER_TYPE)));
@@ -32,7 +84,7 @@ void LayerDockWidget::ToggleDefaultItem(bool selected)
     if(selected) {
         ui->m_layerTreeWidget->clearSelection();
 		//ui->m_layerTreeWidget->setCurrentItem(ui->m_layerTreeWidget->itemBelow(ui->m_layerTreeWidget->topLevelItem(0)));
-		ui->m_layerTreeWidget->setCurrentItem(ui->m_layerTreeWidget->topLevelItem(3));
+		ui->m_layerTreeWidget->setCurrentItem(ui->m_layerTreeWidget->topLevelItem(4));
         _Q_EMITActiveLayerChanged(4);
     }
 
@@ -46,7 +98,7 @@ void LayerDockWidget::setBlockedPaintAction(QAction* action) {
 }
 
 void LayerDockWidget::showWalkHeight() {
-    auto* decorations = ui->m_layerTreeWidget->topLevelItem(4);
+    auto* decorations = ui->m_layerTreeWidget->topLevelItem(5);
     for(int i=0; i<decorations->childCount(); ++i) {
         auto* item = decorations->child(i);
         if(item->whatsThis(0).toInt()==12) item->setCheckState(0,Qt::Checked);
@@ -123,16 +175,19 @@ void LayerDockWidget::setCurrentLayer(const LAYER_TYPE layer) {
 	int index;
 	switch(layer) {
 	case Assets::LAYER_TILE1:
-		index = 3;
+		index = 4;
 		break;
 	case Assets::LAYER_TILE2:
-		index = 2;
+		index = 3;
 		//ui->m_layerTreeWidget->clearSelection();
 		//ui->m_layerTreeWidget->topLevelItem(0)->child(1)->setSelected(true);
 		break;
 	case Assets::LAYER_TILE3:
-		index = 1;
+		index = 2;
 		break;
+    case Assets::LAYER_TILE4:
+        index = 1;
+        break;
     case Assets::LAYER_ENTITY:
 	case Assets::LAYER_LIGHT:
 		index = 0;
@@ -164,5 +219,5 @@ void LayerDockWidget::setCurrentLayer(const LAYER_TYPE layer) {
 }
 
 void LayerDockWidget::setTopLevelItemCheckState(const unsigned index, const bool value) {
-	ui->m_layerTreeWidget->topLevelItem(index)->setCheckState(0, (value)? Qt::Checked : Qt::Unchecked);
+	ui->m_layerTreeWidget->topLevelItem(index>=1 ? index+1 : index)->setCheckState(0, (value)? Qt::Checked : Qt::Unchecked);
 }

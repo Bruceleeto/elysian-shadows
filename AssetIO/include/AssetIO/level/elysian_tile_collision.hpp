@@ -11,17 +11,6 @@
 #include <limits>
 
 namespace elysian {
-// Ordinary tile colliders retain their existing elevation/orientation rules.
-inline Tile::COLLIDER_TYPE tileCollider(const TileEntry (&entries)[3], const Tile* types, unsigned elevation) {
-    auto result = Tile::COLLIDER_NONE;
-    for(const auto entry : entries) {
-        if(entry.getElev() != elevation) continue;
-        const auto shape = Tile::reorientCollider(types[entry.getIndex()].colliderType, entry.getOrient());
-        result = Tile::combineColliders(result, shape);
-    }
-    return result;
-}
-
 // Painted squares are independent of tile faces and elevation slices. Project
 // the character footprint into the overlay's map coordinates (world Y - feet Z),
 // then lift each marked square back to that exact Z, including its fractional part.

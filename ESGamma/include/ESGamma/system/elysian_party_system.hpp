@@ -13,6 +13,7 @@
 #include <ESGamma/system/elysian_system.hpp>
 #include <AssetIO/crtp/elysian_character.hpp>
 #include <AssetIO/level/elysian_event.hpp>
+#include <ESGamma/utility/elysian_party_trail.hpp>
 
 #define ELYSIAN_PARTY_SYSTEM_FOOT_STEP_SFX_TIME         0.3f
 #define ELYSIAN_PARTY_SYSTEM_DASH_PART_TIME_INTERVAL    0.5f
@@ -131,7 +132,7 @@ namespace elysian {
 		//ONLY active and can only contain up to _characterPartySize
         std::vector<PartyMember> _characterParty;
 		
-		std::vector<GYVector2> _partyPathPoint;
+		std::vector<PartyTrailPoint> _partyPathPoint;
         static const unsigned int _pointsPerCharacter = 30;
 		
 		void _resizePartyPathPoints(void);

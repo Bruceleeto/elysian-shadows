@@ -417,11 +417,11 @@ _enableDepthTest();
         for(unsigned i = 0; i < onscreenLightCount; ++i) onscreenLights |= (1<<i);
         bool multipass = (onscreenLights > GYRO_VIDEO_LIGHT_SOURCES_MAX);
 #if 0
-        const unsigned outerLayerLoopEnd = multipass? ELYSIAN_AREA_MAP_LAYERS : 1;
-        const unsigned innerLayerLoopEnd = multipass? 1 : ELYSIAN_AREA_MAP_LAYERS;
+        const unsigned outerLayerLoopEnd = multipass? static_cast<const T*>(this)->getTileLayerCount() : 1;
+        const unsigned innerLayerLoopEnd = multipass? 1 : static_cast<const T*>(this)->getTileLayerCount();
 #else
-        const unsigned outerLayerLoopEnd = multipass? 1 : ELYSIAN_AREA_MAP_LAYERS;
-        const unsigned innerLayerLoopEnd = multipass? ELYSIAN_AREA_MAP_LAYERS : 1;
+        const unsigned outerLayerLoopEnd = multipass? 1 : static_cast<const T*>(this)->getTileLayerCount();
+        const unsigned innerLayerLoopEnd = multipass? static_cast<const T*>(this)->getTileLayerCount() : 1;
 #endif
 
         if(!_isShadowPass()) _renderCustomPassAtElev(-1, NORMAL_FLAT);
@@ -516,7 +516,7 @@ _enableDepthTest();
         uint32_t totalLights = _objectRowLights[normalType][i];
          bool multipass = (totalLights > GYRO_VIDEO_LIGHT_SOURCES_MAX);
         // multipass = false;
-        const unsigned outerLayerLoopEnd = multipass? ELYSIAN_AREA_MAP_LAYERS : 1;
+        const unsigned outerLayerLoopEnd = multipass? static_cast<const T*>(this)->getTileLayerCount() : 1;
 
         for(unsigned l = 0; l < outerLayerLoopEnd; ++l) {
            // _beginObjectList();

@@ -56,6 +56,7 @@ namespace elysian {
     };
 
     class RigidBodySystem: public System {
+        std::vector<std::pair<RigidBody*, GYVector3>> _terrainStarts;
         CollisionContact*		_contactPool[ELYSIAN_RIGID_BODY_SYSTEM_CONTACT_POOL_SIZE];
         ShardPool                _shardPool		= ShardPool(ELYSIAN_RIGID_BODY_SYSTEM_SHARD_POOL_SIZE);
         Pool<ForceGenerator*>	_forces			= Pool<ForceGenerator*>(ELYSIAN_RIGID_BODY_FORCE_GENERATOR_MAX_COUNT);
@@ -76,7 +77,7 @@ namespace elysian {
             RigidBodySystem(void);
            // ~RigidBodySystem(void);
         void update(void);
-        void integrate3D(void);
+        void integrate3D(bool afterContacts=false);
 
         unsigned getVelResIterUsed(void) const;
 

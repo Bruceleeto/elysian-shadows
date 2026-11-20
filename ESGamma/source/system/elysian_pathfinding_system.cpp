@@ -37,7 +37,7 @@ void PathfindingSystem::findAllPathsTo(const unsigned short x,
 
     // Check for collider
     bool collidable = false;
-    for (int layer = 0; layer < 3; ++layer) {
+    for (unsigned layer = 0; layer < mCurrentArea->getLayerCount(); ++layer) {
       if (mCurrentLevel->getTile(mCurrentArea->getTileEntry(
                                                    layer, current->PosX,
                                                    current->PosY).getIndex())

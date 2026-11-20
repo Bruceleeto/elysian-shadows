@@ -461,6 +461,7 @@ void MapView::_finishBlockedStroke() {
 }
 
 void MapView::mouseMoveEvent(QMouseEvent *event) {
+    if(_painting3D || !isVisible()) { if(event) event->accept(); return; }
     if(_canPaintBlocked() && !_panning) {
         if(event) { _viewMousePos=event->position().toPoint(); _updateSceneMousePos(); }
         if(event && _blockedStroke) _paintBlocked(event->position().toPoint());
@@ -588,9 +589,21 @@ void MapView::_forceSceneUpdate(void) {
     if(viewport()) viewport()->update();
 }
 
+void MapView::set3DPaintActive(bool active) {
+    _painting3D=active;
+    if(!active || !getCurrentArea()) return;
+    disableSelectionPlacementMerge();
+    EngineGLSceneWidget::makeCurrentContext();
+    // The 2D brush preview temporarily writes tiles. Restore them before taking
+    // the 3D stroke's undo snapshot, without letting onMapChange reapply it.
+    getCurrentArea()->setEmitMapChange(false);
+    _curUndoItem->clearEntries();
+    getCurrentArea()->setEmitMapChange(true);
+}
+
 void MapView::set3DHoverTile(QPoint tile, bool standing) {
     _hover3DTile=tile; _hover3DStanding=standing;
-    if(tile.x()>=0 && getAssets()->getEngine() &&
+    if(isVisible() && tile.x()>=0 && getAssets()->getEngine() &&
        getAssets()->getEngine()->getEngineState()==elysian::System::ENGINE_ESTK_STOP) {
         auto* camera=getAssets()->getEngine()->getCameraSys();
         const GYVector3 center{tile.x()*32.0f,tile.y()*32.0f,0};
@@ -912,7 +925,7 @@ void MapView::_registerDropEventCallbacks(void) {
 
             elysian::TileEntry tileEntries[ELYSIAN_AREA_MAP_LAYERS];
            int highestElev = 0;
-           for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS; ++i) {
+           for(unsigned i = 0; i < getAssets()->getCurrentArea()->getLayerCount(); ++i) {
                tileEntries[i] = getAssets()->getCurrentArea()->getTileEntry(QPoint(scenePos.x()/32, scenePos.y()/32), (Assets::LAYER_TYPE)i);
                if(tileEntries[i].getElev() > 0 && getAssets()->getCurrentLevel()->getTile(tileEntries[i].getIndex())->getStandOn()) {
                     highestElev = tileEntries[i].getElev();

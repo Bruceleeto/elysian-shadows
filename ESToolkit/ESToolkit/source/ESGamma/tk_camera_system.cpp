@@ -26,13 +26,15 @@ void TkCameraSystem::setCurrentIndex(const unsigned index) {
 }
 
 void TkCameraSystem::onAreaChanging(Area *const area) {
-    //Store current keyframe state within old area (if there was one)
+    // Area keyframes belong to the normal 2D camera. The debug camera is
+    // temporarily pushed above it; loading a default area frame into that
+    // camera replaces its viewing direction with zero and collapses the view.
+    auto* areaCamera = isDebug() && _depth > 0 ? _states[_depth-1] : _curState;
+    auto& frame = *static_cast<elysian::CameraKeyFrame*>(areaCamera);
     if(_curArea) {
-        _curArea->setCameraKeyFrame(getKeyFrame());
+        _curArea->setCameraKeyFrame(frame);
     }
-
-    //Load new keyframe state stored in new area (if there is one)
     if(area) {
-        moveToKeyFrame(area->getCameraKeyFrame());
+        frame = area->getCameraKeyFrame();
     }
 }

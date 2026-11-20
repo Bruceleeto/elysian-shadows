@@ -149,26 +149,6 @@ void TileSelectable::populateModel(void) {
         item->setFlags(Qt::ItemIsEnabled);
         pushLabel("Tile Group", item);
 
-        item = _groupCol = new PropertyStandardItem<QString, TileSelectable>(this,
-                                                                        &TileSelectable::getColliderString,
-                                                                        &TileSelectable::setColliderString,
-                                                                        UndoItem::TILE_GROUP_COLLIDER,
-                                                                        nullptr,
-                                                                        &TileSelectable::updateColliderIcon);
-
-        item->setIcon(ElysianTileWrapper::getColliderIconFromString(getColliderString()));
-        addProperty("collider", item);
-
-
-        item = _groupStandOn = new PropertyStandardItem<bool, TileSelectable>(this,
-                                                                            &TileSelectable::getStandOn,
-                                                                            &TileSelectable::setStandOn);
-        item->setEditable(false);
-        item->setCheckState(getStandOn()? Qt::Checked : Qt::Unchecked);
-        item->setCheckable(true);
-        static_cast<PropertyStandardItem<bool, TileSelectable>*>(item)->unignoreCheck();
-        addProperty("Stand on", item);
-
         item = _groupTrans = new PropertyStandardItem<bool, TileSelectable>(this,
                                                                             &TileSelectable::getTransparency,
                                                                             &TileSelectable::setTransparency);
@@ -212,20 +192,6 @@ void TileSelectable::populateModel(void) {
             item->setIcon(_level->getTileImage(tileIndex)->getIcon());
             pushLabel("Tile", item);
 
-                //Add collider type property
-                item = new PropertyStandardItem<QString, ElysianTileWrapper, true>(curTileWrapper,
-                                                                                   &ElysianTileWrapper::getColliderString,
-                                                                                   &ElysianTileWrapper::setColliderString,
-                                                                                   UndoItem::TILE_COLLIDER,
-                                                                                   &_area->getUndoStack(),
-                                                                                   &ElysianTileWrapper::updateColliderIcon);
-                item->setIcon(ElysianTileWrapper::getColliderIconFromEnum((ElysianTileWrapper::COLLIDER_TYPE)curTile->getColliderType()));
-                if(tileIndex == 0) item->setEditable(false);
-                if(_groupCol) _groupCol->addChildItem(static_cast<ESTkStandardItem*>(item));
-                addProperty("collider", item);
-
-                //addProperty("col int", new PropertyStandardItem<unsigned, elysian::Tile>(curTile, &elysian::Tile::getColliderType, &elysian::Tile::setColliderType));
-
                 item = new PropertyStandardItem<bool, elysian::Tile, true>(curTile,
                                                                                 &elysian::Tile::getAnimated,
                                                                                 &elysian::Tile::setAnimated,
@@ -257,20 +223,6 @@ void TileSelectable::populateModel(void) {
                     addProperty("time", item);
 
                 popLabel();
-
-                item = new PropertyStandardItem<bool, elysian::Tile, true>(curTile,
-                                                                                    &elysian::Tile::getStandOn,
-                                                                                    &elysian::Tile::setStandOn,
-                                                                                    UndoItem::TILE_STAND_ON,
-                                                                                    &_area->getUndoStack());
-                item->setEditable(false);
-                item->setCheckState(curTile->getStandOn()? Qt::Checked : Qt::Unchecked);
-                if(tileIndex != 0) {
-                    item->setCheckable(true);
-                    static_cast<PropertyStandardItem<bool, elysian::Tile, true>*>(item)->unignoreCheck();
-                }
-                if(_groupStandOn) _groupStandOn->addChildItem(static_cast<ESTkStandardItem*>(item));
-                addProperty("Stand on", item);
 
                 item = new PropertyStandardItem<bool, elysian::Tile, true>(curTile,
                                                                                     &elysian::Tile::getTransparency,

@@ -43,6 +43,7 @@
 #include <ESToolkit/ui/dialog/tk_task_monitor_dialog.h>
 #include <ESToolkit/ui/dock/tk_camera_dock_widget.h>
 #include <ESToolkit/ui/widget/tk_selection_scene.h>
+#include <ESToolkit/ui/widget/tk_area_preview.h>
 #include <ESToolkit/core/tk_file_utilities.h>
 #include <ESToolkit/ESGamma/tk_render_system.h>
 
@@ -782,7 +783,13 @@ void ESToolkit::on_actionBloom_toggled(bool arg1)
 
 void ESToolkit::on_actionSelect_Eraser_triggered()
 {
-    _ui->mapView->selectEraserTile();
+    auto* preview=findChild<QOpenGLWidget*>("map3DView");
+    if(preview && preview->isVisible()) {
+        static_cast<AreaPreview*>(preview)->setTool(AreaPreview::Tool::Erase);
+        preview->setFocus(Qt::ShortcutFocusReason);
+    } else {
+        _ui->mapView->selectEraserTile();
+    }
 }
 
 void ESToolkit::on_actionDelete_Selection_triggered()

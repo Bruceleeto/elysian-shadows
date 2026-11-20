@@ -1,3 +1,4 @@
+#include <AssetIO/level/elysian_map_format.hpp>
 /*
  * Copyright (c) 2013-2026 Elysian Shadows Team
  * SPDX-License-Identifier: MIT
@@ -157,21 +158,42 @@ AreaBase::~AreaBase(void) {
 }
 
 void AreaBase::allocMap(void) {
-    tiles = (TileEntry *)malloc(sizeof(TileEntry)*width*height*ELYSIAN_AREA_MAP_LAYERS);
+    tiles = static_cast<TileEntry*>(calloc(std::size_t(width)*height*_layerCount,sizeof(TileEntry)));
+    if(!tiles) { tileEntryCount=layerEntryCount=0; return; }
+    for(std::size_t i=0;i<std::size_t(width)*height*_layerCount;++i) new (&tiles[i]) TileEntry();
     tileLayer2 = tiles + width*height;
     tileLayer3 = tiles + width*height*2;
-    tileEntryCount = width*height*ELYSIAN_AREA_MAP_LAYERS;
+    tileEntryCount = width*height*_layerCount;
     layerEntryCount = width*height;
+}
+
+bool AreaBase::setLayerCount(unsigned count) {
+    if(count==_layerCount) return true;
+    if((count!=mapformat::LegacyLayers && count!=mapformat::MaxLayers) || !tiles) return false;
+    if(count<_layerCount) for(unsigned i=layerEntryCount*count;i<tileEntryCount;++i)
+        if(tiles[i].getValue()) return false;
+    auto* next=static_cast<TileEntry*>(calloc(std::size_t(layerEntryCount)*count,sizeof(TileEntry)));
+    if(!next) return false;
+    for(std::size_t i=0;i<std::size_t(layerEntryCount)*count;++i) new (&next[i]) TileEntry();
+    std::copy_n(tiles,layerEntryCount*std::min(count,_layerCount),next);
+    freeMap(); tiles=next; _layerCount=count;
+    tileEntryCount=layerEntryCount*_layerCount;
+    tileLayer2=tiles+layerEntryCount; tileLayer3=tiles+2*layerEntryCount;
+    if(activated) { freeVbo(); populateVbo(); }
+    return true;
 }
 
 void AreaBase::freeMap(void) {
     free(tiles);
+    tiles = tileLayer2 = tileLayer3 = nullptr;
 }
 
 void AreaBase::resizeMap(const unsigned w, const unsigned h) {
-    TileEntry *ntiles = (TileEntry *)malloc(sizeof(TileEntry)*w*h*ELYSIAN_AREA_MAP_LAYERS);
+    if(!w || !h || w>ELYSIAN_AREA_MAP_WIDTH || h>ELYSIAN_AREA_MAP_HEIGHT) return;
+    TileEntry *ntiles = (TileEntry *)malloc(sizeof(TileEntry)*w*h*_layerCount);
 
-    for(unsigned i = 0; i < w*h*ELYSIAN_AREA_MAP_LAYERS; ++i) {
+    if(!ntiles) return;
+    for(unsigned i = 0; i < w*h*_layerCount; ++i) {
         new (&ntiles[i]) TileEntry();
     }
 
@@ -180,7 +202,7 @@ void AreaBase::resizeMap(const unsigned w, const unsigned h) {
 
     for(unsigned y = 0; y < endY; ++y)
         for(unsigned x = 0; x < endX; ++x) {
-            for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS; ++i)
+            for(unsigned i = 0; i < _layerCount; ++i)
                 ntiles[i*w*h+y*w+x] = getTileEntry(i, x, y);
         }
 
@@ -191,7 +213,7 @@ void AreaBase::resizeMap(const unsigned w, const unsigned h) {
     tileLayer3      = tiles + w*h*2;
     width           = w;
     height          = h;
-    tileEntryCount   = w*h*ELYSIAN_AREA_MAP_LAYERS;
+    tileEntryCount   = w*h*_layerCount;
     layerEntryCount = w*h;
 
     //gotta repopulate map VBO
@@ -213,7 +235,7 @@ void AreaBase::vboEntryFromTileEntry(GYVertex * const vboEntry, const TileEntry 
 
     const GYTexCoord2*const coords = gyVidTexCoordArrayFromFrame(&level->tileSheet->_coord->texCoord[index],
                                                                        texOrient);
-    const GYVector4*const localVerts = glalRectVerts[planeType];
+    const GYVector4*const localVerts = gyTilePlaneVerts[planeType];
     GYVector4 worldVerts[4];
 
     const GYVector3*const tangent = &glalRectTangents[texOrient];
@@ -280,7 +302,7 @@ bool AreaBase::load(const char *const dir) {
 
     strcpy(buffer, dir);
     strcat(buffer, ELYSIAN_AREA_MAP_PATH);
-    success &= loadMap(buffer);
+    if(!loadMap(buffer)) { dbgpop(); return false; }
 
     strcpy(buffer, dir);
     strcat(buffer, ELYSIAN_AREA_TABLE_PATH);
@@ -327,59 +349,58 @@ bool AreaBase::save(const char *const dir) {
 }
 
 bool AreaBase::loadMap(const char *const filename) {
-    GYFile *fp;
-    dbgprintf("Area::LoadMap(%s)", filename);
-    dbgpush();
-
-    if (!gyFileOpen(filename, "rb", &fp)) {
-        Debug::printf(Debug::LOG_ERROR, "FAILURE!");
-        dbgpop();
+    GYFile* fp=nullptr;
+    if(!gyFileOpen(filename,"rb",&fp)) return false;
+    const auto read=[fp](void* data,std::size_t size) {
+        std::size_t actual=0;
+        return gyFileRead(fp,data,size,&actual) && actual==size;
+    };
+    mapformat::Header header;
+    long size=0;
+    const bool valid=mapformat::readHeader(read,header) &&
+        gyFileSeek(fp,0,SEEK_END) && gyFileTell(fp,&size) &&
+        size>=0 && std::size_t(size)==header.bytes+header.entries()*4 &&
+        gyFileSeek(fp,static_cast<off_t>(header.bytes),SEEK_SET);
+    if(!valid) {
+        gyFileClose(&fp);
+        Debug::printf(Debug::LOG_ERROR,"Invalid or unsupported map: %s",filename);
         return false;
     }
-
-    gyFileRead(fp, string, sizeof string, nullptr);
-    gyFileRead(fp, string, sizeof string, nullptr);
-    gyFileRead(fp, &width, sizeof width, nullptr);
-    gyFileRead(fp, &height, sizeof height, nullptr);
-
-    allocMap();
-
-    gyFileRead(fp, tiles, sizeof(TileEntry) * width * height * ELYSIAN_AREA_MAP_LAYERS, nullptr);
-
+    auto* next=static_cast<TileEntry*>(calloc(header.entries(),sizeof(TileEntry)));
+    if(!next) { gyFileClose(&fp); return false; }
+    const bool loaded=mapformat::readEntries(read,header.entries(),[next](std::size_t i,uint32_t value) {
+        new (&next[i]) TileEntry(value);
+    });
     gyFileClose(&fp);
-
-    //populateVbo();
-    dbgpop();
+    if(!loaded) { free(next); return false; }
+    const bool rebuild=vboPopulated;
+    if(rebuild) freeVbo();
+    freeMap(); tiles=next;
+    width=header.width; height=header.height; _layerCount=header.layers;
+    layerEntryCount=unsigned(width)*height; tileEntryCount=layerEntryCount*_layerCount;
+    tileLayer2=tiles+layerEntryCount; tileLayer3=tiles+2*layerEntryCount;
+    std::memcpy(string,header.name.data(),sizeof string); string[sizeof string-1]=0;
+    if(rebuild) populateVbo();
     return true;
 }
 
 bool AreaBase::saveMap(const char *const filename) {
-    dbgprintf("Area::SaveMap(%s)", filename);
-    dbgpush();
-
-    /*
-     * This method should only ever be called from
-     * the toolkit, so all I've done is remove the call
-     * to gyFilePath. It should be safe to leave in
-     * standard file i/o ops. - Eddie
-     */
-    FILE *file = fopen(filename, "wb");
-    if(!file) {
-        Debug::printf(Debug::LOG_WARNING, "FAILURE!");
-        dbgpop();
-        return false;
-    }
-
-    fwrite(dir, sizeof(dir), 1, file);
-    fwrite(string, sizeof(string), 1, file);
-    fwrite(&width, sizeof(width), 1, file);
-    fwrite(&height, sizeof(height), 1, file);
-
-    fwrite(tiles, sizeof(TileEntry)*width*height*ELYSIAN_AREA_MAP_LAYERS, 1, file);
-
-    fclose(file);
-    dbgpop();
-    return true;
+    mapformat::Header header;
+    header.width=width; header.height=height; header.layers=_layerCount;
+    std::memcpy(header.directory.data(),dir,sizeof dir);
+    std::memcpy(header.name.data(),string,sizeof string);
+    if(!tiles || !header.valid()) return false;
+    // A failed write must not destroy the previous map.
+    const std::string temporary=std::string(filename)+".tmp";
+    FILE* file=fopen(temporary.c_str(),"wb");
+    if(!file) return false;
+    const auto write=[file](const void* data,std::size_t size) { return fwrite(data,1,size,file)==size; };
+    bool ok=mapformat::writeHeader(write,header) &&
+        mapformat::writeEntries(write,header.entries(),[this](std::size_t i) { return tiles[i].getValue(); });
+    if(fclose(file)!=0) ok=false;
+    if(ok) ok=rename(temporary.c_str(),filename)==0;
+    if(!ok) remove(temporary.c_str());
+    return ok;
 }
 
 void AreaBase::freeVbo(void) {
@@ -398,6 +419,7 @@ void AreaBase::freeVbo(void) {
     mapIboCount = 0;
 
     for(unsigned i = 0; i < 2; ++i) {
+        std::vector<uint32_t>().swap(elementsArray[i]);
         elementsArraySize[i] = 0;
         lastElemArraySize[i] = 0;
         lastOffset[i] = 0;
@@ -439,15 +461,15 @@ void AreaBase::populateVbo(void) {
 
     glGenBuffers(1, &vertexVbo);
 
-    GYVertex* data =  //(GYVertex*)std::aligned_alloc(64, sizeof(GYVertex)*width*height*ELYSIAN_AREA_MAP_LAYERS*4);//
-    (GYVertex*)malloc(sizeof(GYVertex)*width*height*ELYSIAN_AREA_MAP_LAYERS*4);
+    GYVertex* data =  //(GYVertex*)std::aligned_alloc(64, sizeof(GYVertex)*width*height*_layerCount*4);//
+    (GYVertex*)malloc(sizeof(GYVertex)*width*height*_layerCount*4);
     GYVertex* curPtr = data;
 //	const GYTexCoord2* coords;
 
-   // for(unsigned z = 0; z < ELYSIAN_AREA_MAP_LAYERS; ++z) {
+   // for(unsigned z = 0; z < _layerCount; ++z) {
         for(unsigned y = 0; y < height; ++y) {
             for(unsigned x = 0; x < width; ++x) {
-                for(unsigned z = 0; z < ELYSIAN_AREA_MAP_LAYERS; ++z) {
+                for(unsigned z = 0; z < _layerCount; ++z) {
                     TileEntry tileEntry = getTileEntry(z, x, y);
 
                     vboEntryFromTileEntry(curPtr, &tileEntry, x, y, z);
@@ -460,7 +482,7 @@ void AreaBase::populateVbo(void) {
    // }
 
     glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GYVertex)*width*height*ELYSIAN_AREA_MAP_LAYERS*4, data, ELYSIAN_AREA_ARRAY_VBO_TYPE);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GYVertex)*width*height*_layerCount*4, data, ELYSIAN_AREA_ARRAY_VBO_TYPE);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     free(data);
 
@@ -471,12 +493,13 @@ void AreaBase::populateVbo(void) {
 
     //Per-pass VAOs whose element buffers MapSystem streams visible tiles into
     for(unsigned j = 0; j < 2; ++j) {
+        elementsArray[j].resize(std::size_t(tileEntryCount)*8);
         glGenVertexArrays(1, &vao[j]);
         gyVidVertexArrayBind(vao[j]);
 
         glGenBuffers(1, &elementVbo[j]);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementVbo[j]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE, elementsArray, ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*elementsArray[j].size(), nullptr, ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE);
 
         glBindBuffer(GL_ARRAY_BUFFER, vertexVbo);
         _mapVertexAttribs(shaders[j], j == 0);
@@ -485,7 +508,7 @@ void AreaBase::populateVbo(void) {
     //Static index buffer drawing every tile quad (4 vertices each) as one triangle
     //strip, joined by degenerate triangles: v0 v0 v1 v2 v3 v3. It only depends on the
     //map size, so it is built once here instead of every frame.
-    const uint32_t tileCount = static_cast<uint32_t>(width) * height * ELYSIAN_AREA_MAP_LAYERS;
+    const uint32_t tileCount = static_cast<uint32_t>(width) * height * _layerCount;
     std::vector<GLuint> indices(static_cast<size_t>(tileCount) * 6);
     for(uint32_t t = 0; t < tileCount; ++t) {
         const GLuint base = t * 4;
@@ -535,6 +558,7 @@ void AreaBase::activate(void) {
 }
 
 void AreaBase::setTileEntry(const unsigned l, const unsigned x, const unsigned y, const TileEntry e) {
+    if(l>=_layerCount || x>=width || y>=height || !tiles) return;
     ELYSIAN_AREA_PROTECTED_MAP_ACCESS(l*height*width + y*width + x) = e;
 
 #ifdef GYRO_GLAL

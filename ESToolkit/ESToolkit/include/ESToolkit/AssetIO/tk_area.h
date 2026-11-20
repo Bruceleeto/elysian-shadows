@@ -209,6 +209,7 @@ inline void TkArea::setTileValue(const QPoint loc, const Assets::LAYER_TYPE laye
 }
 
 inline void TkArea::setTileEntry(const QPoint loc, const Assets::LAYER_TYPE layer, const TileEntry entry) {
+    if(unsigned(layer)>=getLayerCount() || loc.x()<0 || loc.y()<0 || loc.x()>=width || loc.y()>=height) return;
     const auto oldEntry = getTileEntry(loc, layer);
     const auto newEntry = elysian::paintTileEntry(entry, oldEntry, static_cast<unsigned>(layer));
     AreaBase::setTileEntry(static_cast<unsigned>(layer), loc.x(), loc.y(), newEntry);

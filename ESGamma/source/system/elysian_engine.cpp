@@ -193,6 +193,10 @@ void Engine::update(void) {
             updateRigidBodyMonitor.resume();
             _rigidBodySystem->update();
             _rigidBodySystem->resolveContactVelocities();
+            // Entity contacts and painted barriers can push a body after its
+            // first terrain sweep. Sweep that correction too, through the same
+            // geometry, so another body cannot push it through a wall.
+            _rigidBodySystem->integrate3D(true);
             _rigidBodySystem->breakRigidBodies();
             updateRigidBodyMonitor.stop();
 

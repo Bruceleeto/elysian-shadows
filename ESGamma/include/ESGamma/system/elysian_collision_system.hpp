@@ -62,6 +62,7 @@ namespace elysian {
 			RENDER_LAYER_1,
 			RENDER_LAYER_2,
 			RENDER_LAYER_3,
+            RENDER_LAYER_4,
 			RENDER_COMBINED,
             RENDER_DISABLED,
 			RENDER_MAX
@@ -108,12 +109,8 @@ namespace elysian {
         void                    _resolveXYPenetration(CollisionContact*const contact);
 
         void                    _checkTriggers(void);
-        void                    _applyTileColliderTransform(const Tile::COLLIDER_TYPE colType) const;
 
         bool                    _detectEntityEntityCollision(Entity*const entity1, Entity*const entity2);
-        void                    _detectCollidableColliderCollision(Collidable &collidable, GYCollider &collider);
-        void                    _detectEntityTileCollisionFine(Collidable &collidable, const unsigned x, const unsigned y, const unsigned char elev);
-        void                    _detectEntityTileZCollisionCoarse(Collidable &collidable);
         void                    _detectEntityTileCollisionCoarse(Collidable &collidable, const ENTITY_TILE_CHECK checkFlag=ENTITY_TILE_CHECK_VOLUME);
 
 

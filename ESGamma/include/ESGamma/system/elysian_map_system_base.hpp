@@ -65,7 +65,7 @@ namespace elysian {
         intptr_t _lastOffset = 0;
 
         void _drawElements(void);
-        void _orphanVbo(void);
+        void _orphanVbo(std::size_t indexCount);
         void _bindArrayVbo(int buffer);
         void _setDepthPrepassState(DEPTH_PASS_STATE state);
 
@@ -85,7 +85,7 @@ namespace elysian {
     private:
         Pool<Entity*>				_onscreenEntityPool	= Pool<Entity*>(ELYSIAN_MAP_SYSTEM_ONSCREEN_ENTITY_POOL_SIZE);
         static const GYColor4		_tileColor;
-        bool _renderLayer[4];
+        bool _renderLayer[ELYSIAN_AREA_MAP_LAYERS+1];
         bool _animate;
 
 
@@ -168,6 +168,7 @@ namespace elysian {
         bool        toggleRenderLayer(const unsigned layer);
         bool        getAnimate(void) const;
         void        setAnimate(const bool v);
+        unsigned getTileLayerCount() const { return _curArea->getLayerCount(); }
         bool        getRenderTileLayer(const unsigned short int layer) const;
         void        setRenderTileLayer(const unsigned short int layer, const bool v);
 
@@ -217,7 +218,7 @@ namespace elysian {
         if(!_renderLayer[entry.layer]) return; //Don't render if this layer has been toggled off.
 
          auto& elemArraySize  = _curArea->elementsArraySize[gyVidShadowPass()];
-         auto* elemArray     = _curArea->elementsArray[gyVidShadowPass()];
+         auto* elemArray     = _curArea->elementsArray[gyVidShadowPass()].data();
 
 
        // if(!gyVidShadowPass()) {
@@ -289,7 +290,7 @@ namespace elysian {
         elemArray[elemArraySize+3]    = checkIndex(indices[3]);
         elemArraySize += 4;
 
-        if(elemArraySize + 6 >= ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE) {
+        if(elemArraySize + 6 >= _curArea->elementsArray[gyVidShadowPass()].size()) {
             flushTileBuffer();
             elemArraySize = 0;
             _curArea->lastOffset[/*gyVidShadowPass()*/0] = 0;
@@ -298,13 +299,13 @@ namespace elysian {
             _curArea->lastElemArraySize[/*gyVidShadowPass()*/0] = 0;
             gyVidVertexArrayBind(_curArea->vao[gyVidShadowPass()]);
              //   _bindArrayVbo(_curArea->vertexVbo);
-            _orphanVbo();
+            _orphanVbo(_curArea->elementsArray[gyVidShadowPass()].size());
         }
 }
 
     template<typename P, typename T, typename E>
     inline void MapSystemCrtp<P, T, E>::beginObjectList(void) {
-        if(!_renderLayer[0] && !_renderLayer[1] && !_renderLayer[2]) return; //Don't render if this layer has been toggled off.
+        if(!_renderLayer[0] && !_renderLayer[1] && !_renderLayer[2] && !_renderLayer[3]) return; //Don't render if this layer has been toggled off.
        // flushTileBuffer();
         bindTileBuffer();
     }
@@ -326,7 +327,7 @@ namespace elysian {
 
     template<typename P, typename T, typename E>
     inline void MapSystemCrtp<P, T, E>::endObjectList(void) {
-        if(!_renderLayer[0] && !_renderLayer[1] && !_renderLayer[2]) return; //Don't render if this layer has been toggled off.
+        if(!_renderLayer[0] && !_renderLayer[1] && !_renderLayer[2] && !_renderLayer[3]) return; //Don't render if this layer has been toggled off.
 
         flushTileBuffer();
         unbindTileBuffer();
@@ -336,7 +337,7 @@ namespace elysian {
     inline void MapSystemCrtp<P, T, E>::flushTileBuffer(void) {
 
         _size = _curArea->elementsArraySize[/*gyVidShadowPass()*/0];
-        _elements     = _curArea->elementsArray[/*gyVidShadowPass()*/0];
+        _elements     = _curArea->elementsArray[/*gyVidShadowPass()*/0].data();
         _lastSize = _curArea->lastElemArraySize[/*gyVidShadowPass()*/0];
         _lastOffset = _curArea->lastOffset[0];
         if(_size-_lastSize == 0) return;
@@ -412,7 +413,7 @@ break;
 
     template<typename P, typename T, typename E>
     inline unsigned MapSystemCrtp<P, T, E>::getEntityCount(void) {
-        if(!_renderLayer[3]) return 0;
+        if(!_renderLayer[ELYSIAN_AREA_MAP_LAYERS]) return 0;
         _onscreenEntityPool.clear();
         auto& entities = _curArea->entities;
 
@@ -521,7 +522,7 @@ break;
     inline MapSystemCrtp<P, T, E>::MapSystemCrtp(void):
         _animate(true)
     {
-        for(unsigned i = 0; i < 4; ++i) _renderLayer[i] = true;
+        for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS+1; ++i) _renderLayer[i] = true;
         //for(unsigned int i = 0; i < 256; ++i) _currentTile[i] = _currentObject[i] = i;
     }
 
@@ -551,7 +552,7 @@ break;
                     _animTiles[i].elapsedTime = 0.0f;
 
                     //FUCKING KILL ME!!!!!!!!!!!!!!!!!!!!!1111111
-                    for(unsigned l = 0; l < 3; ++l) {
+                    for(unsigned l = 0; l < _curArea->getLayerCount(); ++l) {
                         for(unsigned y = 0; y < getCurrentArea()->height; ++y) {
                             for(unsigned x = 0; x < getCurrentArea()->width; ++x) {
                                 if(getCurrentArea()->getTileEntry(l, x, y).getIndex() == i) {
@@ -658,7 +659,7 @@ break;
         for(int e = ELYSIAN_DEPTH_BUFFER_OBJECT_ELEVATION_MAX; e >= 0; --e) {
             for(int y = _scrStartY; y <= _scrEndY; ++y) {
                 for(int x = _scrStartX; x <= _scrEndX; ++x) {
-                    for(int l = 0; l < ELYSIAN_AREA_MAP_LAYERS; ++l) {
+                    for(unsigned l = 0; l < _curArea->getLayerCount(); ++l) {
                         if(x < 0 || y < 0) {
                             assert(0);
                             continue;

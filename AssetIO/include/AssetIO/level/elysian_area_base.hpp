@@ -16,13 +16,12 @@
 
 #define ELYSIAN_MAP_BOUNDARY_CHECKS                 false //PLEASE, GOD, TAKE ME OUT BEFORE RELEASE!!!!!!
 #define ELYSIAN_AREA_USE_INIT_LUA                   true
-#define ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE	(200*200*3*8)
 #define ELYSIAN_AREA_ARRAY_VBO_TYPE                 GL_STATIC_DRAW
 #define ELYSIAN_AREA_ELEMENT_ARRAY_VBO_TYPE         GL_STATIC_DRAW
 
 #define ELYSIAN_AREA_BGM_TRACKS     3
 #define ELYSIAN_AREA_AUX_TRACKS     2
-#define ELYSIAN_AREA_MAP_LAYERS		3
+#define ELYSIAN_AREA_MAP_LAYERS		4
 #define ELYSIAN_AREA_MAP_WIDTH		200
 #define ELYSIAN_AREA_MAP_HEIGHT		200
 #define ELYSIAN_AREA_NAME_SIZE		50
@@ -83,6 +82,11 @@ namespace elysian {
         char                        path[ELYSIAN_AREA_PATH_SIZE];
         char                        string[ELYSIAN_AREA_STRING_SIZE];	//in-game area name
 
+        unsigned getLayerCount() const { return _layerCount; }
+        bool setLayerCount(unsigned count);
+    private:
+        unsigned _layerCount = 3;
+    public:
         //map - tile layers
         //pointer to entire map (contiguous block of memory)
         TileEntry*                  tiles			= nullptr;
@@ -106,7 +110,7 @@ namespace elysian {
         bool                        vboPopulated    = false;
         bool                        activated       = false;
 
-        uint32_t                    elementsArray[2][ELYSIAN_AREA_GLAL_STRIP_INDEX_ARRAY_SIZE] __attribute__((aligned(32)));
+        std::vector<uint32_t>       elementsArray[2];
         int                         elementsArraySize[2] = {0};
         int                         lastElemArraySize[2] = {0};
         int                         lastOffset[2] = {0};
@@ -224,7 +228,8 @@ namespace elysian {
 
     // ==== INLINEZ ====
     inline TileEntry AreaBase::getTileEntry(const unsigned l, const unsigned x, const unsigned y) const {
-        return ELYSIAN_AREA_PROTECTED_MAP_ACCESS(l*height*width + y*width + x);
+        if(l>=_layerCount || x>=width || y>=height || !tiles) return TileEntry();
+        return tiles[l*layerEntryCount + y*width + x];
     }
 
 
@@ -310,7 +315,7 @@ namespace elysian {
      inline Vector4 AreaBase::getAmbientColor(void) { return Vector4(&_ambientColor); }
      inline void AreaBase::setAmbientColor(const Vector4& color) { _ambientColor = color; }
      inline unsigned AreaBase::mapLocationToVBOIndex(unsigned x, unsigned y, unsigned l) {
-        return (y*width*ELYSIAN_AREA_MAP_LAYERS + x*ELYSIAN_AREA_MAP_LAYERS + l)*4;
+        return (y*width*_layerCount + x*_layerCount + l)*4;
      }
      inline const char* AreaBase::getBgmOggByTrack(const unsigned index) const { return _bgmOggTracks[index]; }
      inline void AreaBase::setBgmOggByTrack(const unsigned index, const char* path) { strcpy(_bgmOggTracks[index], path); }

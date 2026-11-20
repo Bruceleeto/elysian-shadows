@@ -5,6 +5,7 @@
  */
 
 #include <cassert>
+#include <AssetIO/level/elysian_terrain_geometry.hpp>
 #include <ESGamma/system/elysian_rigid_body_system.hpp>
 #include <AssetIO/crtp/elysian_area.hpp>
 #include <ESGamma/system/elysian_collision_system.hpp>
@@ -483,6 +484,7 @@ void RigidBodySystem::resolveContactVelocities(void) {
 
 void RigidBodySystem::integrate(void) {
     const float deltaTime = getTimerSys()->getDeltaTime();
+    _terrainStarts.clear();
     GYVector3 worldPos;
     float damping;
 
@@ -498,9 +500,10 @@ void RigidBodySystem::integrate(void) {
     damping = 1.0f;
 
     worldPos = it->getEntity()->getCollidable()->getWorldPos();
-        for(unsigned i = 0; i < 3; ++i) accumTileDamping(it, getCurrentArea()->getTileEntry(i, (worldPos.x+16.0f)/32.0f, (worldPos.y+16.0f)/32.0f));
+        for(unsigned i = 0; i < getCurrentArea()->getLayerCount(); ++i) accumTileDamping(it, getCurrentArea()->getTileEntry(i, (worldPos.x+16.0f)/32.0f, (worldPos.y+16.0f)/32.0f));
 
         it->setTileDamping(damping);
+        _terrainStarts.emplace_back(it, it->getEntity()->_transform._pos);
         it->integrate(deltaTime);
     }
 
@@ -517,189 +520,55 @@ bool RigidBodySystem::_checkEntityEntity3D(const unsigned /*i*/) {
     return false;
 }
 
-void RigidBodySystem::integrate3D(void) {
-//	const float deltaTime = getTimerSys()->getDeltaTime();
-//	CollisionSystem*const colSys = getCollisionSys();
-    auto rigidBodies = getCurrentArea()->rigidBodies;
-
-#if 0
-
-    for(auto& it : rigidBodies) {
-        auto* collidable = it->getEntity()->getCollidable();
-
-        unsigned beforeCount = collidable->getContactCount();
-
-        if(collidable->getEntity()->transform._pos.z < 0.0f) {
-            GYVector3 vel = it->getVelocity();
-            vel.z = 0.0f;
-            //vel.y = 0.0f;
-            it->setVelocity(vel);
-            collidable->getEntity()->transform._pos.z = 0.0f;
-        } else {
-
-            GYVector3 vel = it->getVelocity();
-            if(vel.z > 0.0f) continue;
-
-            colSys->_detectEntityTileCollisionCoarse(*it->getEntity()->getCollidable(), CollisionSystem::ENTITY_TILE_CHECK_BOTTOM);
-            //We are standing ontop of a solid
-            if(beforeCount != collidable->getContactCount()) {
-                found = true;
-
-                //it->getAttrib()->setForceMask(0);
-                //move back up by normal
-                float normal =
-                        (int)(collidable->getEntity()->transform._pos.z+16.0f)/32*32 - collidable->getEntity()->transform._pos.z;
-
-                    collidable->getEntity()->transform._pos.z += normal;
-                    GYVector3 vel = it->getVelocity();
-                    vel.z = 0.0f;
-                    it->setVelocity(vel);
-                    Debug::printf(Debug::LOG_WARNING, "GOT IT");
-            //	} else {
-                    //Debug::printf(Debug::LOG_WARNING, "TOUGH SHIT - %f", normal);
-            //	}
+void RigidBodySystem::integrate3D(bool afterContacts) {
+    using terrain::Vec;
+    auto* area=getCurrentArea();
+    if(!area)return;
+    // A collision callback may have removed a body since integration. Iterate
+    // the current area, never dereference an old record after callbacks ran.
+    for(auto* rb:area->rigidBodies) {
+        const auto found=std::find_if(_terrainStarts.begin(),_terrainStarts.end(),
+            [rb](const auto& entry){return entry.first==rb;});
+        if(found==_terrainStarts.end())continue;
+        auto& start=*found;
+        if(!rb->_active)continue;
+        auto* entity=rb->getEntity();
+        auto* col=entity->getCollidable();
+        if(!col || !col->getWorldSpace())continue;
+        if(!afterContacts) {
+            col->setStackedOnGround(false);col->setRestingOnBody(false);
+        }
+        if(!col->isActive() || !col->getResolvePenetration() || !getCollisionSys()->_enabled)continue;
+        if(!(col->getAttrib()->getFlags()->getTypeAgainst().getValue() & CollisionFlags::TILE))continue;
+        const auto type=col->getAttrib()->getColliderType();
+        if(type!=GY_COLLIDER_AABB && type!=GY_COLLIDER_OBB)continue;
+        auto& pos=entity->_transform._pos;
+        const Vec movement{pos.x-start.second.x,pos.y-start.second.y,pos.z-start.second.z};
+        if(afterContacts && terrain::length(movement)<.000001f)continue;
+        col->update();
+        auto body=terrain::bodyFromVertices(col->_collider.box.worldVert);
+        const auto center=body.center;
+        body.center=body.center-movement;
+        const auto velocity=rb->getVelocity();
+        const auto result=terrain::move(area->width,area->height,area->getLayerCount(),
+            [area](unsigned l,int x,int y){return area->getTileEntry(l,x,y);},body,movement,
+            {velocity.x,velocity.y,velocity.z},col->getAttrib()->getStaticAttrib()->zCoeffOfRest,
+            entity->getCharacter()!=nullptr,ELYSIAN_RIGID_BODY_RESTING_CONTACT_ESCAPE_VELOCITY);
+        const auto correction=result.center-center;
+        pos.x+=correction.x;pos.y+=correction.y;pos.z+=correction.z;
+        rb->setVelocity({result.velocity.x,result.velocity.y,result.velocity.z});
+        col->setStackedOnGround(result.grounded || (afterContacts && col->getStackedOnGround()));
+        col->setRestingOnBody(result.grounded || (afterContacts && col->getRestingOnBody()));
+        col->update();
+        if(rb->getAttrib()->isBreakable()) {
+            const float impulse=result.verticalImpact*col->getAttrib()->getStaticAttrib()->damping.z;
+            if(impulse>=rb->getDurability()) {
+                rb->setDurability(rb->getDurability()-impulse);
+                rb->setBreakContact(nullptr);
             }
-            //else it->getAttrib()->setForceMask(1);
-
         }
-
-
-
+        start.second=pos;
     }
-
-#else
-
-
-    for(auto& it : rigidBodies) {
-
-        if(!it->_active) continue;
-        unsigned i;
-        TileEntry entry;
-        auto* collidable = it->getEntity()->getCollidable();
-
-        GYVector3 vel = it->getVelocity();
-        if(vel.z > 0.0f/* || it->getOnGround()*/) {
-            collidable->setStackedOnGround(false);
-            collidable->setRestingOnBody(false);
-            continue;
-        }
-/*
-        if(collidable->getEntity()->transform._pos.z <= 0.0f) {
-            GYVector3 vel = it->getVelocity();
-            vel.z = 0.0f;
-            //vel.y = 0.0f;
-            it->setVelocity(vel);
-            collidable->getEntity()->transform._pos.z = 0.0f;
-            return;
-        }*/
-
-
-    //	for(unsigned i = 0; i < 4; ++i) {
-        //if(found) break;
-/*
-        GYVector3 worldPos = {
-            it->getEntity()->getCollidable()->_collider.box.worldVert[i].x,
-            it->getEntity()->getCollidable()->_collider.box.worldVert[i].y,
-            it->getEntity()->getCollidable()->_collider.box.worldVert[3].z
-        };*/
-        GYVector3 worldPos = it->getEntity()->getCollidable()->getCenterWorldPos();
-        float zTop = 0.0f;
-
-        const unsigned elev = /*(worldPos.z == 0.0f)? 0 :*/ (worldPos.z)/32;
-        //float zOffset = worldPos.z - elev*32.0f;
-        worldPos.y += 32.0f;//zOffset;
-        //worldPos.y -= (worldPos.z);
-
-        /*it->getEntity()->getCollidable()->getAttrib()->getRelSize().y*
-                it->getEntity()->transform._size.y * it->getEntity()->transform._scale.y;*/
-
-
-            for(i = 0; i < 3; ++i) {
-                for(unsigned j = 0; j < 1; ++j) {
-                    //if(found) break;
-
-                entry = getCurrentArea()->getTileEntry(i, (worldPos.x+16.0f)/32, (worldPos.y)/32-elev-1);
-
-
-                //if(!(j == 0 && entry.getNormal()) && !(j == 0 && !entry.getNormal())) {
-
-
-                    if(getCurrentLevel()->getTile(entry.getIndex())->standOn) {
-
-                        if(entry.getNormal() && ((int)worldPos.y+16)/32 > ((int)worldPos.y/32)) continue; //bottom half of a normal, standon
-
-
-                        float newTop = (entry.getElev()*32 + (entry.getNormal()? 32.0f : 0.0f) );
-
-
-                        if(newTop > zTop && fabs(newTop-worldPos.z) <= 16.0f) {
-                            zTop = newTop;
-
-
-                        }
-                    }
-                //}
-                }
-
-            }
-
-        //}
-
-
-
-        //if(found) {
-                //it->getAttrib()->setForceMask(0);
-            if(collidable->getEntity()->_transform._pos.z <= zTop) {
-               //float zDiff = zTop - collidable->getEntity()->_transform._pos.z;
-                collidable->getEntity()->_transform._pos.z = zTop;
-
-                //We have to remove the same amount of yVelocity we're removing from the Z in this perspective.
-               // collidable->getEntity()->transform._pos.y -= zDiff;
-
-                GYVector3 vel = it->getVelocity();
-                vel.z *= -1.0f * collidable->getAttrib()->getStaticAttrib()->zCoeffOfRest;
-
-                //if(vel.z <= 0.0f && !it->getOnGround()) vel.y += vel.z;
-
-                if(fabs(vel.z) < ELYSIAN_RIGID_BODY_RESTING_CONTACT_ESCAPE_VELOCITY) {
-
-                    vel.z = 0.0f;
-
-                    //Debug::printf(Debug::LOG_WARNING, "Resting");
-                    collidable->getEntity()->getCollidable()->update();
-                    collidable->setStackedOnGround(true);
-                    collidable->setRestingOnBody(true);
-
-                }
-
-                it->setVelocity(vel);
-
-                //Check zImpulse for shattering
-                const float zImpulse = fabs(vel.z * collidable->getAttrib()->getStaticAttrib()->damping.z);
-                auto* rb = collidable->getEntity()->getRigidBody();
-                if(zImpulse >= rb->getDurability()) {
-                    it->setDurability(it->getDurability() - zImpulse);
-                    it->setBreakContact(nullptr);
-                }
-             //   it->getAttrib()->setForceMask(0);
-
-                //collidable->setResolvePenetration(false);
-                //it->_restingOnTile = true;
-        //	}
-
-        } else { // if(!it->getOnGround()){
-            //Debug::printf(Debug::LOG_WARNING, "Falling");
-        //	it->getAttrib()->setForceMask(1);
-            collidable->setStackedOnGround(false);
-            collidable->setRestingOnBody(false);
-            //collidable->setResolvePenetration(true);
-        //	it->_restingOnTile = false;
-
-        }
-    }
-#endif
-
-
 }
 
 void RigidBodySystem::breakRigidBodies(void) {

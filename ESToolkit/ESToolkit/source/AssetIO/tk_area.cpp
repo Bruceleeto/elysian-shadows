@@ -65,9 +65,6 @@ TkArea::TkArea(Level *const lev):
     width = height = 50;
     //Must allocate a map in case this map is to be saved before it is loaded.
     allocMap();
-    for(unsigned i = 0; i < width*height*ELYSIAN_AREA_MAP_LAYERS; ++i) {
-        new (&tiles[i]) elysian::TileEntry();
-    }
     //memset(_elysianArea.lights, 0, sizeof(elysian::LightEntry)*_elysianArea.width*_elysianArea.height);
     strcpy(dir, "untitled");
     strcpy(string, "untitled");
@@ -330,7 +327,7 @@ bool Area::saveAs(const QString path) {
 #ifdef AREA_SAVE_MAP_TILE_0_REEST_CHECK
     bool passed = true;
     qDebug() << "PERFORMING MAP TILE #0 REEST CHECK:";
-    for(unsigned i = 0; i < ELYSIAN_AREA_MAP_LAYERS; ++i) {
+    for(unsigned i = 0; i < getLayerCount(); ++i) {
         for(unsigned y = 0; y < getMapHeight(); ++y) {
             for(unsigned x = 0; x < getMapWidth(); ++x) {
                 auto artwork = getTileEntry(i,x,y);

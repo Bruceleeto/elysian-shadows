@@ -5,6 +5,7 @@
  */
 
 #include <QPainter>
+#include <common/gyro_tile_geometry.h>
 #include <ESToolkit/AssetIO/tk_map_entry.h>
 #include <ESToolkit/AssetIO/tk_level.h>
 
@@ -15,114 +16,17 @@ bool TileEntry::renderColliders = false;
 bool TileEntry::renderZTran		= false;
 bool TileEntry::renderPlane    = false;
 
-void TileEntry::renderCollider(QPainter *const painter, const elysian::Tile::COLLIDER_TYPE collider) {
-    /*static*/ const QColor fillColor(0, 0, 255, 80);
-    /*static*/ const QPointF rTriSE[3] = {
-		 QPointF(16.0f, -16.0f),
-		 QPointF(16.0f, 16.0f),
-		 QPointF(-16.0f, 16.0f)
-	 };
-    /*static*/ const QPointF rTriNE[3] = {
-		 QPointF(-16.0f, -16.0f),
-		 QPointF(16.0f, -16.0f),
-		 QPointF(16.0f, 16.0f)
-	 };
-    /*static*/ const QPointF rTriNW[3] = {
-		 QPointF(16.0f, -16.0f),
-		 QPointF(-16.0f, -16.0f),
-		 QPointF(-16.0f, 16.0f)
-	 };
-    /*static*/ const QPointF rTriSW[3] = {
-		 QPointF(-16.0f, -16.0f),
-		 QPointF(-16.0f, 16.0),
-		 QPointF(16.0f, 16.0f)
-	 };
-
-	//_pushTileFlipRotXForm(painter, orient);
-
-	switch(collider) {
-	case elysian::Tile::COLLIDER_NONE:
-		break;
-	case elysian::Tile::COLLIDER_FULL:
-		painter->fillRect(QRect(-16, -16, 32, 32), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_HALF_E:
-		painter->fillRect(QRect(0, -16, 16, 32), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_HALF_N:
-		painter->fillRect(QRect(-16, -16, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_HALF_W:
-		painter->fillRect(QRect(-16, -16, 16, 32), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_HALF_S:
-		painter->fillRect(QRect(-16, 0, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUAD_SE:
-		painter->fillRect(QRect(0, 0, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUAD_NE:
-		painter->fillRect(QRect(0, -16, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUAD_NW:
-		painter->fillRect(QRect(-16, -16, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUAD_SW:
-		painter->fillRect(QRect(-16, 0, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_L_SE:
-		painter->fillRect(QRect(0, -16, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, 0, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_L_NE:
-		painter->fillRect(QRect(0, 0, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, -16, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_L_NW:
-		painter->fillRect(QRect(-16, 0, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, -16, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_L_SW:
-		painter->fillRect(QRect(-16, -16, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, 0, 32, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUADS_SE_NW:
-		painter->fillRect(QRect(0, 0, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, -16, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_QUADS_SW_NE:
-		painter->fillRect(QRect(0, -16, 16, 16), fillColor);
-		painter->fillRect(QRect(-16, 0, 16, 16), fillColor);
-		break;
-	case elysian::Tile::COLLIDER_45DEG_SE:
-		painter->setPen(Qt::NoPen);
-		painter->setBrush(QBrush(fillColor, Qt::SolidPattern));
-		painter->drawConvexPolygon(rTriSE, 3);
-		break;
-	case elysian::Tile::COLLIDER_45DEG_NE:
-		painter->setPen(Qt::NoPen);
-		painter->setBrush(QBrush(fillColor, Qt::SolidPattern));
-		painter->drawConvexPolygon(rTriNE, 3);
-		break;
-	case elysian::Tile::COLLIDER_45DEG_NW:
-
-		painter->setPen(Qt::NoPen);
-		painter->setBrush(QBrush(fillColor, Qt::SolidPattern));
-		painter->drawConvexPolygon(rTriNW, 3);
-		break;
-	case elysian::Tile::COLLIDER_45DEG_SW:
-
-		painter->setPen(Qt::NoPen);
-		painter->setBrush(QBrush(fillColor, Qt::SolidPattern));
-		painter->drawConvexPolygon(rTriSW, 3);
-		break;
-	default:
-		Q_ASSERT(0);
-	}
-
-	//_popTileFlipRotXForm(painter, orient);
+void TileEntry::renderCollider(QPainter *const painter) const {
+    if(!getSolid() || getPlane()>=GY_RECT_PLANE_MAX)return;
+    QPointF points[4];
+    const unsigned order[4]={0,1,3,2};
+    for(unsigned i=0;i<4;++i) {
+        const auto& v=gyTilePlaneVerts[getPlane()][order[i]];
+        points[i]=QPointF(v.x*32,(v.y-v.z)*32);
+    }
+    painter->save();painter->setPen(Qt::NoPen);
+    painter->setBrush(QColor(0,0,255,80));painter->drawConvexPolygon(points,4);painter->restore();
 }
-
 
 //====NONSTATIC====
 
@@ -132,11 +36,7 @@ void TileEntry::renderDecoration(QPainter *const painter, const unsigned /*x*/, 
 
 	painter->setPen(pen);
 	//Tile attrib
-	if(renderColliders) {
-		elysian::Tile::COLLIDER_TYPE collider = elysian::Tile::reorientCollider(getCurrentLevel()->getElysianTile(getIndex())->colliderType,
-																				getOrient());
-		renderCollider(painter, collider);
-	}
+    if(renderColliders) renderCollider(painter);
 
 	//TileEntry attrib
 #if 0

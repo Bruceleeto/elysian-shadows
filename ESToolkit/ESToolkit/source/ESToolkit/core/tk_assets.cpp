@@ -138,12 +138,12 @@ Assets::~Assets(void) {
 
 void Assets::setLayerVisible(const Assets::LAYER_TYPE type, bool flag) {
     //_layerVisible[type] = flag;
-    if(type <= 3) _engine->getMapSys()->setRenderTileLayer(type, flag);
+    if(type <= LAYER_LIGHT) _engine->getMapSys()->setRenderTileLayer(type, flag);
     _layerVisible[type] = flag;
 }
 
 bool Assets::getLayerVisible(const Assets::LAYER_TYPE type) const {
-    return (type <= 2)? _engine->getMapSys()->getRenderTileLayer(type) : _layerVisible[type];
+    return (type <= LAYER_TILE4)? _engine->getMapSys()->getRenderTileLayer(type) : _layerVisible[type];
 }
 
 bool Assets::setCurrentArea(const QString path) {
@@ -426,8 +426,11 @@ Area* Assets::reloadArea(Area* area) {
         setCurrentArea(newArea);
         // Entering the area puts the party back on its start position; bring the
         // camera with them so the view doesn't stay wherever the player had fallen.
-        if(auto* leader = _engine->getPartySys()->getPartyLeader()) {
-            _engine->getCameraSys()->centerOnEntity(*leader);
+        auto* camera = _engine->getCameraSys();
+        if(auto* leader = _engine->getPartySys()->getPartyLeader(); leader && !camera->isDebug()) {
+            // centerOnEntity uses projected 2D coordinates. The debug camera
+            // follows the leader in 3D itself, retaining its viewing direction.
+            camera->centerOnEntity(*leader);
         }
    } else {
        //Force views and widgets to have correct selection

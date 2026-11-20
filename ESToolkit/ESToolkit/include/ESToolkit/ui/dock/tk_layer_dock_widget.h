@@ -44,7 +44,8 @@ protected:
 private:
     void _Q_EMITActiveLayerChanged(int index);
     Ui::LayerDockWidget *ui;
-    bool    _causedChange;
+    bool    _causedChange=false;
+    QMetaObject::Connection _layerUndoConnection;
 };
 
 

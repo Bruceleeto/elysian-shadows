@@ -120,8 +120,8 @@
 
     \section2 Representation
     \list
-    \li \b {Map}: The map is represented as a 3D array of TileEntry objects. The first dimension is the layer. The engine supports 3
-    separate tile layers. The other two represent the <x, y> location of the tile.
+    \li \b {Map}: The map is represented as a 3D array of TileEntry objects. The first dimension is the layer. An area has three tile layers by default and can be upgraded to four in the editor.
+    Use getLayerCount() when iterating tile layers. The other two represent the <x, y> location of the tile.
     \li \b {Entities}: Entities are stored within two separate arrays. The first is activeEntities, which stores entities
     that are active within the current scene. The second array is inactiveEntities, which can store entities that will
     later be spawned or added to the scene dynamically through a Lua script.
@@ -266,6 +266,12 @@
  * This function does a linear search, so it's relatively expensive. Only use this initially to find an entity, then
  * cache its reference rathe than looking it up every frame.
  */
+/*!
+ * \qmlmethod int Area::getLayerCount()
+ *
+ * Returns the number of tile layers stored in this area (three or four).
+ */
+
 /*!
  * \qmlmethod void Area::setMapHeight(int height)
  *
@@ -426,6 +432,7 @@ void registerArea(sol::state_view state) {
     type["getMapWidth"] = method<T, unsigned short() const>(&T::getMapWidth);
     type["getMapHeight"] = method<T, unsigned short() const>(&T::getMapHeight);
     type["setMapHeight"] = method<T, void(const unsigned short)>(&T::setMapHeight);
+    type["getLayerCount"] = method<T, unsigned() const>(&T::getLayerCount);
     type["setMapWidth"] = method<T, void(const unsigned short)>(&T::setMapWidth);
     type["setActiveEntityByIndex"] = [](T& self, const unsigned arg0, sol::object arg1) { return std::invoke(method<T, void(const unsigned, Entity*)>(&T::setActiveEntityByIndex), self, arg0, take<Entity>(arg1)); };
     type["getActiveEntityByIndex"] = method<T, Entity*(unsigned) const>(&T::getActiveEntityByIndex);

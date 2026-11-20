@@ -78,97 +78,6 @@ const GYVector3 glalPlaneNormals[GY_RECT_PLANE_MAX] = {
 };
 
 
-const GYVector4 glalRectVerts[GY_RECT_PLANE_MAX][4] = {
-    //FLAT
-    {
-        {-0.5f, -0.5f, 0.0f, 1.0f}, // X, Y = 1 length
-        {0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
- #if 0
-    //FRONT
-    {
-        {-0.5f, -0.5f, 0.5f, 1.0f},
-        {0.5f, -0.5f, 0.5f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-#else
-    //FRONT
-    {
-        {-0.5f, 0.5f, 1.0f, 1.0f}, //X, Z len = 1
-        {0.5f, 0.5f, 1.0f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-   #endif
-    //LEFT
-    {
-        {-0.5f, -0.5f, 1.0f, 1.0f}, //Y, Z len = 1
-        {-0.5f, 0.5f, 1.0f, 1.0f},
-        {-0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f}
-    },
-    //RIGHT
-    {
-        {0.5f, -0.5f, 1.0f, 1.0f},
-        {0.5f, 0.5f, 1.0f, 1.0f},
-        {0.5f, -0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-    //FRONT_SLOPE_45
-    #if 0
-    {
-        {-0.5f, -0.5f, SQRT_OF_HALF, 1.0f},
-        {0.5f, -0.5f, SQRT_OF_HALF, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-    #else
-    {
-        {-0.5f, -0.5f, 1.0f, 1.0f},
-        {0.5f, -0.5f, 1.0f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-    #endif
-#if 0
-    //LEFT_SLOPE_45
-    {
-        {-0.5f, 0.0f, 1.0f, 1.0f},
-        {0.0f, -0.5f, 1.0f, 1.0f},
-        {0.0f, 0.5f, 0.0f, 1.0f},
-        {0.5f, 0.0f, 0.0f, 1.0f}
-    },
-    #else
-    {
-        {-0.5f, 0.5f, 1.0f, 1.0f},
-        {0.5f, -0.5f, 1.0f, 1.0f},
-        {-0.5f, 0.5f, 0.0f, 1.0f},
-        {0.5f, -0.5f, 0.0f, 1.0f}
-    },
-    #endif
-#if 0
-    //RIGHT_SLOPE_45
-    {
-        {0.5f, -0.5f, 1.0f, 1.0f},
-        {0.5f, 0.5f, 1.0f, 1.0f},
-        {0.5f, -0.5f, 0.0f, 1.0f},
-        {0.5f, 0.5f, 0.0f, 1.0f}
-    },
-    #else
-    {
-        {-0.5f, -0.5f, 1.0f, 1.0f},
-        {0.5f, 0.5f, 1.0f, 1.0f},
-        {-0.5f, -0.5f, 0.0f, 1.0f},
-        {0.5f,  0.5f, 0.0f, 1.0f}
-    },
-    #endif
-
-};
-
-
 static const GYCamera       _defaultCamera;
 static GYVertex             _vertexQueue[GYRO_VIDEO_GLAL_MAX_TRI_STRIP_SIZE]        __attribute__((aligned(32)));
 
@@ -1081,7 +990,7 @@ void gyVidQuad(const GYVector4 *const verts, const int frame) {
 }
 
 void gyVidRect(const int frame) {
-    gyVidQuad(glalRectVerts[glalPlaneType], frame);
+    gyVidQuad(gyTilePlaneVerts[glalPlaneType], frame);
 }
 
 
